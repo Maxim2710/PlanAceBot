@@ -1,10 +1,10 @@
 bot:
   name: PlanAceBot
-  token: unknown
+  token: 7363455230:AAEJsXrWrvUqT2owJ2a37IP79bXie59yFBQ
 
 spring:
   datasource:
-    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:5432/devMax_account
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:54320/devMax_account
     username: devMax_account_admin
     password: g*nLx&5oSQQ
 

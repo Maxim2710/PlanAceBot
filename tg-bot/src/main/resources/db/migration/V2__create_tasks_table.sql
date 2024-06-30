@@ -4,5 +4,5 @@ CREATE TABLE tasks (
     title VARCHAR(255),
     description TEXT,
     completed BOOLEAN,
-    FOREIGN KEY (user_chat_id) REFERENCES users(chatId)
+    FOREIGN KEY (user_chat_id) REFERENCES users(chat_id)
 );
