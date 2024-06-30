@@ -1,7 +1,7 @@
 CREATE TABLE users (
-    chatId BIGINT PRIMARY KEY,
-    firstName VARCHAR(255),
-    lastName VARCHAR(255),
+    chat_id BIGINT PRIMARY KEY,
+    first_name VARCHAR(255),
+    last_name VARCHAR(255),
     username VARCHAR(255),
-    registeredAt TIMESTAMP
+    registered_at TIMESTAMP
 );
