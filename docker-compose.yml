@@ -1,0 +1,52 @@
+services:
+  postgres:
+    container_name: postgres
+    image: postgres
+    environment:
+      POSTGRES_DB: devMax_account
+      POSTGRES_USER: devMax_account_admin
+      POSTGRES_PASSWORD: g*nLx&5oSQQ
+
+    volumes:
+      - planAce_data:/var/lib/postgresql/data/
+
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U devMax_account_admin -d devMax_account" ]
+      interval: 7s
+      timeout: 3s
+      retries: 7
+
+    networks:
+      - planAce_net
+
+    ports:
+      - "54320:5432"
+
+    restart: unless-stopped
+
+  tg-bot:
+    container_name: tg-bot
+    image: tg-bot:test
+    environment:
+      POSTGRES_HOST: postgres
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+        restart: true
+
+    networks:
+      - planAce_net
+
+    ports:
+      - "8443:8443"
+
+    restart: unless-stopped
+
+
+volumes:
+  planAce_data:
+
+networks:
+  planAce_net:
+    driver: bridge
