@@ -1,13 +1,13 @@
-package com.TaskPlannerBot;
+package com.PlanAceBot;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class TaskPlannerBotApplication {
+public class PlanAceBotApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(TaskPlannerBotApplication.class, args);
+		SpringApplication.run(PlanAceBotApplication.class, args);
 	}
 
 }
