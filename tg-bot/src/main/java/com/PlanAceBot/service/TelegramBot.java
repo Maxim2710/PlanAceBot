@@ -20,10 +20,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Component
 @Slf4j
@@ -42,7 +39,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     private Map<String, TaskCreationState> taskCreationStates = new HashMap<>();
     private Map<String, TaskUpdateState> taskUpdateStates = new HashMap<>();
-    private Map<String, Integer> taskDeletionStates = new HashMap<>();
+    private Map<String, List<Integer>> taskDeletionStates = new HashMap<>();
 
     @Autowired
     private UserService userService;
@@ -359,9 +356,9 @@ public class TelegramBot extends TelegramLongPollingBot {
         String data = callbackQuery.getData();
 
         TaskUpdateState currentState = taskUpdateStates.get(chatId);
-        Integer taskId = taskDeletionStates.get(chatId);
+        List<Integer> taskIds = taskDeletionStates.get(chatId);
 
-        if (currentState == null && taskId == null) {
+        if (currentState == null && taskIds == null) {
             sendMessage(chatId, "Ошибка при обработке запроса.");
             return;
         }
@@ -387,7 +384,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                 break;
 
             case "confirm_delete":
-                confirmDelete(chatId, taskId);
+                confirmDelete(chatId, taskIds);
                 break;
 
             case "cancel_delete":
@@ -456,35 +453,47 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     private void handleDeleteCommand(String[] parts, String chatId) {
         if (parts.length < 2) {
-            sendMessage(chatId, "Неверный формат команды. Используйте /delete_task <номер задачи>");
+            sendMessage(chatId, "Неверный формат команды. Используйте /delete_task <номер задачи1> <номер задачи2> ...");
             return;
         }
 
-        try {
-            int taskId = Integer.parseInt(parts[1]);
+        StringTokenizer tokenizer = new StringTokenizer(parts[1], " ");
+        List<Integer> taskIdsToDelete = new ArrayList<>();
 
-            Task task = taskService.findById(taskId);
-            if (task == null || !task.getUser().getChatId().equals(Long.parseLong(chatId))) {
-                sendMessage(chatId, "Задача с указанным номером не найдена или не принадлежит вам.");
+        while (tokenizer.hasMoreTokens()) {
+            try {
+                int taskId = Integer.parseInt(tokenizer.nextToken().trim());
+                taskIdsToDelete.add(taskId);
+            } catch (NumberFormatException e) {
+                sendMessage(chatId, "Неверный формат номера задачи.");
                 return;
             }
-
-            taskDeletionStates.put(chatId, taskId);
-            sendDeleteConfirmationMessage(chatId, task);
-
-        } catch (NumberFormatException e) {
-            sendMessage(chatId, "Неверный формат номера задачи.");
         }
+
+        if (taskIdsToDelete.isEmpty()) {
+            sendMessage(chatId, "Неверный формат номеров задачи.");
+            return;
+        }
+
+        taskDeletionStates.put(chatId, taskIdsToDelete);
+        sendDeleteConfirmationMessage(chatId, taskIdsToDelete);
     }
 
-    private void sendDeleteConfirmationMessage(String chatId, Task task) {
-        String confirmationMessage = "Вы уверены, что хотите удалить задачу?\n" +
-                "Название: " + task.getTitle() + "\n" +
-                "Описание: " + task.getDescription();
+
+    private void sendDeleteConfirmationMessage(String chatId, List<Integer> taskIdsToDelete) {
+        StringBuilder confirmationMessage = new StringBuilder("Вы уверены, что хотите удалить следующие задачи?\n\n");
+        for (Integer taskId : taskIdsToDelete) {
+            Task task = taskService.findById(taskId);
+            if (task != null) {
+                confirmationMessage.append("Номер: ").append(task.getId()).append("\n");
+                confirmationMessage.append("Название: ").append(task.getTitle()).append("\n");
+                confirmationMessage.append("Описание: ").append(task.getDescription()).append("\n\n");
+            }
+        }
 
         InlineKeyboardMarkup markup = createDeleteConfirmationMarkup();
 
-        SendMessage message = createMessage(chatId, confirmationMessage, markup);
+        SendMessage message = createMessage(chatId, confirmationMessage.toString(), markup);
 
         try {
             execute(message);
@@ -507,14 +516,12 @@ public class TelegramBot extends TelegramLongPollingBot {
         return markup;
     }
 
-    private void confirmDelete(String chatId, Integer taskId) {
-        if (taskId != null) {
+    private void confirmDelete(String chatId, List<Integer> taskIdsToDelete) {
+        for (Integer taskId : taskIdsToDelete) {
             taskService.delete(taskId);
-            taskDeletionStates.remove(chatId);
-            sendMessage(chatId, "Задача удалена.");
-        } else {
-            sendMessage(chatId, "Ошибка при удалении задачи.");
         }
+        taskDeletionStates.remove(chatId);
+        sendMessage(chatId, "Задачи удалены.");
     }
 
     private void cancelDelete(String chatId) {
