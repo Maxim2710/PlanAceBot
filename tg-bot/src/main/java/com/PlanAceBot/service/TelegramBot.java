@@ -137,6 +137,11 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void startTaskCreation(String chatId) {
+        if (getUserTaskCount(chatId) >= 20) {
+            sendMessage(chatId, "Вы достигли максимального количества задач (20). Удалите существующие задачи перед созданием новых.");
+            return;
+        }
+
         taskCreationStates.put(chatId, new TaskCreationState());
         sendMessage(chatId, "Введите название задачи:");
     }
@@ -161,6 +166,11 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void createTask(String title, String description, String chatId) {
+        if (getUserTaskCount(chatId) >= 20) {
+            sendMessage(chatId, "Вы достигли максимального количества задач (20). Удалите существующие задачи перед созданием новых.");
+            return;
+        }
+
         User user = userService.findByChatId(Long.parseLong(chatId));
         if (user == null) {
             sendMessage(chatId, "Пользователь не зарегистрирован. Используйте /start для регистрации.");
@@ -174,6 +184,16 @@ public class TelegramBot extends TelegramLongPollingBot {
         task.setCompleted(false);
 
         taskService.save(task);
+    }
+
+    private int getUserTaskCount(String chatId) {
+        User user = userService.findByChatId(Long.parseLong(chatId));
+        if (user == null) {
+            log.error("User not found for chatId: {}", chatId);
+            return 0;
+        }
+
+        return taskService.countTasksByUser(user);
     }
 
     private void sendUnknownCommandMessage(String chatId) {
