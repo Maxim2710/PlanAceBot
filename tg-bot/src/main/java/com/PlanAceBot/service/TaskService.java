@@ -1,6 +1,7 @@
 package com.PlanAceBot.service;
 
 import com.PlanAceBot.model.Task;
+import com.PlanAceBot.model.User;
 import com.PlanAceBot.repository.TaskRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -20,5 +21,13 @@ public class TaskService {
     public Task findById(int id) {
         Optional<Task> task = taskRepository.findById((long) id);
         return task.orElse(null);
+    }
+
+    public void delete(int id) {
+        taskRepository.deleteById((long) id);
+    }
+
+    public int countTasksByUser(User user) {
+        return taskRepository.countByUser(user);
     }
 }
