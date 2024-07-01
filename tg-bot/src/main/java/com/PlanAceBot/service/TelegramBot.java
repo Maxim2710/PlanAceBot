@@ -30,8 +30,9 @@ import java.util.Map;
 public class TelegramBot extends TelegramLongPollingBot {
 
     private static final String COMMAND_START = "/start";
-    private static final String COMMAND_CREATE = "/create";
-    private static final String COMMAND_UPDATE = "/update";
+    private static final String COMMAND_CREATE = "/create_task";
+    private static final String COMMAND_UPDATE = "/update_task";
+    private static final String COMMAND_DELETE = "/delete_task";
 
     private static final String BUTTON_TITLE = "Название";
     private static final String BUTTON_DESCRIPTION = "Описание";
@@ -41,6 +42,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     private Map<String, TaskCreationState> taskCreationStates = new HashMap<>();
     private Map<String, TaskUpdateState> taskUpdateStates = new HashMap<>();
+    private Map<String, Integer> taskDeletionStates = new HashMap<>();
 
     @Autowired
     private UserService userService;
@@ -94,6 +96,10 @@ public class TelegramBot extends TelegramLongPollingBot {
                     handleUpdateCommand(parts, chatId);
                     break;
 
+                case COMMAND_DELETE:
+                    handleDeleteCommand(parts, chatId);
+                    break;
+
                 default:
                     sendUnknownCommandMessage(chatId);
                     break;
@@ -129,7 +135,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         if (parts.length == 1) {
             startTaskCreation(chatId);
         } else {
-            sendMessage(chatId, "Неверный формат команды. Используйте /create без параметров.");
+            sendMessage(chatId, "Неверный формат команды. Используйте /create_task без параметров.");
         }
     }
 
@@ -179,7 +185,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     private void handleUpdateCommand(String[] parts, String chatId) {
         if (parts.length < 2) {
-            sendMessage(chatId, "Неверный формат команды. Используйте /update <номер задачи>");
+            sendMessage(chatId, "Неверный формат команды. Используйте /update_task <номер задачи>");
             return;
         }
 
@@ -353,8 +359,9 @@ public class TelegramBot extends TelegramLongPollingBot {
         String data = callbackQuery.getData();
 
         TaskUpdateState currentState = taskUpdateStates.get(chatId);
+        Integer taskId = taskDeletionStates.get(chatId);
 
-        if (currentState == null) {
+        if (currentState == null && taskId == null) {
             sendMessage(chatId, "Ошибка при обработке запроса.");
             return;
         }
@@ -379,6 +386,14 @@ public class TelegramBot extends TelegramLongPollingBot {
                 cancelUpdate(chatId, currentState);
                 break;
 
+            case "confirm_delete":
+                confirmDelete(chatId, taskId);
+                break;
+
+            case "cancel_delete":
+                cancelDelete(chatId);
+                break;
+
             default:
                 sendMessage(chatId, "Неверный выбор.");
                 break;
@@ -394,14 +409,18 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void sendNewValueRequest(String chatId, String field) {
-        String messageText = switch (field) {
-            case "title" -> "Введите новое название задачи:";
-            case "description" -> "Введите новое описание задачи:";
-            default -> {
+        String messageText;
+        switch (field) {
+            case "title":
+                messageText = "Введите новое название задачи:";
+                break;
+            case "description":
+                messageText = "Введите новое описание задачи:";
+                break;
+            default:
                 log.error("Unsupported field type: {}", field);
-                yield "";
-            }
-        };
+                return;
+        }
 
         sendMessage(chatId, messageText);
     }
@@ -433,5 +452,73 @@ public class TelegramBot extends TelegramLongPollingBot {
         } catch (TelegramApiException e) {
             log.error("Error editing message reply markup: {}", e.getMessage());
         }
+    }
+
+    private void handleDeleteCommand(String[] parts, String chatId) {
+        if (parts.length < 2) {
+            sendMessage(chatId, "Неверный формат команды. Используйте /delete_task <номер задачи>");
+            return;
+        }
+
+        try {
+            int taskId = Integer.parseInt(parts[1]);
+
+            Task task = taskService.findById(taskId);
+            if (task == null || !task.getUser().getChatId().equals(Long.parseLong(chatId))) {
+                sendMessage(chatId, "Задача с указанным номером не найдена или не принадлежит вам.");
+                return;
+            }
+
+            taskDeletionStates.put(chatId, taskId);
+            sendDeleteConfirmationMessage(chatId, task);
+
+        } catch (NumberFormatException e) {
+            sendMessage(chatId, "Неверный формат номера задачи.");
+        }
+    }
+
+    private void sendDeleteConfirmationMessage(String chatId, Task task) {
+        String confirmationMessage = "Вы уверены, что хотите удалить задачу?\n" +
+                "Название: " + task.getTitle() + "\n" +
+                "Описание: " + task.getDescription();
+
+        InlineKeyboardMarkup markup = createDeleteConfirmationMarkup();
+
+        SendMessage message = createMessage(chatId, confirmationMessage, markup);
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Error sending delete confirmation message: {}", e.getMessage());
+        }
+    }
+
+    private InlineKeyboardMarkup createDeleteConfirmationMarkup() {
+        List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
+
+        List<InlineKeyboardButton> row = createButtonRow(BUTTON_CONFIRM, "confirm_delete");
+        row.add(createInlineButton(BUTTON_CANCEL_UPDATE, "cancel_delete"));
+
+        keyboard.add(row);
+
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        markup.setKeyboard(keyboard);
+
+        return markup;
+    }
+
+    private void confirmDelete(String chatId, Integer taskId) {
+        if (taskId != null) {
+            taskService.delete(taskId);
+            taskDeletionStates.remove(chatId);
+            sendMessage(chatId, "Задача удалена.");
+        } else {
+            sendMessage(chatId, "Ошибка при удалении задачи.");
+        }
+    }
+
+    private void cancelDelete(String chatId) {
+        taskDeletionStates.remove(chatId);
+        sendMessage(chatId, "Удаление отменено.");
     }
 }
