@@ -11,10 +11,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
+import org.telegram.telegrambots.meta.api.methods.groupadministration.GetChatMember;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageReplyMarkup;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.chatmember.ChatMember;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
@@ -36,6 +38,11 @@ public class TelegramBot extends TelegramLongPollingBot {
     private static final String BUTTON_CANCEL = "Отмена";
     private static final String BUTTON_CONFIRM = "Да";
     private static final String BUTTON_CANCEL_UPDATE = "Нет";
+    private static final String BUTTON_SUBSCRIBE = "Подписаться";
+    private static final String BUTTON_CHECK_SUBSCRIPTION = "Проверить подписку";
+    private static final String CHANNEL_NAME = "development_max";
+    private static final String CHANNEL_USERNAME = "@development_max";
+
 
     private Map<String, TaskCreationState> taskCreationStates = new HashMap<>();
     private Map<String, TaskUpdateState> taskUpdateStates = new HashMap<>();
@@ -82,7 +89,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         } else {
             switch (command) {
                 case COMMAND_START:
-                    registerUserAndSendWelcomeMessage(chatId);
+                    sendSubscribeMessage(chatId);
                     break;
 
                 case COMMAND_CREATE:
@@ -103,6 +110,60 @@ public class TelegramBot extends TelegramLongPollingBot {
             }
         }
     }
+
+    private void sendSubscribeMessage(String chatId) {
+        String subscribeMessage = "Подпишитесь на наш канал и затем нажмите кнопку \"Проверить подписку\", чтобы продолжить использование бота.";
+        InlineKeyboardMarkup markup = createSubscribeMarkup();
+        SendMessage message = createMessage(chatId, subscribeMessage, markup);
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Error sending subscribe message: {}", e.getMessage());
+        }
+    }
+
+    private InlineKeyboardMarkup createSubscribeMarkup() {
+        List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
+        List<InlineKeyboardButton> row1 = new ArrayList<>();
+        List<InlineKeyboardButton> row2 = new ArrayList<>();
+
+        InlineKeyboardButton subscribeButton = new InlineKeyboardButton();
+        subscribeButton.setText(BUTTON_SUBSCRIBE);
+        subscribeButton.setUrl("https://t.me/" + CHANNEL_NAME);
+        row1.add(subscribeButton);
+
+        InlineKeyboardButton checkSubscriptionButton = new InlineKeyboardButton();
+        checkSubscriptionButton.setText(BUTTON_CHECK_SUBSCRIPTION);
+        checkSubscriptionButton.setCallbackData("check_subscription");
+        row2.add(checkSubscriptionButton);
+
+        keyboard.add(row1);
+        keyboard.add(row2);
+
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        markup.setKeyboard(keyboard);
+
+        return markup;
+    }
+
+    private boolean isUserSubscribed(String chatId) {
+        Long chatIdLong = Long.parseLong(chatId);
+
+        GetChatMember getChatMember = new GetChatMember();
+        getChatMember.setChatId(CHANNEL_USERNAME);
+        getChatMember.setUserId(chatIdLong);
+
+        try {
+            ChatMember chatMember = execute(getChatMember);
+            String status = chatMember.getStatus();
+            return !"left".equals(status) && !"kicked".equals(status);
+        } catch (TelegramApiException e) {
+            log.error("Error checking subscription status: {}", e.getMessage());
+            return false;
+        }
+    }
+
 
     private void registerUserAndSendWelcomeMessage(String chatId) {
         if (!userService.existByChatId(Long.parseLong(chatId))) {
@@ -375,45 +436,54 @@ public class TelegramBot extends TelegramLongPollingBot {
         String chatId = callbackQuery.getMessage().getChatId().toString();
         String data = callbackQuery.getData();
 
-        TaskUpdateState currentState = taskUpdateStates.get(chatId);
-        List<Integer> taskIds = taskDeletionStates.get(chatId);
+        if (data.equals("check_subscription")) {
+            if (isUserSubscribed(chatId)) {
+                registerUserAndSendWelcomeMessage(chatId);
+                sendWelcomeMessage(chatId);
+            } else {
+                sendMessage(chatId, "Вы еще не подписались на канал. Пожалуйста, подпишитесь и нажмите \"Проверить подписку\".");
+            }
+        } else {
+            TaskUpdateState currentState = taskUpdateStates.get(chatId);
+            List<Integer> taskIds = taskDeletionStates.get(chatId);
 
-        if (currentState == null && taskIds == null) {
-            sendMessage(chatId, "Ошибка при обработке запроса.");
-            return;
-        }
+            if (currentState == null && taskIds == null) {
+                sendMessage(chatId, "Ошибка при обработке запроса.");
+                return;
+            }
 
-        switch (data) {
-            case "update_title":
-                currentState.setFieldToUpdate("title");
-                sendNewValueRequest(chatId, "title");
-                break;
+            switch (data) {
+                case "update_title":
+                    currentState.setFieldToUpdate("title");
+                    sendNewValueRequest(chatId, "title");
+                    break;
 
-            case "update_description":
-                currentState.setFieldToUpdate("description");
-                sendNewValueRequest(chatId, "description");
-                break;
+                case "update_description":
+                    currentState.setFieldToUpdate("description");
+                    sendNewValueRequest(chatId, "description");
+                    break;
 
-            case "confirm_update":
-                taskUpdateStates.remove(chatId);
-                sendMessage(chatId, "Изменения подтверждены.");
-                break;
+                case "confirm_update":
+                    taskUpdateStates.remove(chatId);
+                    sendMessage(chatId, "Изменения подтверждены.");
+                    break;
 
-            case "cancel_update":
-                cancelUpdate(chatId, currentState);
-                break;
+                case "cancel_update":
+                    cancelUpdate(chatId, currentState);
+                    break;
 
-            case "confirm_delete":
-                confirmDelete(chatId, taskIds);
-                break;
+                case "confirm_delete":
+                    confirmDelete(chatId, taskIds);
+                    break;
 
-            case "cancel_delete":
-                cancelDelete(chatId);
-                break;
+                case "cancel_delete":
+                    cancelDelete(chatId);
+                    break;
 
-            default:
-                sendMessage(chatId, "Неверный выбор.");
-                break;
+                default:
+                    sendMessage(chatId, "Неверный выбор.");
+                    break;
+            }
         }
 
         editMessageReplyMarkup(chatId, callbackQuery.getMessage().getMessageId());
@@ -548,4 +618,8 @@ public class TelegramBot extends TelegramLongPollingBot {
         taskDeletionStates.remove(chatId);
         sendMessage(chatId, "Удаление отменено.");
     }
+
+
+
+
 }
