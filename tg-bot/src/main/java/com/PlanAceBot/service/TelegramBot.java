@@ -5,7 +5,7 @@ import com.PlanAceBot.model.User;
 import com.PlanAceBot.state.TaskCreationState;
 import com.PlanAceBot.state.TaskState;
 import com.PlanAceBot.state.TaskUpdateState;
-import com.PlanAceBot.сonfig.BotConfig;
+import com.PlanAceBot.config.BotConfig;
 import com.vdurmont.emoji.EmojiParser;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -77,39 +77,59 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void handleMessageUpdate(Update update) {
-        String messageText = update.getMessage().getText();
-        String chatId = update.getMessage().getChatId().toString();
-        String[] parts = messageText.split(" ", 2);
-        String command = parts[0];
+        if (update.hasMessage() && update.getMessage().hasText()) {
+            String messageText = update.getMessage().getText();
+            String chatId = update.getMessage().getChatId().toString();
+            String[] parts = messageText.split(" ", 2);
+            String command = parts[0];
 
-        if (taskCreationStates.containsKey(chatId)) {
-            processTaskCreation(chatId, messageText);
-        } else if (taskUpdateStates.containsKey(chatId)) {
-            processFieldAndValue(chatId, messageText);
-        } else {
-            switch (command) {
-                case COMMAND_START:
+            // Check if user is registered
+            if (!userService.existByChatId(Long.parseLong(chatId))) {
+                if (!command.equals(COMMAND_START)) {
+                    // User is not registered, only allow /start command
                     sendSubscribeMessage(chatId);
-                    break;
-
-                case COMMAND_CREATE:
-                    handleTaskCreationCommand(chatId, parts);
-                    break;
-
-                case COMMAND_UPDATE:
-                    handleUpdateCommand(parts, chatId);
-                    break;
-
-                case COMMAND_DELETE:
-                    handleDeleteCommand(parts, chatId);
-                    break;
-
-                default:
-                    sendUnknownCommandMessage(chatId);
-                    break;
+                    return;
+                }
             }
+
+            // Check if user is subscribed to the channel
+            if (!isUserSubscribed(chatId)) {
+                sendSubscribeMessage(chatId);
+                return;
+            }
+
+            if (taskCreationStates.containsKey(chatId)) {
+                processTaskCreation(chatId, messageText);
+            } else if (taskUpdateStates.containsKey(chatId)) {
+                processFieldAndValue(chatId, messageText);
+            } else {
+                switch (command) {
+                    case COMMAND_START:
+                        registerUserAndSendWelcomeMessage(chatId);
+                        break;
+
+                    case COMMAND_CREATE:
+                        handleTaskCreationCommand(chatId, parts);
+                        break;
+
+                    case COMMAND_UPDATE:
+                        handleUpdateCommand(parts, chatId);
+                        break;
+
+                    case COMMAND_DELETE:
+                        handleDeleteCommand(parts, chatId);
+                        break;
+
+                    default:
+                        sendUnknownCommandMessage(chatId);
+                        break;
+                }
+            }
+        } else if (update.hasCallbackQuery()) {
+            handleCallbackQuery(update);
         }
     }
+
 
     private void sendSubscribeMessage(String chatId) {
         String subscribeMessage = "Подпишитесь на наш канал и затем нажмите кнопку \"Проверить подписку\", чтобы продолжить использование бота.";
@@ -164,17 +184,22 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
-
     private void registerUserAndSendWelcomeMessage(String chatId) {
+        boolean isNewUser = false;
+
         if (!userService.existByChatId(Long.parseLong(chatId))) {
             User currentUser = new User();
             currentUser.setChatId(Long.parseLong(chatId));
             currentUser.setRegisteredAt(new Timestamp(System.currentTimeMillis()));
             userService.save(currentUser);
-            sendWelcomeMessage(chatId);
+            isNewUser = true;
         }
 
-        sendWelcomeBackMessage(chatId);
+        if (isNewUser) {
+            sendWelcomeMessage(chatId);
+        } else {
+            sendWelcomeBackMessage(chatId);
+        }
     }
 
     private void sendWelcomeMessage(String chatId) {
@@ -439,7 +464,6 @@ public class TelegramBot extends TelegramLongPollingBot {
         if (data.equals("check_subscription")) {
             if (isUserSubscribed(chatId)) {
                 registerUserAndSendWelcomeMessage(chatId);
-                sendWelcomeMessage(chatId);
             } else {
                 sendMessage(chatId, "Вы еще не подписались на канал. Пожалуйста, подпишитесь и нажмите \"Проверить подписку\".");
             }
