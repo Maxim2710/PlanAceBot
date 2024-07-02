@@ -11,12 +11,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
+import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.methods.groupadministration.GetChatMember;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageReplyMarkup;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.chatmember.ChatMember;
+import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
+import org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScopeDefault;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
@@ -32,6 +35,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private static final String COMMAND_CREATE = "/create_task";
     private static final String COMMAND_UPDATE = "/update_task";
     private static final String COMMAND_DELETE = "/delete_task";
+    private static final String COMMAND_HELP = "/help";
 
     private static final String BUTTON_TITLE = "Название";
     private static final String BUTTON_DESCRIPTION = "Описание";
@@ -42,7 +46,6 @@ public class TelegramBot extends TelegramLongPollingBot {
     private static final String BUTTON_CHECK_SUBSCRIPTION = "Проверить подписку";
     private static final String CHANNEL_NAME = "development_max";
     private static final String CHANNEL_USERNAME = "@development_max";
-
 
     private Map<String, TaskCreationState> taskCreationStates = new HashMap<>();
     private Map<String, TaskUpdateState> taskUpdateStates = new HashMap<>();
@@ -56,6 +59,22 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     @Autowired
     private TaskService taskService;
+
+    public TelegramBot(BotConfig config) {
+        this.botConfig = config;
+        List<BotCommand> listofCommands = new ArrayList<>();
+        listofCommands.add(new BotCommand("/start", "Регистрация пользователя и приветственное сообщение"));
+        listofCommands.add(new BotCommand("/create_task", "Создание новой задачи"));
+        listofCommands.add(new BotCommand("/update_task", "Обновление существующей задачи"));
+        listofCommands.add(new BotCommand("/delete_task", "Удаление задач"));
+        listofCommands.add(new BotCommand("/help", "Показать инструкцию по командам"));
+
+        try {
+            this.execute(new SetMyCommands(listofCommands, new BotCommandScopeDefault(), null));
+        } catch (TelegramApiException e) {
+            log.error("Error setting bot's command list: " + e.getMessage());
+        }
+    }
 
     @Override
     public String getBotUsername() {
@@ -83,16 +102,13 @@ public class TelegramBot extends TelegramLongPollingBot {
             String[] parts = messageText.split(" ", 2);
             String command = parts[0];
 
-            // Check if user is registered
             if (!userService.existByChatId(Long.parseLong(chatId))) {
                 if (!command.equals(COMMAND_START)) {
-                    // User is not registered, only allow /start command
                     sendSubscribeMessage(chatId);
                     return;
                 }
             }
 
-            // Check if user is subscribed to the channel
             if (!isUserSubscribed(chatId)) {
                 sendSubscribeMessage(chatId);
                 return;
@@ -120,6 +136,10 @@ public class TelegramBot extends TelegramLongPollingBot {
                         handleDeleteCommand(parts, chatId);
                         break;
 
+                    case COMMAND_HELP:
+                        sendHelpMessage(chatId);
+                        break;
+
                     default:
                         sendUnknownCommandMessage(chatId);
                         break;
@@ -130,6 +150,18 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
+    private void sendHelpMessage(String chatId) {
+        String helpMessage = EmojiParser.parseToUnicode(
+                ":information_source: Список доступных команд:\n\n" +
+                        "/start - Регистрация пользователя и приветственное сообщение.\n" +
+                        "/create_task - Создание новой задачи.\n" +
+                        "/update_task <номер задачи> - Обновление существующей задачи.\n" +
+                        "/delete_task <номер задачи1> <номер задачи2> ... - Удаление задач.\n" +
+                        "/help - Показать это сообщение.\n\n" +
+                        "Дополнительно, вам нужно подписаться на наш канал, чтобы пользоваться ботом."
+        );
+        sendMessage(chatId, helpMessage);
+    }
 
     private void sendSubscribeMessage(String chatId) {
         String subscribeMessage = "Подпишитесь на наш канал и затем нажмите кнопку \"Проверить подписку\", чтобы продолжить использование бота.";
@@ -642,8 +674,4 @@ public class TelegramBot extends TelegramLongPollingBot {
         taskDeletionStates.remove(chatId);
         sendMessage(chatId, "Удаление отменено.");
     }
-
-
-
-
 }
