@@ -6,6 +6,7 @@ import com.PlanAceBot.repository.TaskRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -29,5 +30,9 @@ public class TaskService {
 
     public int countTasksByUser(User user) {
         return taskRepository.countByUser(user);
+    }
+
+    public List<Task> findTasksByUserId(Long userId) {
+        return taskRepository.findByUser_ChatId(userId);
     }
 }

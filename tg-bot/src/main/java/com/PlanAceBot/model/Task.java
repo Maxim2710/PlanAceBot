@@ -27,4 +27,5 @@ public class Task {
 
     @Column(name = "completed")
     private boolean completed;
+
 }

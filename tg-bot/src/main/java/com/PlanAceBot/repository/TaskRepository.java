@@ -12,4 +12,5 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
 
     int countByUser(User user);
 
+    List<Task> findByUser_ChatId(Long chatId);
 }
