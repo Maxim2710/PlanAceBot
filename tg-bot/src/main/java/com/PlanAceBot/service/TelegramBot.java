@@ -32,6 +32,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private static final String COMMAND_CREATE = "/create_task";
     private static final String COMMAND_UPDATE = "/update_task";
     private static final String COMMAND_DELETE = "/delete_task";
+    private static final String COMMAND_HELP = "/help";
 
     private static final String BUTTON_TITLE = "Название";
     private static final String BUTTON_DESCRIPTION = "Описание";
@@ -83,16 +84,13 @@ public class TelegramBot extends TelegramLongPollingBot {
             String[] parts = messageText.split(" ", 2);
             String command = parts[0];
 
-            // Check if user is registered
             if (!userService.existByChatId(Long.parseLong(chatId))) {
                 if (!command.equals(COMMAND_START)) {
-                    // User is not registered, only allow /start command
                     sendSubscribeMessage(chatId);
                     return;
                 }
             }
 
-            // Check if user is subscribed to the channel
             if (!isUserSubscribed(chatId)) {
                 sendSubscribeMessage(chatId);
                 return;
@@ -120,6 +118,10 @@ public class TelegramBot extends TelegramLongPollingBot {
                         handleDeleteCommand(parts, chatId);
                         break;
 
+                    case COMMAND_HELP:
+                        sendHelpMessage(chatId);
+                        break;
+
                     default:
                         sendUnknownCommandMessage(chatId);
                         break;
@@ -130,6 +132,18 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
+    private void sendHelpMessage(String chatId) {
+        String helpMessage = EmojiParser.parseToUnicode(
+                ":information_source: Список доступных команд:\n\n" +
+                        "/start - Регистрация пользователя и приветственное сообщение.\n" +
+                        "/create_task - Создание новой задачи.\n" +
+                        "/update_task <номер задачи> - Обновление существующей задачи.\n" +
+                        "/delete_task <номер задачи1> <номер задачи2> ... - Удаление задач.\n" +
+                        "/help - Показать это сообщение.\n\n" +
+                        "Дополнительно, вам нужно подписаться на наш канал, чтобы пользоваться ботом."
+        );
+        sendMessage(chatId, helpMessage);
+    }
 
     private void sendSubscribeMessage(String chatId) {
         String subscribeMessage = "Подпишитесь на наш канал и затем нажмите кнопку \"Проверить подписку\", чтобы продолжить использование бота.";
@@ -642,8 +656,4 @@ public class TelegramBot extends TelegramLongPollingBot {
         taskDeletionStates.remove(chatId);
         sendMessage(chatId, "Удаление отменено.");
     }
-
-
-
-
 }
