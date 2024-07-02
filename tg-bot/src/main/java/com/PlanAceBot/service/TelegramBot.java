@@ -66,7 +66,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         listofCommands.add(new BotCommand("/start", "Регистрация пользователя и приветственное сообщение"));
         listofCommands.add(new BotCommand("/create_task", "Создание новой задачи"));
         listofCommands.add(new BotCommand("/update_task", "Обновление существующей задачи"));
-        listofCommands.add(new BotCommand("/delete_task", "Удаление задач"));
+        listofCommands.add(new BotCommand("/delete_task", "Удаление задачи"));
         listofCommands.add(new BotCommand("/help", "Показать инструкцию по командам"));
 
         try {
@@ -118,6 +118,8 @@ public class TelegramBot extends TelegramLongPollingBot {
                 processTaskCreation(chatId, messageText);
             } else if (taskUpdateStates.containsKey(chatId)) {
                 processFieldAndValue(chatId, messageText);
+            } else if(taskDeletionStates.containsKey(chatId)) {
+                sendDeleteConfirmationMessage(chatId, taskDeletionStates.get(chatId).get(0));
             } else {
                 switch (command) {
                     case COMMAND_START:
@@ -155,10 +157,9 @@ public class TelegramBot extends TelegramLongPollingBot {
                 ":information_source: Список доступных команд:\n\n" +
                         "/start - Регистрация пользователя и приветственное сообщение.\n" +
                         "/create_task - Создание новой задачи.\n" +
-                        "/update_task <номер задачи> - Обновление существующей задачи.\n" +
-                        "/delete_task <номер задачи1> <номер задачи2> ... - Удаление задач.\n" +
-                        "/help - Показать это сообщение.\n\n" +
-                        "Дополнительно, вам нужно подписаться на наш канал, чтобы пользоваться ботом."
+                        "/update_task - Обновление существующей задачи.\n" +
+                        "/delete_task - Удаление задачи.\n" +
+                        "/help - Показать инструкцию по командам.\n\n"
         );
         sendMessage(chatId, helpMessage);
     }
@@ -535,6 +536,24 @@ public class TelegramBot extends TelegramLongPollingBot {
             } catch (NumberFormatException e) {
                 sendMessage(chatId, "Ошибка при выборе задачи для обновления.");
             }
+        } else if (data.startsWith("delete_task_")) {
+            String taskIdString = data.substring("delete_task_".length());
+            try {
+                int taskId = Integer.parseInt(taskIdString);
+
+                Task task = taskService.findById(taskId);
+                if (task == null || !task.getUser().getChatId().equals(Long.parseLong(chatId))) {
+                    sendMessage(chatId, "Задача с указанным номером не найдена или не принадлежит вам.");
+                    return;
+                }
+
+                taskDeletionStates.put(chatId, Collections.singletonList(taskId));
+
+                sendDeleteConfirmationMessage(chatId, taskId);
+
+            } catch (NumberFormatException e) {
+                sendMessage(chatId, "Ошибка при удалении задачи.");
+            }
         } else {
             TaskUpdateState currentState = taskUpdateStates.get(chatId);
             List<Integer> taskIds = taskDeletionStates.get(chatId);
@@ -565,7 +584,12 @@ public class TelegramBot extends TelegramLongPollingBot {
                     break;
 
                 case "confirm_delete":
-                    confirmDelete(chatId, taskIds);
+                    if (taskIds != null && !taskIds.isEmpty()) {
+                        confirmDelete(chatId, Collections.singletonList(taskIds.get(0)));
+                        taskDeletionStates.remove(chatId);
+                    } else {
+                        sendMessage(chatId, "Ошибка при подтверждении удаления задачи.");
+                    }
                     break;
 
                 case "cancel_delete":
@@ -580,7 +604,6 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         editMessageReplyMarkup(chatId, callbackQuery.getMessage().getMessageId());
     }
-
 
     private void cancelUpdate(String chatId, TaskUpdateState currentState) {
         taskService.save(currentState.getOriginalTask());
@@ -635,44 +658,58 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void handleDeleteCommand(String[] parts, String chatId) {
-        if (parts.length < 2) {
-            sendMessage(chatId, "Неверный формат команды. Используйте /delete_task <номер задачи1> <номер задачи2> ...");
+        if (parts.length > 1) {
+            sendMessage(chatId, "Неверный формат команды. Используйте /delete_task без параметров.");
             return;
         }
 
-        StringTokenizer tokenizer = new StringTokenizer(parts[1], " ");
-        List<Integer> taskIdsToDelete = new ArrayList<>();
+        List<Task> tasks = taskService.findTasksByUserId(Long.parseLong(chatId));
 
-        while (tokenizer.hasMoreTokens()) {
-            try {
-                int taskId = Integer.parseInt(tokenizer.nextToken().trim());
-                taskIdsToDelete.add(taskId);
-            } catch (NumberFormatException e) {
-                sendMessage(chatId, "Неверный формат номера задачи.");
-                return;
-            }
-        }
-
-        if (taskIdsToDelete.isEmpty()) {
-            sendMessage(chatId, "Неверный формат номеров задачи.");
+        if (tasks.isEmpty()) {
+            sendMessage(chatId, "У вас нет задач для удаления.");
             return;
         }
 
-        taskDeletionStates.put(chatId, taskIdsToDelete);
-        sendDeleteConfirmationMessage(chatId, taskIdsToDelete);
+        InlineKeyboardMarkup markup = createDeleteTaskMarkup(tasks);
+
+        SendMessage message = createMessage(chatId, "Выберите задачу для удаления:", markup);
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Error sending delete task selection message: {}", e.getMessage());
+        }
     }
 
+    private InlineKeyboardMarkup createDeleteTaskMarkup(List<Task> tasks) {
+        List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
 
-    private void sendDeleteConfirmationMessage(String chatId, List<Integer> taskIdsToDelete) {
-        StringBuilder confirmationMessage = new StringBuilder("Вы уверены, что хотите удалить следующие задачи?\n\n");
-        for (Integer taskId : taskIdsToDelete) {
-            Task task = taskService.findById(taskId);
-            if (task != null) {
-                confirmationMessage.append("Номер: ").append(task.getId()).append("\n");
-                confirmationMessage.append("Название: ").append(task.getTitle()).append("\n");
-                confirmationMessage.append("Описание: ").append(task.getDescription()).append("\n\n");
-            }
+        for (Task task : tasks) {
+            InlineKeyboardButton button = new InlineKeyboardButton();
+            button.setText(task.getTitle());
+            button.setCallbackData("delete_task_" + task.getId());
+            List<InlineKeyboardButton> row = new ArrayList<>();
+            row.add(button);
+            keyboard.add(row);
         }
+
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        markup.setKeyboard(keyboard);
+
+        return markup;
+    }
+
+    private void sendDeleteConfirmationMessage(String chatId, int taskIdToDelete) {
+        Task task = taskService.findById(taskIdToDelete);
+        if (task == null) {
+            sendMessage(chatId, "Задача не найдена.");
+            return;
+        }
+
+        StringBuilder confirmationMessage = new StringBuilder("Вы уверены, что хотите удалить следующую задачу?\n\n");
+        confirmationMessage.append("Номер: ").append(task.getId()).append("\n");
+        confirmationMessage.append("Название: ").append(task.getTitle()).append("\n");
+        confirmationMessage.append("Описание: ").append(task.getDescription()).append("\n\n");
 
         InlineKeyboardMarkup markup = createDeleteConfirmationMarkup();
 
@@ -704,7 +741,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             taskService.delete(taskId);
         }
         taskDeletionStates.remove(chatId);
-        sendMessage(chatId, "Задачи удалены.");
+        sendMessage(chatId, "Задача удалена.");
     }
 
     private void cancelDelete(String chatId) {
