@@ -319,27 +319,45 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void handleUpdateCommand(String[] parts, String chatId) {
-        if (parts.length < 2) {
-            sendMessage(chatId, "Неверный формат команды. Используйте /update_task <номер задачи>");
+        if (parts.length > 1) {
+            sendMessage(chatId, "Неверный формат команды. Используйте только /update_task без параметров.");
             return;
         }
 
-        try {
-            int taskId = Integer.parseInt(parts[1]);
+        List<Task> tasks = taskService.findTasksByUserId(Long.parseLong(chatId));
 
-            Task task = taskService.findById(taskId);
-            if (task == null || !task.getUser().getChatId().equals(Long.parseLong(chatId))) {
-                sendMessage(chatId, "Задача с указанным номером не найдена или не принадлежит вам.");
-                return;
-            }
-
-            taskUpdateStates.put(chatId, new TaskUpdateState(taskId, "", task));
-
-            sendFieldSelectionMessage(chatId);
-
-        } catch (NumberFormatException e) {
-            sendMessage(chatId, "Неверный формат номера задачи.");
+        if (tasks.isEmpty()) {
+            sendMessage(chatId, "У вас пока нет задач для обновления.");
+            return;
         }
+
+        InlineKeyboardMarkup markup = createTasksMarkup(tasks);
+
+        SendMessage message = createMessage(chatId, "Выберите задачу для обновления:", markup);
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Error sending task selection message: {}", e.getMessage());
+        }
+    }
+
+    private InlineKeyboardMarkup createTasksMarkup(List<Task> tasks) {
+        List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
+
+        for (Task task : tasks) {
+            InlineKeyboardButton button = new InlineKeyboardButton();
+            button.setText(task.getTitle());
+            button.setCallbackData("update_task_" + task.getId());
+            List<InlineKeyboardButton> row = new ArrayList<>();
+            row.add(button);
+            keyboard.add(row);
+        }
+
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        markup.setKeyboard(keyboard);
+
+        return markup;
     }
 
     private void sendFieldSelectionMessage(String chatId) {
@@ -499,6 +517,24 @@ public class TelegramBot extends TelegramLongPollingBot {
             } else {
                 sendMessage(chatId, "Вы еще не подписались на канал. Пожалуйста, подпишитесь и нажмите \"Проверить подписку\".");
             }
+        } else if (data.startsWith("update_task_")) {
+            String taskIdString = data.substring("update_task_".length());
+            try {
+                int taskId = Integer.parseInt(taskIdString);
+
+                Task task = taskService.findById(taskId);
+                if (task == null || !task.getUser().getChatId().equals(Long.parseLong(chatId))) {
+                    sendMessage(chatId, "Задача с указанным номером не найдена или не принадлежит вам.");
+                    return;
+                }
+
+                taskUpdateStates.put(chatId, new TaskUpdateState(taskId, "", task));
+
+                sendFieldSelectionMessage(chatId);
+
+            } catch (NumberFormatException e) {
+                sendMessage(chatId, "Ошибка при выборе задачи для обновления.");
+            }
         } else {
             TaskUpdateState currentState = taskUpdateStates.get(chatId);
             List<Integer> taskIds = taskDeletionStates.get(chatId);
@@ -544,6 +580,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         editMessageReplyMarkup(chatId, callbackQuery.getMessage().getMessageId());
     }
+
 
     private void cancelUpdate(String chatId, TaskUpdateState currentState) {
         taskService.save(currentState.getOriginalTask());
