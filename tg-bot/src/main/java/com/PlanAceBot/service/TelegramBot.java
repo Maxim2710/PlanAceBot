@@ -11,12 +11,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
+import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.methods.groupadministration.GetChatMember;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageReplyMarkup;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.chatmember.ChatMember;
+import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
+import org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScopeDefault;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
@@ -44,7 +47,6 @@ public class TelegramBot extends TelegramLongPollingBot {
     private static final String CHANNEL_NAME = "development_max";
     private static final String CHANNEL_USERNAME = "@development_max";
 
-
     private Map<String, TaskCreationState> taskCreationStates = new HashMap<>();
     private Map<String, TaskUpdateState> taskUpdateStates = new HashMap<>();
     private Map<String, List<Integer>> taskDeletionStates = new HashMap<>();
@@ -57,6 +59,22 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     @Autowired
     private TaskService taskService;
+
+    public TelegramBot(BotConfig config) {
+        this.botConfig = config;
+        List<BotCommand> listofCommands = new ArrayList<>();
+        listofCommands.add(new BotCommand("/start", "Регистрация пользователя и приветственное сообщение"));
+        listofCommands.add(new BotCommand("/create_task", "Создание новой задачи"));
+        listofCommands.add(new BotCommand("/update_task", "Обновление существующей задачи"));
+        listofCommands.add(new BotCommand("/delete_task", "Удаление задач"));
+        listofCommands.add(new BotCommand("/help", "Показать инструкцию по командам"));
+
+        try {
+            this.execute(new SetMyCommands(listofCommands, new BotCommandScopeDefault(), null));
+        } catch (TelegramApiException e) {
+            log.error("Error setting bot's command list: " + e.getMessage());
+        }
+    }
 
     @Override
     public String getBotUsername() {
