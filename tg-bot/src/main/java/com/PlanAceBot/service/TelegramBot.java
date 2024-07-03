@@ -26,6 +26,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -290,18 +291,29 @@ public class TelegramBot extends TelegramLongPollingBot {
             currentState.setState(TaskState.ENTER_DESCRIPTION);
             sendMessage(chatId, "Введите описание задачи для '" + messageText + "':");
         } else if (currentState.getState() == TaskState.ENTER_DESCRIPTION) {
-            String title = currentState.getTitle();
-            String description = messageText;
+            currentState.setDescription(messageText);
+            currentState.setState(TaskState.ENTER_PRIORITY);
+            sendMessage(chatId, "Введите приоритет задачи (1-5):");
+        } else if (currentState.getState() == TaskState.ENTER_PRIORITY) {
+            try {
+                int priority = Integer.parseInt(messageText);
+                if (priority < 1 || priority > 5) {
+                    sendMessage(chatId, "Приоритет должен быть в диапазоне от 1 до 5. Пожалуйста, введите заново:");
+                    return;
+                }
+                currentState.setPriority(priority);
 
-            createTask(title, description, chatId);
+                createTask(currentState.getTitle(), currentState.getDescription(), currentState.getPriority(), chatId);
+                taskCreationStates.remove(chatId);
 
-            taskCreationStates.remove(chatId);
-
-            sendMessage(chatId, "Задача '" + title + "' с описанием '" + description + "' создана.");
+                sendMessage(chatId, "Задача '" + currentState.getTitle() + "' с приоритетом " + priority + " создана.");
+            } catch (NumberFormatException e) {
+                sendMessage(chatId, "Пожалуйста, введите числовое значение для приоритета (1-5):");
+            }
         }
     }
 
-    private void createTask(String title, String description, String chatId) {
+    private void createTask(String title, String description, int priority, String chatId) {
         if (getUserTaskCount(chatId) >= 20) {
             sendMessage(chatId, "Вы достигли максимального количества задач (20). Удалите существующие задачи перед созданием новых.");
             return;
@@ -318,7 +330,8 @@ public class TelegramBot extends TelegramLongPollingBot {
         task.setDescription(description);
         task.setUser(user);
         task.setCompleted(false);
-        task.setCreationTimestamp(Timestamp.valueOf(LocalDateTime.now()));
+        task.setCreationTimestamp(Timestamp.from(Instant.now()));
+        task.setPriority(priority);
 
         taskService.save(task);
     }
@@ -928,6 +941,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             messageBuilder.append(EmojiParser.parseToUnicode(":pencil2: *Название:* ")).append(task.getTitle()).append("\n");
             messageBuilder.append(EmojiParser.parseToUnicode(":page_facing_up: *Описание:* ")).append(task.getDescription()).append("\n");
             messageBuilder.append(EmojiParser.parseToUnicode(":calendar: *Создано:* ")).append(task.getCreationTimestamp().toLocalDateTime().format(formatter)).append("\n");
+            messageBuilder.append(EmojiParser.parseToUnicode(":star: *Приоритет:* ")).append(task.getPriority()).append("\n");
             messageBuilder.append("\n");
         }
 
