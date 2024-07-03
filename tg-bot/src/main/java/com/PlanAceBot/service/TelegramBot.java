@@ -9,6 +9,7 @@ import com.PlanAceBot.config.BotConfig;
 import com.vdurmont.emoji.EmojiParser;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
@@ -68,6 +69,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         listofCommands.add(new BotCommand("/create_task", "Создание новой задачи"));
         listofCommands.add(new BotCommand("/update_task", "Обновление существующей задачи"));
         listofCommands.add(new BotCommand("/delete_task", "Удаление задачи"));
+        listofCommands.add(new BotCommand("/change_status_task", "Смена статуса задачи"));
         listofCommands.add(new BotCommand("/help", "Показать инструкцию по командам"));
 
         try {
@@ -164,6 +166,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                         "/create_task - Создание новой задачи.\n" +
                         "/update_task - Обновление существующей задачи.\n" +
                         "/delete_task - Удаление задачи.\n" +
+                        "/change_status_task - Смена существующей задачи.\n" +
                         "/help - Показать инструкцию по командам.\n\n"
         );
         sendMessage(chatId, helpMessage);
@@ -890,6 +893,15 @@ public class TelegramBot extends TelegramLongPollingBot {
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
         markup.setKeyboard(keyboard);
         return markup;
+    }
+
+    @Scheduled(fixedRate = 1000)
+    private void cleanupCompletedTasks() {
+        List<Task> completedTasks = taskService.findByCompletedTrue();
+
+        for (Task task : completedTasks) {
+            taskService.delete(task);
+        }
     }
 
 }
