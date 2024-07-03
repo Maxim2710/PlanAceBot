@@ -35,4 +35,12 @@ public class TaskService {
     public List<Task> findTasksByUserId(Long userId) {
         return taskRepository.findByUser_ChatId(userId);
     }
+
+    public List<Task> findByCompletedTrue() {
+        return taskRepository.findByCompletedTrue();
+    }
+
+    public void delete(Task task) {
+        taskRepository.delete(task);
+    }
 }
