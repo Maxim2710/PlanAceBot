@@ -35,6 +35,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private static final String COMMAND_CREATE = "/create_task";
     private static final String COMMAND_UPDATE = "/update_task";
     private static final String COMMAND_DELETE = "/delete_task";
+    private static final String COMMAND_CHANGE_STATUS = "/change_status_task";
     private static final String COMMAND_HELP = "/help";
 
     private static final String BUTTON_TITLE = "Название";
@@ -136,6 +137,10 @@ public class TelegramBot extends TelegramLongPollingBot {
 
                     case COMMAND_DELETE:
                         handleDeleteCommand(parts, chatId);
+                        break;
+
+                    case COMMAND_CHANGE_STATUS:
+                        handleChangeStatusCommand(parts, chatId);
                         break;
 
                     case COMMAND_HELP:
@@ -507,104 +512,6 @@ public class TelegramBot extends TelegramLongPollingBot {
         return button;
     }
 
-    private void handleCallbackQuery(Update update) {
-        CallbackQuery callbackQuery = update.getCallbackQuery();
-        String chatId = callbackQuery.getMessage().getChatId().toString();
-        String data = callbackQuery.getData();
-
-        if (data.equals("check_subscription")) {
-            if (isUserSubscribed(chatId)) {
-                registerUserAndSendWelcomeMessage(chatId);
-            } else {
-                sendMessage(chatId, "Вы еще не подписались на канал. Пожалуйста, подпишитесь и нажмите \"Проверить подписку\".");
-            }
-        } else if (data.startsWith("update_task_")) {
-            String taskIdString = data.substring("update_task_".length());
-            try {
-                int taskId = Integer.parseInt(taskIdString);
-
-                Task task = taskService.findById(taskId);
-                if (task == null || !task.getUser().getChatId().equals(Long.parseLong(chatId))) {
-                    sendMessage(chatId, "Задача с указанным номером не найдена или не принадлежит вам.");
-                    return;
-                }
-
-                taskUpdateStates.put(chatId, new TaskUpdateState(taskId, "", task));
-
-                sendFieldSelectionMessage(chatId);
-
-            } catch (NumberFormatException e) {
-                sendMessage(chatId, "Ошибка при выборе задачи для обновления.");
-            }
-        } else if (data.startsWith("delete_task_")) {
-            String taskIdString = data.substring("delete_task_".length());
-            try {
-                int taskId = Integer.parseInt(taskIdString);
-
-                Task task = taskService.findById(taskId);
-                if (task == null || !task.getUser().getChatId().equals(Long.parseLong(chatId))) {
-                    sendMessage(chatId, "Задача с указанным номером не найдена или не принадлежит вам.");
-                    return;
-                }
-
-                taskDeletionStates.put(chatId, Collections.singletonList(taskId));
-
-                sendDeleteConfirmationMessage(chatId, taskId);
-
-            } catch (NumberFormatException e) {
-                sendMessage(chatId, "Ошибка при удалении задачи.");
-            }
-        } else {
-            TaskUpdateState currentState = taskUpdateStates.get(chatId);
-            List<Integer> taskIds = taskDeletionStates.get(chatId);
-
-            if (currentState == null && taskIds == null) {
-                sendMessage(chatId, "Ошибка при обработке запроса.");
-                return;
-            }
-
-            switch (data) {
-                case "update_title":
-                    currentState.setFieldToUpdate("title");
-                    sendNewValueRequest(chatId, "title");
-                    break;
-
-                case "update_description":
-                    currentState.setFieldToUpdate("description");
-                    sendNewValueRequest(chatId, "description");
-                    break;
-
-                case "confirm_update":
-                    taskUpdateStates.remove(chatId);
-                    sendMessage(chatId, "Изменения подтверждены.");
-                    break;
-
-                case "cancel_update":
-                    cancelUpdate(chatId, currentState);
-                    break;
-
-                case "confirm_delete":
-                    if (taskIds != null && !taskIds.isEmpty()) {
-                        confirmDelete(chatId, Collections.singletonList(taskIds.get(0)));
-                        taskDeletionStates.remove(chatId);
-                    } else {
-                        sendMessage(chatId, "Ошибка при подтверждении удаления задачи.");
-                    }
-                    break;
-
-                case "cancel_delete":
-                    cancelDelete(chatId);
-                    break;
-
-                default:
-                    sendMessage(chatId, "Неверный выбор.");
-                    break;
-            }
-        }
-
-        editMessageReplyMarkup(chatId, callbackQuery.getMessage().getMessageId());
-    }
-
     private void cancelUpdate(String chatId, TaskUpdateState currentState) {
         taskService.save(currentState.getOriginalTask());
         taskUpdateStates.remove(chatId);
@@ -748,4 +655,241 @@ public class TelegramBot extends TelegramLongPollingBot {
         taskDeletionStates.remove(chatId);
         sendMessage(chatId, "Удаление отменено.");
     }
+
+    private void handleCallbackQuery(Update update) {
+        CallbackQuery callbackQuery = update.getCallbackQuery();
+        String chatId = callbackQuery.getMessage().getChatId().toString();
+        String data = callbackQuery.getData();
+
+        if ("check_subscription".equals(data)) {
+            if (isUserSubscribed(chatId)) {
+                registerUserAndSendWelcomeMessage(chatId);
+            } else {
+                sendMessage(chatId, "Вы еще не подписались на канал. Пожалуйста, подпишитесь и нажмите \"Проверить подписку\".");
+            }
+        } else if (data.startsWith("update_task_")) {
+            handleUpdateTask(data, chatId);
+        } else if (data.startsWith("delete_task_")) {
+            handleDeleteTask(data, chatId);
+        } else if (data.startsWith("change_status_")) {
+            handleChangeStatus(data, chatId);
+        } else if (data.startsWith("status_completed_") || data.startsWith("status_cancel_change_")) {
+            handleStatusChange(data, chatId);
+        } else {
+            handleOtherStates(data, chatId);
+        }
+
+        editMessageReplyMarkup(chatId, callbackQuery.getMessage().getMessageId());
+    }
+
+    private void handleUpdateTask(String data, String chatId) {
+        String taskIdString = data.substring("update_task_".length());
+        try {
+            int taskId = Integer.parseInt(taskIdString);
+            Task task = taskService.findById(taskId);
+            if (task == null || !task.getUser().getChatId().equals(Long.parseLong(chatId))) {
+                sendMessage(chatId, "Задача с указанным номером не найдена или не принадлежит вам.");
+                return;
+            }
+            taskUpdateStates.put(chatId, new TaskUpdateState(taskId, "", task));
+            sendFieldSelectionMessage(chatId);
+        } catch (NumberFormatException e) {
+            sendMessage(chatId, "Ошибка при выборе задачи для обновления.");
+        }
+    }
+
+    private void handleDeleteTask(String data, String chatId) {
+        String taskIdString = data.substring("delete_task_".length());
+        try {
+            int taskId = Integer.parseInt(taskIdString);
+            Task task = taskService.findById(taskId);
+            if (task == null || !task.getUser().getChatId().equals(Long.parseLong(chatId))) {
+                sendMessage(chatId, "Задача с указанным номером не найдена или не принадлежит вам.");
+                return;
+            }
+            taskDeletionStates.put(chatId, Collections.singletonList(taskId));
+            sendDeleteConfirmationMessage(chatId, taskId);
+        } catch (NumberFormatException e) {
+            sendMessage(chatId, "Ошибка при удалении задачи.");
+        }
+    }
+
+    private void handleChangeStatus(String data, String chatId) {
+        String taskIdString = data.substring("change_status_".length());
+        try {
+            int taskId = Integer.parseInt(taskIdString);
+            Task task = taskService.findById(taskId);
+            if (task == null || !task.getUser().getChatId().equals(Long.parseLong(chatId))) {
+                sendMessage(chatId, "Задача с указанным номером не найдена или не принадлежит вам.");
+                return;
+            }
+            sendStatusChangeMessage(chatId, taskId);
+        } catch (NumberFormatException e) {
+            sendMessage(chatId, "Ошибка при выборе задачи для изменения статуса.");
+        }
+    }
+
+    private void handleStatusChange(String data, String chatId) {
+        if (data.startsWith("status_completed_")) {
+            boolean isCompleted = true;
+            changeTaskStatus(chatId, data, isCompleted);
+        } else if (data.startsWith("status_cancel_change_")) {
+            sendMessage(chatId, "Изменение статуса задачи отменено.");
+        }
+    }
+
+    private void handleOtherStates(String data, String chatId) {
+        TaskUpdateState currentState = taskUpdateStates.get(chatId);
+        List<Integer> taskIds = taskDeletionStates.get(chatId);
+
+        if (currentState == null && (taskIds == null || taskIds.isEmpty())) {
+            sendMessage(chatId, "Ошибка при обработке запроса.");
+            return;
+        }
+
+        switch (data) {
+            case "update_title":
+                currentState.setFieldToUpdate("title");
+                sendNewValueRequest(chatId, "title");
+                break;
+            case "update_description":
+                currentState.setFieldToUpdate("description");
+                sendNewValueRequest(chatId, "description");
+                break;
+            case "confirm_update":
+                taskUpdateStates.remove(chatId);
+                sendMessage(chatId, "Изменения подтверждены.");
+                break;
+            case "cancel_update":
+                cancelUpdate(chatId, currentState);
+                break;
+            case "confirm_delete":
+                if (taskIds != null && !taskIds.isEmpty()) {
+                    confirmDelete(chatId, taskIds);
+                    taskDeletionStates.remove(chatId);
+                } else {
+                    sendMessage(chatId, "Ошибка при подтверждении удаления задачи.");
+                }
+                break;
+            case "cancel_delete":
+                cancelDelete(chatId);
+                break;
+            default:
+                sendMessage(chatId, "Неверный выбор.");
+                break;
+        }
+    }
+
+    private void handleChangeStatusCommand(String[] parts, String chatId) {
+        if (parts.length > 1) {
+            sendMessage(chatId, "Неверный формат команды. Используйте только /change_status без параметров.");
+            return;
+        }
+
+        List<Task> tasks = taskService.findTasksByUserId(Long.parseLong(chatId));
+
+        if (tasks.isEmpty()) {
+            sendMessage(chatId, "У вас пока нет задач для изменения статуса.");
+            return;
+        }
+
+        InlineKeyboardMarkup markup = createTasksStatusMarkup(tasks);
+
+        SendMessage message = createMessage(chatId, "Выберите задачу для изменения статуса:", markup);
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Error sending task selection message: {}", e.getMessage());
+        }
+    }
+
+    private InlineKeyboardMarkup createTasksStatusMarkup(List<Task> tasks) {
+        List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
+
+        for (Task task : tasks) {
+            InlineKeyboardButton button = new InlineKeyboardButton();
+            button.setText(task.getTitle());
+            button.setCallbackData("change_status_" + task.getId());
+            List<InlineKeyboardButton> row = new ArrayList<>();
+            row.add(button);
+            keyboard.add(row);
+        }
+
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        markup.setKeyboard(keyboard);
+
+        return markup;
+    }
+
+    private void changeTaskStatus(String chatId, String data, boolean isCompleted) {
+        String taskIdString = data.substring(data.lastIndexOf('_') + 1);
+        try {
+            int taskId = Integer.parseInt(taskIdString);
+            Task task = taskService.findById(taskId);
+            if (task == null || !task.getUser().getChatId().equals(Long.parseLong(chatId))) {
+                sendMessage(chatId, "Задача с указанным номером не найдена или не принадлежит вам.");
+                return;
+            }
+
+            task.setCompleted(isCompleted);
+            taskService.save(task);
+
+            sendMessage(chatId, "Статус задачи '" + task.getTitle() + "' изменен на " + (isCompleted ? "Завершена" : "Не завершена") + ".");
+        } catch (NumberFormatException e) {
+            sendMessage(chatId, "Ошибка при изменении статуса задачи.");
+        }
+    }
+
+    private void sendStatusChangeMessage(String chatId, int taskId) {
+        Task task = taskService.findById(taskId);
+        if (task == null) {
+            sendMessage(chatId, "Задача не найдена.");
+            return;
+        }
+
+        StringBuilder statusMessage = new StringBuilder("Выберите новый статус для задачи:\n\n");
+        statusMessage.append("Название: ").append(task.getTitle()).append("\n");
+        statusMessage.append("Текущий статус: ").append(task.isCompleted() ? "Завершена" : "Не завершена").append("\n\n");
+        statusMessage.append("Примечание: после смены статуса задачи на 'Завершена', задача будет удалена.\n");
+
+        InlineKeyboardMarkup markup = createStatusChangeMarkup(taskId);
+
+        SendMessage message = createMessage(chatId, statusMessage.toString(), markup);
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Error sending status change message: {}", e.getMessage());
+        }
+    }
+
+    private InlineKeyboardMarkup createStatusChangeMarkup(int taskId) {
+        Task task = taskService.findById(taskId);
+        if (task == null) {
+            return null;
+        }
+
+        InlineKeyboardButton completedButton = new InlineKeyboardButton();
+        completedButton.setText("Завершена");
+        completedButton.setCallbackData("status_completed_" + taskId);
+
+        InlineKeyboardButton cancelChangeButton = new InlineKeyboardButton();
+        cancelChangeButton.setText("Отмена изменений");
+        cancelChangeButton.setCallbackData("status_cancel_change_" + taskId);
+
+        List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
+        List<InlineKeyboardButton> row1 = new ArrayList<>();
+        row1.add(completedButton);
+        List<InlineKeyboardButton> row2 = new ArrayList<>();
+        row2.add(cancelChangeButton);
+
+        keyboard.add(row1);
+        keyboard.add(row2);
+
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        markup.setKeyboard(keyboard);
+        return markup;
+    }
+
 }
