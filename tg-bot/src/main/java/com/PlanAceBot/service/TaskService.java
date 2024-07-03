@@ -6,6 +6,7 @@ import com.PlanAceBot.repository.TaskRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -14,6 +15,9 @@ public class TaskService {
 
     @Autowired
     private TaskRepository taskRepository;
+
+    @Autowired
+    private UserService userService;
 
     public void save(Task task) {
         taskRepository.save(task);
@@ -43,4 +47,13 @@ public class TaskService {
     public void delete(Task task) {
         taskRepository.delete(task);
     }
+
+    public List<Task> getTasksByUserChatId(Long chatId) {
+        User user = userService.findByChatId(chatId);
+        if (user != null) {
+            return taskRepository.findByUser(user);
+        }
+        return Collections.emptyList();
+    }
+
 }
