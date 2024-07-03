@@ -8,6 +8,8 @@ import lombok.Setter;
 public class TaskCreationState {
     private TaskState state;
     private String title;
+    private String description;
+    private Integer priority;
 
     public TaskCreationState() {
         this.state = TaskState.ENTER_TITLE;

@@ -26,6 +26,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -44,6 +45,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     private static final String BUTTON_TITLE = "Название";
     private static final String BUTTON_DESCRIPTION = "Описание";
+    private static final String BUTTON_PRIORITY = "Приоритет";
     private static final String BUTTON_CANCEL = "Отмена";
     private static final String BUTTON_CONFIRM = "Да";
     private static final String BUTTON_CANCEL_UPDATE = "Нет";
@@ -290,18 +292,29 @@ public class TelegramBot extends TelegramLongPollingBot {
             currentState.setState(TaskState.ENTER_DESCRIPTION);
             sendMessage(chatId, "Введите описание задачи для '" + messageText + "':");
         } else if (currentState.getState() == TaskState.ENTER_DESCRIPTION) {
-            String title = currentState.getTitle();
-            String description = messageText;
+            currentState.setDescription(messageText);
+            currentState.setState(TaskState.ENTER_PRIORITY);
+            sendMessage(chatId, "Введите приоритет задачи (1-5):");
+        } else if (currentState.getState() == TaskState.ENTER_PRIORITY) {
+            try {
+                int priority = Integer.parseInt(messageText);
+                if (priority < 1 || priority > 5) {
+                    sendMessage(chatId, "Приоритет должен быть в диапазоне от 1 до 5. Пожалуйста, введите заново:");
+                    return;
+                }
+                currentState.setPriority(priority);
 
-            createTask(title, description, chatId);
+                createTask(currentState.getTitle(), currentState.getDescription(), currentState.getPriority(), chatId);
+                taskCreationStates.remove(chatId);
 
-            taskCreationStates.remove(chatId);
-
-            sendMessage(chatId, "Задача '" + title + "' с описанием '" + description + "' создана.");
+                sendMessage(chatId, "Задача '" + currentState.getTitle() + "' с приоритетом " + priority + " создана.");
+            } catch (NumberFormatException e) {
+                sendMessage(chatId, "Пожалуйста, введите числовое значение для приоритета (1-5):");
+            }
         }
     }
 
-    private void createTask(String title, String description, String chatId) {
+    private void createTask(String title, String description, int priority, String chatId) {
         if (getUserTaskCount(chatId) >= 20) {
             sendMessage(chatId, "Вы достигли максимального количества задач (20). Удалите существующие задачи перед созданием новых.");
             return;
@@ -318,7 +331,8 @@ public class TelegramBot extends TelegramLongPollingBot {
         task.setDescription(description);
         task.setUser(user);
         task.setCompleted(false);
-        task.setCreationTimestamp(Timestamp.valueOf(LocalDateTime.now()));
+        task.setCreationTimestamp(Timestamp.from(Instant.now()));
+        task.setPriority(priority);
 
         taskService.save(task);
     }
@@ -397,10 +411,12 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         String currentTitle = task.getTitle();
         String currentDescription = task.getDescription();
+        int currentPriority = task.getPriority();
 
         String selectionMessage = "Выберите, что вы хотите обновить для задачи:\n";
         selectionMessage += "Текущее название: " + currentTitle + "\n";
-        selectionMessage += "Текущее описание: " + currentDescription + "\n\n";
+        selectionMessage += "Текущее описание: " + currentDescription + "\n";
+        selectionMessage += "Текущий приоритет: " + currentPriority + "\n\n";
 
         InlineKeyboardMarkup markup = createUpdateMarkup();
 
@@ -418,11 +434,13 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         List<InlineKeyboardButton> row1 = createButtonRow(BUTTON_TITLE, "update_title");
         List<InlineKeyboardButton> row2 = createButtonRow(BUTTON_DESCRIPTION, "update_description");
-        List<InlineKeyboardButton> row3 = createButtonRow(BUTTON_CANCEL, "update_cancel");
+        List<InlineKeyboardButton> row3 = createButtonRow(BUTTON_PRIORITY, "update_priority"); // New button for priority
+        List<InlineKeyboardButton> row4 = createButtonRow(BUTTON_CANCEL, "update_cancel");
 
         keyboard.add(row1);
         keyboard.add(row2);
         keyboard.add(row3);
+        keyboard.add(row4);
 
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
         markup.setKeyboard(keyboard);
@@ -465,7 +483,23 @@ public class TelegramBot extends TelegramLongPollingBot {
             return;
         }
 
-        updateTaskField(task, fieldToUpdate, messageText);
+        if (fieldToUpdate.equals("priority")) {
+            try {
+                int priority = Integer.parseInt(messageText);
+                if (priority < 1 || priority > 5) {
+                    sendMessage(chatId, "Приоритет должен быть в диапазоне от 1 до 5. Пожалуйста, введите заново:");
+                    return;
+                }
+                task.setPriority(priority);
+            } catch (NumberFormatException e) {
+                sendMessage(chatId, "Пожалуйста, введите числовое значение для приоритета (1-5):");
+                return;
+            }
+        } else {
+            updateTaskField(task, fieldToUpdate, messageText);
+        }
+
+        taskService.save(task);
 
         sendConfirmationMessage(chatId, task);
     }
@@ -477,6 +511,9 @@ public class TelegramBot extends TelegramLongPollingBot {
                 break;
             case "description":
                 task.setDescription(newValue);
+                break;
+            case "priority":
+                task.setPriority(Integer.parseInt(newValue));
                 break;
             default:
                 sendMessage(task.getUser().getChatId().toString(), "Ошибка при обновлении задачи.");
@@ -490,7 +527,8 @@ public class TelegramBot extends TelegramLongPollingBot {
     private void sendConfirmationMessage(String chatId, Task task) {
         String confirmationMessage = "Изменения сохранены:\n" +
                 "Название: " + task.getTitle() + "\n" +
-                "Описание: " + task.getDescription() + "\n\n" +
+                "Описание: " + task.getDescription() + "\n" +
+                "Приоритет: " + task.getPriority() + "\n\n" +
                 "Подтвердить изменения?";
 
         InlineKeyboardMarkup markup = createConfirmationMarkup();
@@ -503,6 +541,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             log.error("Error sending confirmation message: {}", e.getMessage());
         }
     }
+
 
     private InlineKeyboardMarkup createConfirmationMarkup() {
         List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
@@ -539,6 +578,9 @@ public class TelegramBot extends TelegramLongPollingBot {
                 break;
             case "description":
                 messageText = "Введите новое описание задачи:";
+                break;
+            case "priority":
+                messageText = "Введите новый приоритет задачи (1-5):";
                 break;
             default:
                 log.error("Unsupported field type: {}", field);
@@ -627,9 +669,9 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
 
         StringBuilder confirmationMessage = new StringBuilder("Вы уверены, что хотите удалить следующую задачу?\n\n");
-        confirmationMessage.append("Номер: ").append(task.getId()).append("\n");
         confirmationMessage.append("Название: ").append(task.getTitle()).append("\n");
-        confirmationMessage.append("Описание: ").append(task.getDescription()).append("\n\n");
+        confirmationMessage.append("Описание: ").append(task.getDescription()).append("\n");
+        confirmationMessage.append("Приоритет: ").append(task.getPriority()).append("\n\n");
 
         InlineKeyboardMarkup markup = createDeleteConfirmationMarkup();
 
@@ -641,6 +683,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             log.error("Error sending delete confirmation message: {}", e.getMessage());
         }
     }
+
 
     private InlineKeyboardMarkup createDeleteConfirmationMarkup() {
         List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
@@ -768,6 +811,10 @@ public class TelegramBot extends TelegramLongPollingBot {
             case "update_description":
                 currentState.setFieldToUpdate("description");
                 sendNewValueRequest(chatId, "description");
+                break;
+            case "update_priority":
+                currentState.setFieldToUpdate("priority");
+                sendNewValueRequest(chatId, "priority");
                 break;
             case "confirm_update":
                 taskUpdateStates.remove(chatId);
@@ -921,6 +968,9 @@ public class TelegramBot extends TelegramLongPollingBot {
             return;
         }
 
+        // Sort tasks by priority in descending order
+        tasks.sort(Comparator.comparingInt(Task::getPriority).reversed());
+
         StringBuilder messageBuilder = new StringBuilder(EmojiParser.parseToUnicode("*Ваши задачи:*\n\n"));
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
@@ -928,6 +978,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             messageBuilder.append(EmojiParser.parseToUnicode(":pencil2: *Название:* ")).append(task.getTitle()).append("\n");
             messageBuilder.append(EmojiParser.parseToUnicode(":page_facing_up: *Описание:* ")).append(task.getDescription()).append("\n");
             messageBuilder.append(EmojiParser.parseToUnicode(":calendar: *Создано:* ")).append(task.getCreationTimestamp().toLocalDateTime().format(formatter)).append("\n");
+            messageBuilder.append(EmojiParser.parseToUnicode(":star: *Приоритет:* ")).append(task.getPriority()).append("\n");
             messageBuilder.append("\n");
         }
 

@@ -33,4 +33,7 @@ public class Task {
     @Column(name = "creation_timestamp")
     private Timestamp creationTimestamp;
 
+    @Column(name = "priority")
+    private Integer priority;
+
 }
