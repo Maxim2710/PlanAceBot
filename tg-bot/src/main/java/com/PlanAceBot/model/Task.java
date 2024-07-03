@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.sql.Timestamp;
+
 @Getter
 @Setter
 @Entity
@@ -27,5 +29,8 @@ public class Task {
 
     @Column(name = "completed")
     private boolean completed;
+
+    @Column(name = "creation_timestamp")
+    private Timestamp creationTimestamp;
 
 }

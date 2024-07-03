@@ -26,6 +26,8 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Component
@@ -38,6 +40,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private static final String COMMAND_DELETE = "/delete_task";
     private static final String COMMAND_CHANGE_STATUS = "/change_status_task";
     private static final String COMMAND_HELP = "/help";
+    private static final String COMMAND_LIST_TASKS = "/list_tasks";
 
     private static final String BUTTON_TITLE = "Название";
     private static final String BUTTON_DESCRIPTION = "Описание";
@@ -71,6 +74,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         listofCommands.add(new BotCommand("/delete_task", "Удаление задачи"));
         listofCommands.add(new BotCommand("/change_status_task", "Смена статуса задачи"));
         listofCommands.add(new BotCommand("/help", "Показать инструкцию по командам"));
+        listofCommands.add(new BotCommand("/list_tasks", "Показать все задачи пользователя"));
 
         try {
             this.execute(new SetMyCommands(listofCommands, new BotCommandScopeDefault(), null));
@@ -149,6 +153,10 @@ public class TelegramBot extends TelegramLongPollingBot {
                         sendHelpMessage(chatId);
                         break;
 
+                    case COMMAND_LIST_TASKS:
+                        handleListTasksCommand(chatId);
+                        break;
+
                     default:
                         sendUnknownCommandMessage(chatId);
                         break;
@@ -167,7 +175,8 @@ public class TelegramBot extends TelegramLongPollingBot {
                         "/update_task - Обновление существующей задачи.\n" +
                         "/delete_task - Удаление задачи.\n" +
                         "/change_status_task - Смена существующей задачи.\n" +
-                        "/help - Показать инструкцию по командам.\n\n"
+                        "/help - Показать инструкцию по командам.\n" +
+                        "/list_tasks, Показать все задачи пользователя.\n\n"
         );
         sendMessage(chatId, helpMessage);
     }
@@ -309,6 +318,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         task.setDescription(description);
         task.setUser(user);
         task.setCompleted(false);
+        task.setCreationTimestamp(Timestamp.valueOf(LocalDateTime.now()));
 
         taskService.save(task);
     }
@@ -901,6 +911,35 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         for (Task task : completedTasks) {
             taskService.delete(task);
+        }
+    }
+
+    private void handleListTasksCommand(String chatId) {
+        List<Task> tasks = taskService.getTasksByUserChatId(Long.parseLong(chatId));
+        if (tasks.isEmpty()) {
+            sendMessage(chatId, EmojiParser.parseToUnicode(":information_source: У вас нет задач."));
+            return;
+        }
+
+        StringBuilder messageBuilder = new StringBuilder(EmojiParser.parseToUnicode("*Ваши задачи:*\n\n"));
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+        for (Task task : tasks) {
+            messageBuilder.append(EmojiParser.parseToUnicode(":pencil2: *Название:* ")).append(task.getTitle()).append("\n");
+            messageBuilder.append(EmojiParser.parseToUnicode(":page_facing_up: *Описание:* ")).append(task.getDescription()).append("\n");
+            messageBuilder.append(EmojiParser.parseToUnicode(":calendar: *Создано:* ")).append(task.getCreationTimestamp().toLocalDateTime().format(formatter)).append("\n");
+            messageBuilder.append("\n");
+        }
+
+        SendMessage message = new SendMessage();
+        message.setChatId(chatId);
+        message.setText(messageBuilder.toString());
+        message.setParseMode("Markdown");
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Error sending message: " + e.getMessage());
         }
     }
 

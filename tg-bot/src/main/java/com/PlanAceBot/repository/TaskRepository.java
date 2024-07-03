@@ -15,4 +15,6 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     List<Task> findByUser_ChatId(Long chatId);
 
     List<Task> findByCompletedTrue();
+
+    List<Task> findByUser(User user);
 }
