@@ -6,5 +6,6 @@ CREATE TABLE tasks (
     completed BOOLEAN,
     creation_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     priority INT,
+    deadline TIMESTAMP,
     FOREIGN KEY (user_chat_id) REFERENCES users(chat_id)
 );

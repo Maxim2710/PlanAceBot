@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -36,4 +37,6 @@ public class Task {
     @Column(name = "priority")
     private Integer priority;
 
+    @Column(name = "deadline")
+    private LocalDateTime deadline;
 }
