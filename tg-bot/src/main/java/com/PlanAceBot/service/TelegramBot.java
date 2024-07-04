@@ -29,6 +29,7 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.*;
 
 @Component
@@ -42,6 +43,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private static final String COMMAND_CHANGE_STATUS = "/change_status_task";
     private static final String COMMAND_HELP = "/help";
     private static final String COMMAND_LIST_TASKS = "/list_tasks";
+    private static final String COMMAND_SET_DEADLINE = "/set_deadline";
 
     private static final String BUTTON_TITLE = "Название";
     private static final String BUTTON_DESCRIPTION = "Описание";
@@ -57,6 +59,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private Map<String, TaskCreationState> taskCreationStates = new HashMap<>();
     private Map<String, TaskUpdateState> taskUpdateStates = new HashMap<>();
     private Map<String, List<Integer>> taskDeletionStates = new HashMap<>();
+    private Map<String, Integer> taskDeadlineStates = new HashMap<>();
 
     @Autowired
     private UserService userService;
@@ -129,6 +132,8 @@ public class TelegramBot extends TelegramLongPollingBot {
                 processFieldAndValue(chatId, messageText);
             } else if(taskDeletionStates.containsKey(chatId)) {
                 sendDeleteConfirmationMessage(chatId, taskDeletionStates.get(chatId).get(0));
+            } else if (taskDeadlineStates.containsKey(chatId)) {
+                processDeadlineInput(chatId, messageText);
             } else {
                 switch (command) {
                     case COMMAND_START:
@@ -157,6 +162,10 @@ public class TelegramBot extends TelegramLongPollingBot {
 
                     case COMMAND_LIST_TASKS:
                         handleListTasksCommand(chatId);
+                        break;
+
+                    case COMMAND_SET_DEADLINE:
+                        handleSetDeadlineCommand(chatId);
                         break;
 
                     default:
@@ -731,11 +740,29 @@ public class TelegramBot extends TelegramLongPollingBot {
             handleChangeStatus(data, chatId);
         } else if (data.startsWith("status_completed_") || data.startsWith("status_cancel_change_")) {
             handleStatusChange(data, chatId);
+        } else if (data.startsWith("set_deadline_")) {
+            handleSetDeadlineTask(data, chatId);
         } else {
             handleOtherStates(data, chatId);
         }
 
         editMessageReplyMarkup(chatId, callbackQuery.getMessage().getMessageId());
+    }
+
+    private void handleSetDeadlineTask(String data, String chatId) {
+        String taskIdString = data.substring("set_deadline_".length());
+        try {
+            int taskId = Integer.parseInt(taskIdString);
+            Task task = taskService.findById(taskId);
+            if (task == null || !task.getUser().getChatId().equals(Long.parseLong(chatId))) {
+                sendMessage(chatId, "Задача с указанным номером не найдена или не принадлежит вам.");
+                return;
+            }
+            taskDeadlineStates.put(chatId, taskId);
+            sendMessage(chatId, "Введите дедлайн для задачи в формате ГГГГ-ММ-ДД ЧЧ:ММ.");
+        } catch (NumberFormatException e) {
+            sendMessage(chatId, "Ошибка при выборе задачи.");
+        }
     }
 
     private void handleUpdateTask(String data, String chatId) {
@@ -820,7 +847,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                 taskUpdateStates.remove(chatId);
                 sendMessage(chatId, "Изменения подтверждены.");
                 break;
-            case "cancel_update":
+            case "cancel_update", "update_cancel":
                 cancelUpdate(chatId, currentState);
                 break;
             case "confirm_delete":
@@ -968,7 +995,6 @@ public class TelegramBot extends TelegramLongPollingBot {
             return;
         }
 
-        // Sort tasks by priority in descending order
         tasks.sort(Comparator.comparingInt(Task::getPriority).reversed());
 
         StringBuilder messageBuilder = new StringBuilder(EmojiParser.parseToUnicode("*Ваши задачи:*\n\n"));
@@ -992,6 +1018,61 @@ public class TelegramBot extends TelegramLongPollingBot {
         } catch (TelegramApiException e) {
             log.error("Error sending message: " + e.getMessage());
         }
+    }
+
+    private void handleSetDeadlineCommand(String chatId) {
+        List<Task> tasks = taskService.findTasksByUserId(Long.parseLong(chatId));
+
+        if (tasks.isEmpty()) {
+            sendMessage(chatId, "У вас нет задач для установки дедлайна.");
+            return;
+        }
+
+        InlineKeyboardMarkup markup = createDeadlineTaskMarkup(tasks);
+        SendMessage message = createMessage(chatId, "Выберите задачу для установки дедлайна:", markup);
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Error sending deadline task selection message: {}", e.getMessage());
+        }
+    }
+
+    private InlineKeyboardMarkup createDeadlineTaskMarkup(List<Task> tasks) {
+        List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
+
+        for (Task task : tasks) {
+            InlineKeyboardButton button = new InlineKeyboardButton();
+            button.setText(task.getTitle());
+            button.setCallbackData("set_deadline_" + task.getId());
+            List<InlineKeyboardButton> row = new ArrayList<>();
+            row.add(button);
+            keyboard.add(row);
+        }
+
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        markup.setKeyboard(keyboard);
+
+        return markup;
+    }
+
+    private void processDeadlineInput(String chatId, String deadlineInput) {
+        int taskId = taskDeadlineStates.get(chatId);
+        Task task = taskService.findById(taskId);
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+        LocalDateTime deadline;
+        try {
+            deadline = LocalDateTime.parse(deadlineInput, formatter);
+        } catch (DateTimeParseException e) {
+            sendMessage(chatId, "Неверный формат даты. Пожалуйста, введите дедлайн в формате ГГГГ-ММ-ДД ЧЧ:ММ.");
+            return;
+        }
+
+        task.setDeadline(deadline);
+        taskService.save(task);
+        taskDeadlineStates.remove(chatId);
+        sendMessage(chatId, "Дедлайн установлен для задачи: " + task.getTitle());
     }
 
 }
