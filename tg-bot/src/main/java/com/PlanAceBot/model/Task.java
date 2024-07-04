@@ -39,4 +39,10 @@ public class Task {
 
     @Column(name = "deadline")
     private LocalDateTime deadline;
+
+    @Column(name = "notified_three_days")
+    private boolean notifiedThreeDays;
+
+    @Column(name = "notified_one_day")
+    private boolean notifiedOneDay;
 }

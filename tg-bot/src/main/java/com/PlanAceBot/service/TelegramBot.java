@@ -36,6 +36,16 @@ import java.util.*;
 @Slf4j
 public class TelegramBot extends TelegramLongPollingBot {
 
+    private static final String HELP_TEXT = ":information_source: Список доступных команд:\n\n" +
+            "/start - Регистрация пользователя и приветственное сообщение.\n" +
+            "/create_task - Создание новой задачи.\n" +
+            "/update_task - Обновление существующей задачи.\n" +
+            "/delete_task - Удаление задачи.\n" +
+            "/change_status_task - Смена существующей задачи.\n" +
+            "/help - Показать инструкцию по командам.\n" +
+            "/list_tasks - Показать все задачи пользователя.\n" +
+            "/set_deadline_task - Установить дедлайн для задачи\n\n";
+
     private static final String COMMAND_START = "/start";
     private static final String COMMAND_CREATE = "/create_task";
     private static final String COMMAND_UPDATE = "/update_task";
@@ -43,7 +53,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private static final String COMMAND_CHANGE_STATUS = "/change_status_task";
     private static final String COMMAND_HELP = "/help";
     private static final String COMMAND_LIST_TASKS = "/list_tasks";
-    private static final String COMMAND_SET_DEADLINE = "/set_deadline";
+    private static final String COMMAND_SET_DEADLINE = "/set_deadline_task";
 
     private static final String BUTTON_TITLE = "Название";
     private static final String BUTTON_DESCRIPTION = "Описание";
@@ -80,6 +90,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         listofCommands.add(new BotCommand("/change_status_task", "Смена статуса задачи"));
         listofCommands.add(new BotCommand("/help", "Показать инструкцию по командам"));
         listofCommands.add(new BotCommand("/list_tasks", "Показать все задачи пользователя"));
+        listofCommands.add(new BotCommand("/set_deadline_task", "Установить дедлайн для задачи"));
 
         try {
             this.execute(new SetMyCommands(listofCommands, new BotCommandScopeDefault(), null));
@@ -179,16 +190,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void sendHelpMessage(String chatId) {
-        String helpMessage = EmojiParser.parseToUnicode(
-                ":information_source: Список доступных команд:\n\n" +
-                        "/start - Регистрация пользователя и приветственное сообщение.\n" +
-                        "/create_task - Создание новой задачи.\n" +
-                        "/update_task - Обновление существующей задачи.\n" +
-                        "/delete_task - Удаление задачи.\n" +
-                        "/change_status_task - Смена существующей задачи.\n" +
-                        "/help - Показать инструкцию по командам.\n" +
-                        "/list_tasks, Показать все задачи пользователя.\n\n"
-        );
+        String helpMessage = EmojiParser.parseToUnicode(HELP_TEXT);
         sendMessage(chatId, helpMessage);
     }
 
@@ -421,11 +423,19 @@ public class TelegramBot extends TelegramLongPollingBot {
         String currentTitle = task.getTitle();
         String currentDescription = task.getDescription();
         int currentPriority = task.getPriority();
+        LocalDateTime creationTimestamp = task.getCreationTimestamp().toLocalDateTime();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
         String selectionMessage = "Выберите, что вы хотите обновить для задачи:\n";
         selectionMessage += "Текущее название: " + currentTitle + "\n";
         selectionMessage += "Текущее описание: " + currentDescription + "\n";
-        selectionMessage += "Текущий приоритет: " + currentPriority + "\n\n";
+        selectionMessage += "Текущий приоритет: " + currentPriority + "\n";
+        selectionMessage += "Дата создания: " + creationTimestamp.format(formatter) + "\n";
+
+        LocalDateTime deadline = task.getDeadline();
+        if (deadline != null) {
+            selectionMessage += "Дедлайн: " + deadline.format(formatter) + "\n";
+        }
 
         InlineKeyboardMarkup markup = createUpdateMarkup();
 
@@ -441,15 +451,15 @@ public class TelegramBot extends TelegramLongPollingBot {
     private InlineKeyboardMarkup createUpdateMarkup() {
         List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
 
-        List<InlineKeyboardButton> row1 = createButtonRow(BUTTON_TITLE, "update_title");
-        List<InlineKeyboardButton> row2 = createButtonRow(BUTTON_DESCRIPTION, "update_description");
-        List<InlineKeyboardButton> row3 = createButtonRow(BUTTON_PRIORITY, "update_priority"); // New button for priority
-        List<InlineKeyboardButton> row4 = createButtonRow(BUTTON_CANCEL, "update_cancel");
-
+        List<InlineKeyboardButton> row1 = new ArrayList<>();
+        row1.add(createInlineButton(BUTTON_TITLE, "update_title"));
+        row1.add(createInlineButton(BUTTON_DESCRIPTION, "update_description"));
         keyboard.add(row1);
+
+        List<InlineKeyboardButton> row2 = new ArrayList<>();
+        row2.add(createInlineButton(BUTTON_PRIORITY, "update_priority"));
+        row2.add(createInlineButton(BUTTON_CANCEL, "update_cancel"));
         keyboard.add(row2);
-        keyboard.add(row3);
-        keyboard.add(row4);
 
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
         markup.setKeyboard(keyboard);
@@ -534,15 +544,25 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void sendConfirmationMessage(String chatId, Task task) {
-        String confirmationMessage = "Изменения сохранены:\n" +
-                "Название: " + task.getTitle() + "\n" +
-                "Описание: " + task.getDescription() + "\n" +
-                "Приоритет: " + task.getPriority() + "\n\n" +
-                "Подтвердить изменения?";
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+
+        StringBuilder confirmationMessage = new StringBuilder("Изменения сохранены:\n");
+        confirmationMessage.append("Название: ").append(task.getTitle()).append("\n");
+        confirmationMessage.append("Описание: ").append(task.getDescription()).append("\n");
+        confirmationMessage.append("Приоритет: ").append(task.getPriority()).append("\n");
+
+        confirmationMessage.append("\nДата создания: ").append(task.getCreationTimestamp().toLocalDateTime().format(formatter));
+
+        LocalDateTime deadline = task.getDeadline();
+        if (deadline != null) {
+            confirmationMessage.append("\nДедлайн: ").append(deadline.format(formatter));
+        }
+
+        confirmationMessage.append("\n\nПодтвердить изменения?");
 
         InlineKeyboardMarkup markup = createConfirmationMarkup();
 
-        SendMessage message = createMessage(chatId, confirmationMessage, markup);
+        SendMessage message = createMessage(chatId, confirmationMessage.toString(), markup);
 
         try {
             execute(message);
@@ -550,7 +570,6 @@ public class TelegramBot extends TelegramLongPollingBot {
             log.error("Error sending confirmation message: {}", e.getMessage());
         }
     }
-
 
     private InlineKeyboardMarkup createConfirmationMarkup() {
         List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
@@ -599,7 +618,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         sendMessage(chatId, messageText);
     }
 
-    private void sendMessage(String chatId, String text) {
+    public void sendMessage(String chatId, String text) {
         SendMessage message = new SendMessage();
         message.setChatId(chatId);
         message.setText(text);
@@ -677,10 +696,18 @@ public class TelegramBot extends TelegramLongPollingBot {
             return;
         }
 
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+
         StringBuilder confirmationMessage = new StringBuilder("Вы уверены, что хотите удалить следующую задачу?\n\n");
         confirmationMessage.append("Название: ").append(task.getTitle()).append("\n");
         confirmationMessage.append("Описание: ").append(task.getDescription()).append("\n");
-        confirmationMessage.append("Приоритет: ").append(task.getPriority()).append("\n\n");
+        confirmationMessage.append("Приоритет: ").append(task.getPriority()).append("\n");
+        confirmationMessage.append("Дата создания: ").append(task.getCreationTimestamp().toLocalDateTime().format(formatter)).append("\n");
+
+        LocalDateTime deadline = task.getDeadline();
+        if (deadline != null) {
+            confirmationMessage.append("Дедлайн: ").append(deadline.format(formatter)).append("\n");
+        }
 
         InlineKeyboardMarkup markup = createDeleteConfirmationMarkup();
 
@@ -692,7 +719,6 @@ public class TelegramBot extends TelegramLongPollingBot {
             log.error("Error sending delete confirmation message: {}", e.getMessage());
         }
     }
-
 
     private InlineKeyboardMarkup createDeleteConfirmationMarkup() {
         List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
@@ -1005,6 +1031,9 @@ public class TelegramBot extends TelegramLongPollingBot {
             messageBuilder.append(EmojiParser.parseToUnicode(":page_facing_up: *Описание:* ")).append(task.getDescription()).append("\n");
             messageBuilder.append(EmojiParser.parseToUnicode(":calendar: *Создано:* ")).append(task.getCreationTimestamp().toLocalDateTime().format(formatter)).append("\n");
             messageBuilder.append(EmojiParser.parseToUnicode(":star: *Приоритет:* ")).append(task.getPriority()).append("\n");
+            if (task.getDeadline() != null) {
+                messageBuilder.append(EmojiParser.parseToUnicode(":alarm_clock: *Дедлайн:* ")).append(task.getDeadline().format(formatter)).append("\n");
+            }
             messageBuilder.append("\n");
         }
 
@@ -1069,10 +1098,17 @@ public class TelegramBot extends TelegramLongPollingBot {
             return;
         }
 
+        LocalDateTime now = LocalDateTime.now();
+        if (deadline.isBefore(now) || deadline.isEqual(now)) {
+            sendMessage(chatId, "Дата дедлайна должна быть в будущем. Пожалуйста, введите корректную дату.");
+            return;
+        }
+
         task.setDeadline(deadline);
         taskService.save(task);
         taskDeadlineStates.remove(chatId);
         sendMessage(chatId, "Дедлайн установлен для задачи: " + task.getTitle());
     }
+
 
 }
