@@ -28,4 +28,7 @@ public class Reminder {
 
     @Column(name = "message")
     private String message;
+
+    @Column(name = "sent")
+    private boolean sent = false;
 }
