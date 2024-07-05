@@ -37,4 +37,8 @@ public class ReminderService {
         return reminderRepository.findByUser_ChatId(userId);
     }
 
+    public void deleteReminderById(Long reminderId) {
+        reminderRepository.deleteById(reminderId);
+    }
+
 }
