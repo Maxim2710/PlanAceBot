@@ -1,6 +1,7 @@
 package com.PlanAceBot.service;
 
 import com.PlanAceBot.model.Reminder;
+import com.PlanAceBot.model.Task;
 import com.PlanAceBot.repository.ReminderRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,4 +32,9 @@ public class ReminderService {
     public void deleteById(int reminderId) {
         reminderRepository.deleteById((long) reminderId);
     }
+
+    public List<Reminder> findRemindersByUserId(Long userId) {
+        return reminderRepository.findByUser_ChatId(userId);
+    }
+
 }
