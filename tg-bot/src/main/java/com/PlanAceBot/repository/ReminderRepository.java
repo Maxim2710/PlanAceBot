@@ -14,5 +14,7 @@ public interface ReminderRepository extends JpaRepository<Reminder, Long> {
 
     @Query("SELECT r FROM Reminder r WHERE r.reminderTime <= :currentTime")
     List<Reminder> findDueReminders(@Param("currentTime") Timestamp currentTime);
+
+    List<Reminder> findByUser_ChatId(Long userId);
 }
 
