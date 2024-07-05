@@ -1,12 +1,12 @@
 package com.PlanAceBot.service;
 
+import com.PlanAceBot.model.Reminder;
 import com.PlanAceBot.model.Task;
 import com.PlanAceBot.model.User;
-import com.PlanAceBot.state.TaskCreationState;
-import com.PlanAceBot.state.TaskState;
-import com.PlanAceBot.state.TaskUpdateState;
+import com.PlanAceBot.state.*;
 import com.PlanAceBot.config.BotConfig;
 import com.vdurmont.emoji.EmojiParser;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -26,11 +26,15 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 @Component
 @Slf4j
@@ -44,7 +48,8 @@ public class TelegramBot extends TelegramLongPollingBot {
             "/change_status_task - Смена существующей задачи.\n" +
             "/help - Показать инструкцию по командам.\n" +
             "/list_tasks - Показать все задачи пользователя.\n" +
-            "/set_deadline_task - Установить дедлайн для задачи\n\n";
+            "/set_deadline_task - Установить дедлайн для задачи.\n" +
+            "/create_reminder - Создание нового напоминания.\n\n";
 
     private static final String COMMAND_START = "/start";
     private static final String COMMAND_CREATE = "/create_task";
@@ -54,6 +59,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private static final String COMMAND_HELP = "/help";
     private static final String COMMAND_LIST_TASKS = "/list_tasks";
     private static final String COMMAND_SET_DEADLINE = "/set_deadline_task";
+    private static final String COMMAND_CREATE_REMINDER = "/create_reminder";
 
     private static final String BUTTON_TITLE = "Название";
     private static final String BUTTON_DESCRIPTION = "Описание";
@@ -70,6 +76,8 @@ public class TelegramBot extends TelegramLongPollingBot {
     private Map<String, TaskUpdateState> taskUpdateStates = new HashMap<>();
     private Map<String, List<Integer>> taskDeletionStates = new HashMap<>();
     private Map<String, Integer> taskDeadlineStates = new HashMap<>();
+    private Map<String, ReminderCreationState> reminderCreationStates = new HashMap<>();
+    private final Map<String, Integer> reminderCustomTimeStates = new ConcurrentHashMap<>();
 
     @Autowired
     private UserService userService;
@@ -79,6 +87,9 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     @Autowired
     private TaskService taskService;
+
+    @Autowired
+    private ReminderService reminderService;
 
     public TelegramBot(BotConfig config) {
         this.botConfig = config;
@@ -91,6 +102,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         listofCommands.add(new BotCommand("/help", "Показать инструкцию по командам"));
         listofCommands.add(new BotCommand("/list_tasks", "Показать все задачи пользователя"));
         listofCommands.add(new BotCommand("/set_deadline_task", "Установить дедлайн для задачи"));
+        listofCommands.add(new BotCommand("/create_reminder", "Создание нового напоминания"));
 
         try {
             this.execute(new SetMyCommands(listofCommands, new BotCommandScopeDefault(), null));
@@ -141,10 +153,14 @@ public class TelegramBot extends TelegramLongPollingBot {
                 processTaskCreation(chatId, messageText);
             } else if (taskUpdateStates.containsKey(chatId)) {
                 processFieldAndValue(chatId, messageText);
-            } else if(taskDeletionStates.containsKey(chatId)) {
+            } else if (taskDeletionStates.containsKey(chatId)) {
                 sendDeleteConfirmationMessage(chatId, taskDeletionStates.get(chatId).get(0));
             } else if (taskDeadlineStates.containsKey(chatId)) {
                 processDeadlineInput(chatId, messageText);
+            } else if (reminderCreationStates.containsKey(chatId)) {
+                processReminderCreation(chatId, messageText);
+            } else if (reminderCustomTimeStates.containsKey(chatId)) {
+                processCustomTimeInput(chatId, messageText);
             } else {
                 switch (command) {
                     case COMMAND_START:
@@ -177,6 +193,10 @@ public class TelegramBot extends TelegramLongPollingBot {
 
                     case COMMAND_SET_DEADLINE:
                         handleSetDeadlineCommand(chatId);
+                        break;
+
+                    case COMMAND_CREATE_REMINDER:
+                        handleReminderCreationCommand(chatId);
                         break;
 
                     default:
@@ -758,6 +778,25 @@ public class TelegramBot extends TelegramLongPollingBot {
             } else {
                 sendMessage(chatId, "Вы еще не подписались на канал. Пожалуйста, подпишитесь и нажмите \"Проверить подписку\".");
             }
+        } else if (data.startsWith("reschedule_")) {
+            handleReschedule(data, chatId);
+        } else if (data.startsWith("delete_")) {
+            int reminderId = Integer.parseInt(data.split("_")[1]);
+            deleteReminder(chatId, reminderId);
+        } else if ("confirm_yes".equals(data)) {
+            ReminderCreationState currentState = reminderCreationStates.get(chatId);
+            if (currentState != null) {
+                createReminder(currentState.getMessage(), currentState.getReminderTime(), chatId);
+                reminderCreationStates.remove(chatId);
+
+                SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+                String formattedReminderTime = formatter.format(currentState.getReminderTime());
+
+                sendMessage(chatId, "Напоминание установлено на " + formattedReminderTime + ".");
+            }
+        } else if ("confirm_no".equals(data)) {
+            reminderCreationStates.remove(chatId);
+            sendMessage(chatId, "Создание напоминания отменено.");
         } else if (data.startsWith("update_task_")) {
             handleUpdateTask(data, chatId);
         } else if (data.startsWith("delete_task_")) {
@@ -773,6 +812,30 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
 
         editMessageReplyMarkup(chatId, callbackQuery.getMessage().getMessageId());
+    }
+
+    private void handleReschedule(String data, String chatId) {
+        String[] parts = data.split("_");
+        String action = parts[1];
+        int reminderId = Integer.parseInt(parts[2]);
+
+        switch (action) {
+            case "5m":
+                rescheduleReminder(chatId, reminderId, Duration.ofMinutes(5));
+                break;
+            case "1h":
+                rescheduleReminder(chatId, reminderId, Duration.ofHours(1));
+                break;
+            case "1d":
+                rescheduleReminder(chatId, reminderId, Duration.ofDays(1));
+                break;
+            case "custom":
+                askForCustomTime(chatId, reminderId);
+                break;
+            default:
+                sendMessage(chatId, "Неверная команда.");
+                break;
+        }
     }
 
     private void handleSetDeadlineTask(String data, String chatId) {
@@ -1110,5 +1173,204 @@ public class TelegramBot extends TelegramLongPollingBot {
         sendMessage(chatId, "Дедлайн установлен для задачи: " + task.getTitle());
     }
 
+    private void handleReminderCreationCommand(String chatId) {
+        reminderCreationStates.put(chatId, new ReminderCreationState());
+        sendMessage(chatId, "Введите текст напоминания:");
+    }
 
+    private void processReminderCreation(String chatId, String messageText) {
+        ReminderCreationState currentState = reminderCreationStates.get(chatId);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+
+        if (currentState.getState() == ReminderState.ENTER_MESSAGE) {
+            currentState.setMessage(messageText);
+            currentState.setState(ReminderState.ENTER_REMINDER_TIME);
+            sendMessage(chatId, "Введите время напоминания в формате yyyy-MM-dd HH:mm");
+        } else if (currentState.getState() == ReminderState.ENTER_REMINDER_TIME) {
+            try {
+                LocalDateTime localDateTime = LocalDateTime.parse(messageText, formatter);
+
+                LocalDateTime currentDateTime = LocalDateTime.now();
+                if (localDateTime.isBefore(currentDateTime)) {
+                    sendMessage(chatId, "Время напоминания не может быть в прошлом или текущее. Пожалуйста, введите корректное время.");
+                    return;
+                }
+
+                Timestamp reminderTime = Timestamp.valueOf(localDateTime);
+                currentState.setReminderTime(reminderTime);
+                currentState.setState(ReminderState.CONFIRMATION);
+
+                String confirmationMessage = "Вы ввели следующие данные:\n" +
+                        "Сообщение: " + currentState.getMessage() + "\n" +
+                        "Время напоминания: " + localDateTime.format(formatter) + "\n\n" +
+                        "Все верно?";
+                sendConfirmationMessage(chatId, confirmationMessage);
+            } catch (DateTimeParseException e) {
+                sendMessage(chatId, "Неверный формат времени. Пожалуйста, введите время в формате yyyy-MM-dd HH:mm:");
+            }
+        }
+    }
+
+    private void sendConfirmationMessage(String chatId, String confirmationMessage) {
+        InlineKeyboardMarkup markup = createConfirmationMarkupForRemind();
+
+        SendMessage message = new SendMessage();
+        message.setChatId(chatId);
+        message.setText(confirmationMessage);
+        message.setReplyMarkup(markup);
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Error sending confirmation message: {}", e.getMessage());
+        }
+    }
+
+    private InlineKeyboardMarkup createConfirmationMarkupForRemind() {
+        List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
+
+        List<InlineKeyboardButton> row1 = new ArrayList<>();
+        row1.add(createInlineButtonForRemind("Да", "confirm_yes"));
+        row1.add(createInlineButtonForRemind("Нет", "confirm_no"));
+        keyboard.add(row1);
+
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        markup.setKeyboard(keyboard);
+
+        return markup;
+    }
+
+    private InlineKeyboardButton createInlineButtonForRemind(String text, String callbackData) {
+        InlineKeyboardButton button = new InlineKeyboardButton();
+        button.setText(text);
+        button.setCallbackData(callbackData);
+        return button;
+    }
+
+    private void createReminder(String message, Timestamp reminderTime, String chatId) {
+        User user = userService.findByChatId(Long.parseLong(chatId));
+        if (user == null) {
+            sendMessage(chatId, "Пользователь не зарегистрирован. Используйте /start для регистрации.");
+            return;
+        }
+
+        Reminder reminder = new Reminder();
+        reminder.setMessage(message);
+        reminder.setReminderTime(reminderTime);
+        reminder.setUser(user);
+
+        reminderService.save(reminder);
+    }
+
+    @Scheduled(fixedRate = 1000)
+    public void checkAndSendReminders() {
+        List<Reminder> dueReminders = reminderService.findDueReminders();
+        for (Reminder reminder : dueReminders) {
+            if (!reminder.isSent()) {
+                sendReminderNotification(reminder);
+                reminder.setSent(true);
+                reminderService.save(reminder);
+            }
+        }
+    }
+
+    private void sendReminderNotification(Reminder reminder) {
+        String chatId = reminder.getUser().getChatId().toString();
+        String messageText = "Напоминание: " + reminder.getMessage();
+
+        InlineKeyboardMarkup markup = createReschedulingMarkup(Math.toIntExact(reminder.getId()));
+
+        SendMessage message = new SendMessage();
+        message.setChatId(chatId);
+        message.setText(messageText);
+        message.setReplyMarkup(markup);
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Error sending reminder notification: {}", e.getMessage());
+        }
+    }
+
+    private InlineKeyboardMarkup createReschedulingMarkup(int reminderId) {
+        List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
+
+        keyboard.add(Arrays.asList(
+                createInlineButtonForRemind("🕒 Отложить на 5 минут", "reschedule_5m_" + reminderId),
+                createInlineButtonForRemind("⏰ Отложить на 1 час", "reschedule_1h_" + reminderId)
+        ));
+        keyboard.add(Arrays.asList(
+                createInlineButtonForRemind("📅 Отложить на 1 день", "reschedule_1d_" + reminderId),
+                createInlineButtonForRemind("⏱️ Задать время", "reschedule_custom_" + reminderId)
+        ));
+        keyboard.add(Collections.singletonList(
+                createInlineButtonForRemind("✅ Ок!", "delete_" + reminderId)
+        ));
+
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        markup.setKeyboard(keyboard);
+
+        return markup;
+    }
+
+    public void rescheduleReminder(String chatId, int reminderId, Duration duration) {
+        Optional<Reminder> optionalReminder = reminderService.findReminderById(reminderId);
+        if (optionalReminder.isPresent()) {
+            Reminder reminder = optionalReminder.get();
+            if (reminder.getUser().getChatId().equals(Long.parseLong(chatId))) {
+                Timestamp newTime = new Timestamp(reminder.getReminderTime().getTime() + duration.toMillis());
+                reminder.setReminderTime(newTime);
+                reminder.setSent(false);
+                reminderService.save(reminder);
+                sendMessage(chatId, "Напоминание отложено на " + duration.toMinutes() + " минут.");
+            } else {
+                sendMessage(chatId, "Ошибка при отложении напоминания.");
+            }
+        } else {
+            sendMessage(chatId, "Напоминание не найдено.");
+        }
+    }
+
+    public void askForCustomTime(String chatId, int reminderId) {
+        reminderCustomTimeStates.put(chatId, reminderId);
+        sendMessage(chatId, "Введите новое время напоминания в формате yyyy-MM-dd HH:mm:");
+    }
+
+    public void processCustomTimeInput(String chatId, String messageText) {
+        Integer reminderId = reminderCustomTimeStates.get(chatId);
+        if (reminderId != null) {
+            try {
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+                LocalDateTime localDateTime = LocalDateTime.parse(messageText, formatter);
+
+                LocalDateTime currentDateTime = LocalDateTime.now();
+                if (localDateTime.isBefore(currentDateTime)) {
+                    sendMessage(chatId, "Время напоминания не может быть в прошлом или текущее. Пожалуйста, введите корректное время.");
+                    return;
+                }
+
+                Optional<Reminder> optionalReminder = reminderService.findReminderById(reminderId);
+                if (optionalReminder.isPresent()) {
+                    Reminder reminder = optionalReminder.get();
+                    Timestamp newTime = Timestamp.valueOf(localDateTime);
+                    reminder.setReminderTime(newTime);
+                    reminder.setSent(false);
+                    reminderService.save(reminder);
+                    sendMessage(chatId, "Напоминание отложено на " + localDateTime.format(formatter) + ".");
+                    reminderCustomTimeStates.remove(chatId);
+                } else {
+                    sendMessage(chatId, "Ошибка при отложении напоминания.");
+                }
+            } catch (DateTimeParseException e) {
+                sendMessage(chatId, "Неверный формат времени. Пожалуйста, введите время в формате yyyy-MM-dd HH:mm:");
+            }
+        } else {
+            sendMessage(chatId, "Ошибка при отложении напоминания.");
+        }
+    }
+
+    private void deleteReminder(String chatId, int reminderId) {
+        reminderService.deleteById(reminderId);
+        sendMessage(chatId, "Напоминание выполнено и удалено.");
+    }
 }
