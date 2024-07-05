@@ -6,7 +6,6 @@ import com.PlanAceBot.model.User;
 import com.PlanAceBot.state.*;
 import com.PlanAceBot.config.BotConfig;
 import com.vdurmont.emoji.EmojiParser;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -34,23 +33,28 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 
 @Component
 @Slf4j
 public class TelegramBot extends TelegramLongPollingBot {
 
-    private static final String HELP_TEXT = ":information_source: Список доступных команд:\n\n" +
-            "/start - Регистрация пользователя и приветственное сообщение.\n" +
-            "/create_task - Создание новой задачи.\n" +
-            "/update_task - Обновление существующей задачи.\n" +
-            "/delete_task - Удаление задачи.\n" +
-            "/change_status_task - Смена существующей задачи.\n" +
-            "/help - Показать инструкцию по командам.\n" +
-            "/list_tasks - Показать все задачи пользователя.\n" +
-            "/set_deadline_task - Установить дедлайн для задачи.\n" +
-            "/create_reminder - Создание нового напоминания.\n" +
-            "/update_reminder - Обновление существующего напоминания.\\n\" +\n\n\n";
+    private static final String HELP_TEXT = """
+            :information_source: Список доступных команд:
+
+            /start - Регистрация пользователя и приветственное сообщение.
+            /create_task - Создание новой задачи.
+            /update_task - Обновление существующей задачи.
+            /delete_task - Удаление задачи.
+            /change_status_task - Смена существующей задачи.
+            /help - Показать инструкцию по командам.
+            /list_tasks - Показать все задачи пользователя.
+            /set_deadline_task - Установить дедлайн для задачи.
+            /create_reminder - Создание нового напоминания.
+            /update_reminder - Обновление существующего напоминания.
+            /delete_reminder - Удаление напоминания.
+
+
+            """;
 
     private static final String COMMAND_START = "/start";
     private static final String COMMAND_CREATE = "/create_task";
@@ -62,6 +66,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private static final String COMMAND_SET_DEADLINE = "/set_deadline_task";
     private static final String COMMAND_CREATE_REMINDER = "/create_reminder";
     private static final String COMMAND_UPDATE_REMINDER = "/update_reminder";
+    private static final String COMMAND_DELETE_REMINDER = "/delete_reminder";
 
     private static final String BUTTON_TITLE = "Название";
     private static final String BUTTON_DESCRIPTION = "Описание";
@@ -76,13 +81,14 @@ public class TelegramBot extends TelegramLongPollingBot {
     private static final String CHANNEL_NAME = "development_max";
     private static final String CHANNEL_USERNAME = "@development_max";
 
-    private Map<String, TaskCreationState> taskCreationStates = new HashMap<>();
-    private Map<String, TaskUpdateState> taskUpdateStates = new HashMap<>();
-    private Map<String, List<Integer>> taskDeletionStates = new HashMap<>();
-    private Map<String, Integer> taskDeadlineStates = new HashMap<>();
-    private Map<String, ReminderCreationState> reminderCreationStates = new HashMap<>();
+    private final Map<String, TaskCreationState> taskCreationStates = new HashMap<>();
+    private final Map<String, TaskUpdateState> taskUpdateStates = new HashMap<>();
+    private final Map<String, List<Integer>> taskDeletionStates = new HashMap<>();
+    private final Map<String, Integer> taskDeadlineStates = new HashMap<>();
+    private final Map<String, ReminderCreationState> reminderCreationStates = new HashMap<>();
     private final Map<String, Integer> reminderCustomTimeStates = new ConcurrentHashMap<>();
-    private Map<String, ReminderUpdateState> reminderUpdateStates = new HashMap<>();
+    private final Map<String, ReminderUpdateState> reminderUpdateStates = new HashMap<>();
+    private final Map<String, List<Long>> reminderDeletionStates = new HashMap<>();
 
     @Autowired
     private UserService userService;
@@ -109,6 +115,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         listofCommands.add(new BotCommand("/set_deadline_task", "Установить дедлайн для задачи"));
         listofCommands.add(new BotCommand("/create_reminder", "Создание нового напоминания"));
         listofCommands.add(new BotCommand("/update_reminder", "Обновление существующего напоминания"));
+        listofCommands.add(new BotCommand("/delete_reminder", "Удаление напоминания"));
 
         try {
             this.execute(new SetMyCommands(listofCommands, new BotCommandScopeDefault(), null));
@@ -168,7 +175,9 @@ public class TelegramBot extends TelegramLongPollingBot {
             } else if (reminderCustomTimeStates.containsKey(chatId)) {
                 processCustomTimeInput(chatId, messageText);
             } else if (reminderUpdateStates.containsKey(chatId)) {
-                processFieldAndValueForReminder(chatId, messageText); // Здесь вызывайте методы для работы с обновлением напоминания
+                processFieldAndValueForReminder(chatId, messageText);
+            } else if (reminderDeletionStates.containsKey(chatId)) {
+                sendDeleteReminderConfirmationMessage(chatId, reminderDeletionStates.get(chatId).get(0));
             } else {
                 switch (command) {
                     case COMMAND_START:
@@ -209,6 +218,10 @@ public class TelegramBot extends TelegramLongPollingBot {
 
                     case COMMAND_UPDATE_REMINDER:
                         handleUpdateReminderCommand(parts, chatId);
+                        break;
+
+                    case COMMAND_DELETE_REMINDER:
+                        handleDeleteReminderCommand(parts, chatId);
                         break;
 
                     default:
@@ -792,10 +805,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             }
         } else if (data.startsWith("reschedule_")) {
             handleReschedule(data, chatId);
-        } else if (data.startsWith("delete_")) {
-            int reminderId = Integer.parseInt(data.split("_")[1]);
-            deleteReminder(chatId, reminderId);
-        } else if ("confirm_yes".equals(data)) {
+        }  else if ("confirm_yes".equals(data)) {
             ReminderCreationState currentState = reminderCreationStates.get(chatId);
             if (currentState != null) {
                 createReminder(currentState.getMessage(), currentState.getReminderTime(), chatId);
@@ -821,6 +831,8 @@ public class TelegramBot extends TelegramLongPollingBot {
             handleSetDeadlineTask(data, chatId);
         } else if (data.startsWith("update_reminder_")) {
             handleUpdateReminder(data, chatId);
+        } else if (data.startsWith("delete_reminder_")) {
+            handleDeleteReminder(data, chatId);
         } else {
             handleOtherStates(data, chatId);
         }
@@ -950,34 +962,57 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
+    private void handleDeleteReminder(String data, String chatId) {
+        String reminderIdString = data.substring("delete_reminder_".length());
+        try {
+            Long reminderId = Long.parseLong(reminderIdString);
+            Optional<Reminder> optionalReminder = reminderService.findReminderById(Math.toIntExact(reminderId));
+            if (optionalReminder.isEmpty() || !optionalReminder.get().getUser().getChatId().equals(Long.parseLong(chatId))) {
+                sendMessage(chatId, "Напоминание с указанным номером не найдено или не принадлежит вам.");
+                return;
+            }
+
+            reminderDeletionStates.put(chatId, Collections.singletonList(reminderId));
+            sendDeleteReminderConfirmationMessage(chatId, reminderId);
+        } catch (NumberFormatException e) {
+            sendMessage(chatId, "Ошибка при удалении напоминания.");
+        }
+    }
+
     private void handleOtherStates(String data, String chatId) {
         TaskUpdateState currentState = taskUpdateStates.get(chatId);
         List<Integer> taskIds = taskDeletionStates.get(chatId);
         ReminderUpdateState curState = reminderUpdateStates.get(chatId);
+        List<Long> remindersId = reminderDeletionStates.get(chatId);
 
-        if (currentState == null && curState == null && (taskIds == null || taskIds.isEmpty())) {
+        if (currentState == null && curState == null && (taskIds == null || taskIds.isEmpty()) && (remindersId == null || remindersId.isEmpty())) {
             sendMessage(chatId, "Ошибка при обработке запроса.");
             return;
         }
 
         switch (data) {
             case "update_title":
+                assert currentState != null;
                 currentState.setFieldToUpdate("title");
                 sendNewValueRequest(chatId, "title");
                 break;
             case "update_description":
+                assert currentState != null;
                 currentState.setFieldToUpdate("description");
                 sendNewValueRequest(chatId, "description");
                 break;
             case "update_message":
+                assert curState != null;
                 curState.setFieldToUpdate("message");
                 sendNewValueRequestForReminder(chatId,"message");
                 break;
             case "update_remind_at":
+                assert curState != null;
                 curState.setFieldToUpdate("remindAt");
                 sendNewValueRequestForReminder(chatId,"remindAt");
                 break;
             case "update_priority":
+                assert currentState != null;
                 currentState.setFieldToUpdate("priority");
                 sendNewValueRequest(chatId, "priority");
                 break;
@@ -986,6 +1021,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                 sendMessage(chatId, "Изменения подтверждены.");
                 break;
             case "cancel_update", "update_cancel":
+                assert currentState != null;
                 cancelUpdate(chatId, currentState);
                 break;
             case "confirm_update_reminder":
@@ -993,6 +1029,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                 sendMessage(chatId, "Изменения подтверждены.");
                 break;
             case "cancel_update_reminder", "update_cancel_reminder":
+                assert curState != null;
                 cancelReminderUpdate(chatId, curState);
                 break;
             case "confirm_delete":
@@ -1005,6 +1042,17 @@ public class TelegramBot extends TelegramLongPollingBot {
                 break;
             case "cancel_delete":
                 cancelDelete(chatId);
+                break;
+            case "confirm_delete_reminder":
+                if (remindersId != null && !remindersId.isEmpty()) {
+                    confirmDeleteReminder(chatId, remindersId);
+                    taskDeletionStates.remove(chatId);
+                } else {
+                    sendMessage(chatId, "Ошибка при подтверждении удаления напоминания.");
+                }
+                break;
+            case "cancel_delete_reminder":
+                cancelDeleteReminder(chatId);
                 break;
             default:
                 sendMessage(chatId, "Неверный выбор.");
@@ -1639,4 +1687,101 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         sendMessage(chatId, messageText);
     }
+
+    private void handleDeleteReminderCommand(String[] parts, String chatId) {
+        if (parts.length > 1) {
+            sendMessage(chatId, "Неверный формат команды. Используйте /delete_reminder без параметров.");
+            return;
+        }
+
+        List<Reminder> reminders = reminderService.findRemindersByUserId(Long.parseLong(chatId));
+
+        if (reminders.isEmpty()) {
+            sendMessage(chatId, "У вас нет напоминаний для удаления.");
+            return;
+        }
+
+        InlineKeyboardMarkup markup = createDeleteReminderMarkup(reminders);
+
+        SendMessage message = createMessage(chatId, "Выберите напоминание для удаления:", markup);
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Error sending delete reminder selection message: {}", e.getMessage());
+        }
+    }
+
+    private InlineKeyboardMarkup createDeleteReminderMarkup(List<Reminder> reminders) {
+        List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
+
+        for (Reminder reminder : reminders) {
+            InlineKeyboardButton button = new InlineKeyboardButton();
+            button.setText(reminder.getMessage());
+            button.setCallbackData("delete_reminder_" + reminder.getId());
+            List<InlineKeyboardButton> row = new ArrayList<>();
+            row.add(button);
+            keyboard.add(row);
+        }
+
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        markup.setKeyboard(keyboard);
+
+        return markup;
+    }
+
+    private void sendDeleteReminderConfirmationMessage(String chatId, Long reminderIdToDelete) {
+        Optional<Reminder> optionalReminder = reminderService.findReminderById(reminderIdToDelete.intValue());
+        if (!optionalReminder.isPresent()) {
+            sendMessage(chatId, "Напоминание не найдено.");
+            return;
+        }
+
+        Reminder reminder = optionalReminder.get();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+
+        StringBuilder confirmationMessage = new StringBuilder("Вы уверены, что хотите удалить следующее напоминание?\n\n");
+        confirmationMessage.append("Сообщение: ").append(reminder.getMessage()).append("\n");
+        confirmationMessage.append("Время напоминания: ").append(reminder.getReminderTime().toLocalDateTime().format(formatter)).append("\n");
+
+        InlineKeyboardMarkup markup = createDeleteReminderConfirmationMarkup();
+
+        SendMessage message = createMessage(chatId, confirmationMessage.toString(), markup);
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Error sending delete reminder confirmation message: {}", e.getMessage());
+        }
+    }
+
+
+
+    private InlineKeyboardMarkup createDeleteReminderConfirmationMarkup() {
+        List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
+
+        List<InlineKeyboardButton> row = createButtonRow(BUTTON_CONFIRM, "confirm_delete_reminder");
+        row.add(createInlineButton(BUTTON_CANCEL_UPDATE, "cancel_delete_reminder"));
+
+        keyboard.add(row);
+
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        markup.setKeyboard(keyboard);
+
+        return markup;
+    }
+
+    private void confirmDeleteReminder(String chatId, List<Long> reminderIdsToDelete) {
+        for (Long reminderId : reminderIdsToDelete) {
+            reminderService.deleteReminderById(reminderId);
+        }
+        reminderDeletionStates.remove(chatId);
+        sendMessage(chatId, "Напоминание удалено.");
+    }
+
+    private void cancelDeleteReminder(String chatId) {
+        reminderDeletionStates.remove(chatId);
+        sendMessage(chatId, "Удаление напоминания отменено.");
+    }
+
 }
