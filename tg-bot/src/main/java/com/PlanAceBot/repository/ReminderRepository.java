@@ -1,6 +1,7 @@
 package com.PlanAceBot.repository;
 
 import com.PlanAceBot.model.Reminder;
+import com.PlanAceBot.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -16,5 +17,7 @@ public interface ReminderRepository extends JpaRepository<Reminder, Long> {
     List<Reminder> findDueReminders(@Param("currentTime") Timestamp currentTime);
 
     List<Reminder> findByUser_ChatId(Long userId);
+
+    int countByUser(User user);
 }
 
