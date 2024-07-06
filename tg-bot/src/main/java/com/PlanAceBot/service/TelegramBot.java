@@ -56,6 +56,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             /delete_reminder - Удаление напоминания.
             /list_reminders - Показать все напоминания пользователя.
             /show_task_commands - Отобразить все команды для взаимодействия с задачами.
+            /show_reminder_commands - Отобразить все команды для взаимодействия с напоминаниями.
             
 
             """;
@@ -73,6 +74,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private static final String COMMAND_DELETE_REMINDER = "/delete_reminder";
     private static final String COMMAND_LIST_REMINDERS = "/list_reminders";
     private static final String COMMAND_SHOW_TASK_COMMANDS = "/show_task_commands";
+    private static final String COMMAND_SHOW_REMINDER_COMMANDS = "/show_reminder_commands";
 
     private static final String BUTTON_TITLE = "Название";
     private static final String BUTTON_DESCRIPTION = "Описание";
@@ -124,6 +126,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         listofCommands.add(new BotCommand("/delete_reminder", "Удаление напоминания"));
         listofCommands.add(new BotCommand("/list_reminders", "Показать все напоминания пользователя"));
         listofCommands.add(new BotCommand("/show_task_commands", "Отобразить все команды для взаимодействия с задачами"));
+        listofCommands.add(new BotCommand("/show_reminder_commands", "Отобразить все команды для взаимодействия с напоминаниями"));
 
         try {
             this.execute(new SetMyCommands(listofCommands, new BotCommandScopeDefault(), null));
@@ -171,14 +174,19 @@ public class TelegramBot extends TelegramLongPollingBot {
             }
 
             command = switch (messageText) {
+                case "\uD83D\uDCCB Задачи" -> COMMAND_SHOW_TASK_COMMANDS;
+                case "\uD83D\uDD14 Напоминания" -> COMMAND_SHOW_REMINDER_COMMANDS;
                 case "\uD83D\uDCDD Создать задачу" -> COMMAND_CREATE;
                 case "\uD83D\uDD8A Обновить задачу" -> COMMAND_UPDATE;
                 case "\uD83D\uDDD1 Удалить задачу" -> COMMAND_DELETE;
                 case "\uD83D\uDCDB Изменить статус" -> COMMAND_CHANGE_STATUS;
                 case "\uD83D\uDCCB Список задач" -> COMMAND_LIST_TASKS;
                 case "\u23F0 Установить дедлайн" -> COMMAND_SET_DEADLINE;
-                case "\uD83D\uDCCB Задачи" -> COMMAND_SHOW_TASK_COMMANDS;
                 case "◀ Вернуться назад" -> COMMAND_START;
+                case "\uD83D\uDCDD Создать напоминание" -> COMMAND_CREATE_REMINDER;
+                case "\uD83D\uDD8A Обновить напоминание" -> COMMAND_UPDATE_REMINDER;
+                case "\uD83D\uDDD1 Удалить напоминание" -> COMMAND_DELETE_REMINDER;
+                case "\uD83D\uDCCB Список напоминаний" -> COMMAND_LIST_REMINDERS;
                 default -> messageText.split(" ", 2)[0];
             };
 
@@ -233,23 +241,27 @@ public class TelegramBot extends TelegramLongPollingBot {
                         break;
 
                     case COMMAND_CREATE_REMINDER:
-                        handleReminderCreationCommand(chatId);
+                        handleReminderCreationCommand(chatId, parts, messageText);
                         break;
 
                     case COMMAND_UPDATE_REMINDER:
-                        handleUpdateReminderCommand(parts, chatId);
+                        handleUpdateReminderCommand(parts, chatId, messageText);
                         break;
 
                     case COMMAND_DELETE_REMINDER:
-                        handleDeleteReminderCommand(parts, chatId);
+                        handleDeleteReminderCommand(parts, chatId, messageText);
                         break;
 
                     case COMMAND_LIST_REMINDERS:
-                        handleListRemindersCommand(chatId);
+                        handleListRemindersCommand(chatId, parts, messageText);
                         break;
 
                     case COMMAND_SHOW_TASK_COMMANDS:
                         showCommandsKeyboard(chatId);
+                        break;
+
+                    case COMMAND_SHOW_REMINDER_COMMANDS:
+                        showReminderCommandsKeyboard(chatId);
                         break;
 
                     default:
@@ -284,6 +296,30 @@ public class TelegramBot extends TelegramLongPollingBot {
             execute(message);
         } catch (TelegramApiException e) {
             log.error("Error sending commands keyboard: {}", e.getMessage());
+        }
+    }
+
+    private void showReminderCommandsKeyboard(String chatId) {
+        ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
+        List<KeyboardRow> keyboard = new ArrayList<>();
+
+        keyboard.add(createKeyboardRow("\uD83D\uDCDD Создать напоминание", "\uD83D\uDD8A Обновить напоминание", "\uD83D\uDDD1 Удалить напоминание"));
+        keyboard.add(createKeyboardRow("\uD83D\uDCCB Список напоминаний"));
+        keyboard.add(createKeyboardRow("◀ Вернуться назад"));
+
+        keyboardMarkup.setKeyboard(keyboard);
+        keyboardMarkup.setResizeKeyboard(true);
+
+        SendMessage message = SendMessage.builder()
+                .chatId(chatId)
+                .text("Выберите команду для напоминаний:")
+                .replyMarkup(keyboardMarkup)
+                .build();
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Error sending reminder commands keyboard: {}", e.getMessage());
         }
     }
 
@@ -399,9 +435,14 @@ public class TelegramBot extends TelegramLongPollingBot {
         keyboardMarkup.setResizeKeyboard(true);
         List<KeyboardRow> keyboard = new ArrayList<>();
 
-        KeyboardRow row = new KeyboardRow();
-        row.add("\uD83D\uDCCB Задачи");
-        keyboard.add(row);
+        KeyboardRow taskCommandsRow = new KeyboardRow();
+        taskCommandsRow.add("\uD83D\uDCCB Задачи");
+
+        KeyboardRow reminderCommandsRow = new KeyboardRow();
+        reminderCommandsRow.add("\uD83D\uDD14 Напоминания");
+
+        keyboard.add(taskCommandsRow);
+        keyboard.add(reminderCommandsRow);
         keyboardMarkup.setKeyboard(keyboard);
 
         SendMessage message = SendMessage.builder()
@@ -422,9 +463,14 @@ public class TelegramBot extends TelegramLongPollingBot {
         keyboardMarkup.setResizeKeyboard(true);
         List<KeyboardRow> keyboard = new ArrayList<>();
 
-        KeyboardRow row = new KeyboardRow();
-        row.add("\uD83D\uDCCB Задачи");
-        keyboard.add(row);
+        KeyboardRow taskCommandsRow = new KeyboardRow();
+        taskCommandsRow.add("\uD83D\uDCCB Задачи");
+
+        KeyboardRow reminderCommandsRow = new KeyboardRow();
+        reminderCommandsRow.add("\uD83D\uDD14 Напоминания");
+
+        keyboard.add(taskCommandsRow);
+        keyboard.add(reminderCommandsRow);
         keyboardMarkup.setKeyboard(keyboard);
 
         SendMessage message = SendMessage.builder()
@@ -445,9 +491,14 @@ public class TelegramBot extends TelegramLongPollingBot {
         keyboardMarkup.setResizeKeyboard(true);
         List<KeyboardRow> keyboard = new ArrayList<>();
 
-        KeyboardRow row = new KeyboardRow();
-        row.add("\uD83D\uDCCB Задачи");
-        keyboard.add(row);
+        KeyboardRow taskCommandsRow = new KeyboardRow();
+        taskCommandsRow.add("\uD83D\uDCCB Задачи");
+
+        KeyboardRow reminderCommandsRow = new KeyboardRow();
+        reminderCommandsRow.add("\uD83D\uDD14 Напоминания");
+
+        keyboard.add(taskCommandsRow);
+        keyboard.add(reminderCommandsRow);
         keyboardMarkup.setKeyboard(keyboard);
 
         SendMessage message = SendMessage.builder()
@@ -472,7 +523,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void startTaskCreation(String chatId) {
-        if (getUserTaskCount(chatId) >= 20) {
+        if (getUserTaskCount(chatId) > 20) {
             sendMessage(chatId, "Вы достигли максимального количества задач (20). Удалите существующие задачи перед созданием новых.");
             return;
         }
@@ -512,7 +563,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void createTask(String title, String description, int priority, String chatId) {
-        if (getUserTaskCount(chatId) >= 20) {
+        if (getUserTaskCount(chatId) > 20) {
             sendMessage(chatId, "Вы достигли максимального количества задач (20). Удалите существующие задачи перед созданием новых.");
             return;
         }
@@ -1432,7 +1483,24 @@ public class TelegramBot extends TelegramLongPollingBot {
         sendMessage(chatId, "Дедлайн установлен для задачи: " + task.getTitle());
     }
 
-    private void handleReminderCreationCommand(String chatId) {
+    private void handleReminderCreationCommand(String chatId, String[] parts, String messageText) {
+        if (parts.length > 1 && !(messageText.equals("\uD83D\uDCDD Создать напоминание"))) {
+            sendMessage(chatId, "Неверный формат команды. Используйте команду /create_reminder только без параметров.");
+            return;
+        }
+
+        User user = userService.findByChatId(Long.parseLong(chatId));
+        if (user == null) {
+            sendMessage(chatId, "Пользователь не зарегистрирован. Используйте /start для регистрации.");
+            return;
+        }
+
+        int existingRemindersCount = reminderService.countByUser(user);
+        if (existingRemindersCount > 20) {
+            sendMessage(chatId, "Вы уже создали максимальное количество напоминаний (20 штук).");
+            return;
+        }
+
         reminderCreationStates.put(chatId, new ReminderCreationState());
         sendMessage(chatId, "Введите текст напоминания:");
     }
@@ -1633,8 +1701,8 @@ public class TelegramBot extends TelegramLongPollingBot {
         sendMessage(chatId, "Напоминание выполнено и удалено.");
     }
 
-    private void handleUpdateReminderCommand(String[] parts, String chatId) {
-        if (parts.length > 1) {
+    private void handleUpdateReminderCommand(String[] parts, String chatId, String messageText) {
+        if (parts.length > 1 && !(messageText.equals("\uD83D\uDD8A Обновить напоминание"))) {
             sendMessage(chatId, "Неверный формат команды. Используйте команду /update_reminder только без параметров.");
             return;
         }
@@ -1843,8 +1911,8 @@ public class TelegramBot extends TelegramLongPollingBot {
         sendMessage(chatId, messageText);
     }
 
-    private void handleDeleteReminderCommand(String[] parts, String chatId) {
-        if (parts.length > 1) {
+    private void handleDeleteReminderCommand(String[] parts, String chatId, String messageText) {
+        if (parts.length > 1 && !(messageText.equals("\uD83D\uDDD1 Удалить напоминание"))) {
             sendMessage(chatId, "Неверный формат команды. Используйте /delete_reminder без параметров.");
             return;
         }
@@ -1939,7 +2007,12 @@ public class TelegramBot extends TelegramLongPollingBot {
         sendMessage(chatId, "Удаление напоминания отменено.");
     }
 
-    private void handleListRemindersCommand(String chatId) {
+    private void handleListRemindersCommand(String chatId, String[] parts, String messageText) {
+        if (parts.length > 1 && !(messageText.equals("\uD83D\uDCCB Список напоминаний"))) {
+            sendMessage(chatId, "Неверный формат команды. Используйте /list_reminders без параметров.");
+            return;
+        }
+
         List<Reminder> reminders = reminderService.getRemindersByUserChatId(Long.parseLong(chatId));
 
         if (reminders.isEmpty()) {
