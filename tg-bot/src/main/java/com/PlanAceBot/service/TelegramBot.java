@@ -60,6 +60,8 @@ public class TelegramBot extends TelegramLongPollingBot {
             /show_reminder_commands - Отобразить все команды для взаимодействия с напоминаниями.
             /add_income - Создание нового дохода.
             /add_expense - Создание нового расхода.
+            /update_income - Обновление существующей записи о доходе.
+            /update_expense - Обновление существующей записи о расходе.
 
             
 
@@ -85,6 +87,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private static final String COMMAND_ADD_INCOME = "/add_income";
     private static final String COMMAND_ADD_EXPENSE = "/add_expense";
     private static final String COMMAND_UPDATE_INCOME = "/update_income";
+    private static final String COMMAND_UPDATE_EXPENSE = "/update_expense";
 
     private static final String COMMAND_CALC = "/calc";
 
@@ -114,6 +117,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private final Map<String, IncomeCreationState> incomeCreationStates = new HashMap<>();
     private final Map<String, ExpenseCreationState> expenseCreationStates = new HashMap<>();
     private final Map<String, IncomeUpdateState> incomeUpdateStates = new HashMap<>();
+    private final Map<String, ExpenseUpdateState> expenseUpdateStates = new HashMap<>();
 
     private final Map<String, Boolean> calcStates = new HashMap<>();
 
@@ -155,6 +159,8 @@ public class TelegramBot extends TelegramLongPollingBot {
         listofCommands.add(new BotCommand("/show_reminder_commands", "Отобразить все команды для взаимодействия с напоминаниями"));
         listofCommands.add(new BotCommand("/add_income", "Создание нового дохода"));
         listofCommands.add(new BotCommand("/add_expense", "Создание нового расхода"));
+        listofCommands.add(new BotCommand("/update_income", "Обновление существующей записи о доходе"));
+        listofCommands.add(new BotCommand("/update_expense", "Обновление существующей записи о расходе"));
 
         try {
             this.execute(new SetMyCommands(listofCommands, new BotCommandScopeDefault(), null));
@@ -243,6 +249,8 @@ public class TelegramBot extends TelegramLongPollingBot {
                 processExpenseCreation(chatId, messageText);
             } else if (incomeUpdateStates.containsKey(chatId)) {
                 processFieldAndValueForIncome(chatId, messageText);
+            } else if (expenseUpdateStates.containsKey(chatId)) {
+                processFieldAndValueForExpense(chatId, messageText);
             } else {
                 switch (command) {
                     case COMMAND_START:
@@ -316,6 +324,10 @@ public class TelegramBot extends TelegramLongPollingBot {
 
                     case COMMAND_UPDATE_INCOME:
                         handleUpdateIncomeCommand(parts, chatId, messageText);
+                        break;
+
+                    case COMMAND_UPDATE_EXPENSE:
+                        handleUpdateExpenseCommand(parts, chatId, messageText);
                         break;
 
                     default:
@@ -1106,6 +1118,8 @@ public class TelegramBot extends TelegramLongPollingBot {
             handleDeleteReminder(data, chatId);
         } else if (data.startsWith("update_income_")) {
             handleUpdateIncome(data, chatId);
+        } else if (data.startsWith("update_expense_")) {
+            handleUpdateExpense(data, chatId);
         } else {
             handleOtherStates(data, chatId);
         }
@@ -1151,6 +1165,22 @@ public class TelegramBot extends TelegramLongPollingBot {
             sendFieldSelectionMessageForIncome(chatId);
         } catch (NumberFormatException e) {
             sendMessage(chatId, "Ошибка при выборе дохода для обновления.");
+        }
+    }
+
+    public void handleUpdateExpense(String data, String chatId) {
+        String expenseIdString = data.substring("update_expense_".length());
+        try {
+            Long expenseId = Long.parseLong(expenseIdString);
+            Expense expense = expenseService.findById(expenseId);
+            if (expense == null || !expense.getUser().getChatId().equals(Long.parseLong(chatId))) {
+                sendMessage(chatId, "Расход с указанным номером не найден или не принадлежит вам.");
+                return;
+            }
+            expenseUpdateStates.put(chatId, new ExpenseUpdateState(expenseId, expense,""));
+            sendFieldSelectionMessageForExpense(chatId);
+        } catch (NumberFormatException e) {
+            sendMessage(chatId, "Ошибка при выборе расхода для обновления.");
         }
     }
 
@@ -1275,10 +1305,11 @@ public class TelegramBot extends TelegramLongPollingBot {
         ReminderUpdateState curState = reminderUpdateStates.get(chatId);
         List<Long> remindersId = reminderDeletionStates.get(chatId);
         IncomeUpdateState incomeState = incomeUpdateStates.get(chatId);
+        ExpenseUpdateState expenseUpdateState = expenseUpdateStates.get(chatId);
 
         if (currentState == null && curState == null && currentIncomeState == null &&
                 (taskIds == null || taskIds.isEmpty()) && (remindersId == null || remindersId.isEmpty()) &&
-                incomeState == null) {
+                incomeState == null && expenseUpdateState == null) {
             sendMessage(chatId, "Ошибка при обработке запроса.");
             return;
         }
@@ -1384,6 +1415,42 @@ public class TelegramBot extends TelegramLongPollingBot {
                 incomeUpdateStates.remove(chatId);
                 sendMessage(chatId, "Изменения подтверждены.");
                 break;
+            case "update_title_expense":
+                assert expenseUpdateState != null;
+                expenseUpdateState.setFieldToUpdate("title");
+                sendNewValueRequestForExpense(chatId, "title");
+                break;
+            case "update_amount_expense":
+                assert expenseUpdateState != null;
+                expenseUpdateState.setFieldToUpdate("amount");
+                sendNewValueRequestForExpense(chatId, "amount");
+                break;
+            case "update_expense_date":
+                assert expenseUpdateState != null;
+                expenseUpdateState.setFieldToUpdate("date");
+                sendNewValueRequestForExpense(chatId, "date");
+                break;
+            case "update_description_expense":
+                assert expenseUpdateState != null;
+                expenseUpdateState.setFieldToUpdate("description");
+                sendNewValueRequestForExpense(chatId, "description");
+                break;
+            case "update_category_expense":
+                assert expenseUpdateState != null;
+                expenseUpdateState.setFieldToUpdate("category");
+                sendNewValueRequestForExpense(chatId, "category");
+                break;
+            case "update_cancel_expense":
+                expenseUpdateStates.remove(chatId);
+                sendMessage(chatId, "Обновление расхода отменено.");
+                break;
+            case "confirm_update_expense":
+                expenseUpdateStates.remove(chatId);
+                sendMessage(chatId, "Изменения подтверждены.");
+                break;
+            case "cancel_update_expense":
+                assert incomeState != null;
+                cancelExpenseUpdate(chatId, expenseUpdateState);
             default:
                 sendMessage(chatId, "Неверный выбор.");
                 break;
@@ -2515,7 +2582,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         for (Income income : incomes) {
             InlineKeyboardButton button = new InlineKeyboardButton();
-            button.setText("Запись о доходах №" + income.getId());
+            button.setText("Запись о доходах №" + income.getId() + ": " + income.getTitle());
             button.setCallbackData("update_income_" + income.getId());
             List<InlineKeyboardButton> row = new ArrayList<>();
             row.add(button);
@@ -2688,6 +2755,221 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void sendNewValueRequestForIncome(String chatId, String field) {
+        String fieldDisplayName = switch (field) {
+            case "title" -> "название";
+            case "amount" -> "сумма";
+            case "date" -> "дата";
+            case "description" -> "описание";
+            case "category" -> "категория";
+            default -> "";
+        };
+        sendMessage(chatId, "Введите новое значение для поля " + fieldDisplayName + ":");
+    }
+
+    public void handleUpdateExpenseCommand(String[] parts, String chatId, String messageText) {
+        if (parts.length > 1 && !messageText.equals("\uD83D\uDD8A Обновить расход")) {
+            sendMessage(chatId, "Неверный формат команды. Используйте команду /update_expense только без параметров.");
+            return;
+        }
+
+        List<Expense> expenses = expenseService.findExpensesByUserId(Long.parseLong(chatId));
+
+        if (expenses.isEmpty()) {
+            sendMessage(chatId, "У вас пока нет расходов для обновления.");
+            return;
+        }
+
+        InlineKeyboardMarkup markup = createExpensesMarkup(expenses);
+
+        SendMessage message = createMessage(chatId, "Выберите расход для обновления:", markup);
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Error sending expense selection message: {}", e.getMessage());
+        }
+    }
+
+    public InlineKeyboardMarkup createExpensesMarkup(List<Expense> expenses) {
+        List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
+
+        for (Expense expense : expenses) {
+            InlineKeyboardButton button = new InlineKeyboardButton();
+            button.setText("Запись о расходах №" + expense.getId() + ": " + expense.getTitle());
+            button.setCallbackData("update_expense_" + expense.getId());
+
+            List<InlineKeyboardButton> row = new ArrayList<>();
+            row.add(button);
+
+            keyboard.add(row);
+        }
+
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        markup.setKeyboard(keyboard);
+
+        return markup;
+    }
+
+    public void sendFieldSelectionMessageForExpense(String chatId) {
+        ExpenseUpdateState currentState = expenseUpdateStates.get(chatId);
+
+        if (currentState == null) {
+            sendMessage(chatId, "Ошибка обновления расхода.");
+            return;
+        }
+
+        Long expenseId = currentState.getExpenseId();
+
+        Expense expense = expenseService.findById(expenseId);
+        if (expense == null || !expense.getUser().getChatId().equals(Long.parseLong(chatId))) {
+            sendMessage(chatId, "Расход с указанным номером не найден или не принадлежит вам.");
+            return;
+        }
+
+        String currentTitle = expense.getTitle();
+        Double currentAmount = expense.getAmount();
+        Timestamp currentDate = expense.getDate();
+        String currentDescription = expense.getDescription();
+        String currentCategory = expense.getCategory();
+
+        String selectionMessage = "Выберите, что вы хотите обновить для расхода:\n";
+        selectionMessage += "Текущее название: " + currentTitle + "\n";
+        selectionMessage += "Текущая сумма: " + currentAmount + "\n";
+        selectionMessage += "Дата расхода: " + currentDate + "\n";
+        selectionMessage += "Описание: " + currentDescription + "\n";
+        selectionMessage += "Категория: " + currentCategory + "\n";
+
+        InlineKeyboardMarkup markup = createUpdateMarkupForExpense();
+
+        SendMessage message = createMessage(chatId, selectionMessage, markup);
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Error sending field selection message for expense: {}", e.getMessage());
+        }
+    }
+
+    public InlineKeyboardMarkup createUpdateMarkupForExpense() {
+        List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
+
+        List<InlineKeyboardButton> row1 = new ArrayList<>();
+        row1.add(createInlineButton("Название", "update_title_expense"));
+        row1.add(createInlineButton("Сумма", "update_amount_expense"));
+        keyboard.add(row1);
+
+        List<InlineKeyboardButton> row2 = new ArrayList<>();
+        row2.add(createInlineButton("Дата", "update_expense_date"));
+        row2.add(createInlineButton("Описание", "update_description_expense"));
+        keyboard.add(row2);
+
+        List<InlineKeyboardButton> row3 = new ArrayList<>();
+        row3.add(createInlineButton("Категория", "update_category_expense"));
+        row3.add(createInlineButton("Отмена", "update_cancel_expense"));
+        keyboard.add(row3);
+
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        markup.setKeyboard(keyboard);
+
+        return markup;
+    }
+
+    public void processFieldAndValueForExpense(String chatId, String messageText) {
+        ExpenseUpdateState currentState = expenseUpdateStates.get(chatId);
+
+        if (currentState == null) {
+            sendMessage(chatId, "Ошибка при обновлении расхода.");
+            return;
+        }
+
+        Long expenseId = currentState.getExpenseId();
+        String fieldToUpdate = currentState.getFieldToUpdate();
+
+        Expense expense = expenseService.findById(expenseId);
+        if (expense == null || !expense.getUser().getChatId().equals(Long.parseLong(chatId))) {
+            sendMessage(chatId, "Расход с указанным номером не найден или не принадлежит вам.");
+            expenseUpdateStates.remove(chatId);
+            return;
+        }
+
+        try {
+            switch (fieldToUpdate) {
+                case "title":
+                    expense.setTitle(messageText);
+                    break;
+                case "amount":
+                    double amount = Double.parseDouble(messageText);
+                    expense.setAmount(amount);
+                    break;
+                case "date":
+                    Timestamp date = Timestamp.valueOf(messageText + " 00:00:00");
+                    expense.setDate(date);
+                    break;
+                case "description":
+                    expense.setDescription(messageText);
+                    break;
+                case "category":
+                    expense.setCategory(messageText);
+                    break;
+                default:
+                    sendMessage(chatId, "Ошибка при обновлении расхода.");
+                    expenseUpdateStates.remove(chatId);
+                    return;
+            }
+
+            expenseService.save(expense);
+
+            sendExpenseUpdateConfirmationMessage(chatId, expense);
+        } catch (IllegalArgumentException e) {
+            sendMessage(chatId, "Ошибка при обработке введенного значения. Попробуйте снова.");
+        }
+    }
+
+    public void sendExpenseUpdateConfirmationMessage(String chatId, Expense expense) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+
+        StringBuilder confirmationMessage = new StringBuilder("Изменения сохранены:\n");
+        confirmationMessage.append("Название: ").append(expense.getTitle()).append("\n");
+        confirmationMessage.append("Описание: ").append(expense.getDescription()).append("\n");
+        confirmationMessage.append("Сумма: ").append(expense.getAmount()).append("\n");
+        confirmationMessage.append("Категория: ").append(expense.getCategory()).append("\n");
+
+        confirmationMessage.append("\nДата создания: ").append(expense.getDate().toLocalDateTime().format(formatter));
+
+        confirmationMessage.append("\n\nПодтвердить изменения?");
+
+        InlineKeyboardMarkup markup = createExpenseConfirmationMarkup();
+
+        SendMessage message = createMessage(chatId, confirmationMessage.toString(), markup);
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Error sending confirmation message: {}", e.getMessage());
+        }
+    }
+
+    private InlineKeyboardMarkup createExpenseConfirmationMarkup() {
+        List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
+
+        List<InlineKeyboardButton> row = createButtonRow("Да", "confirm_update_expense");
+        row.add(createInlineButton("Нет", "cancel_update_expense"));
+
+        keyboard.add(row);
+
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        markup.setKeyboard(keyboard);
+
+        return markup;
+    }
+
+    private void cancelExpenseUpdate(String chatId, ExpenseUpdateState currentState) {
+        expenseService.save(currentState.getOriginalExpense());
+        expenseUpdateStates.remove(chatId);
+        sendMessage(chatId, "Изменения отменены.");
+    }
+
+    private void sendNewValueRequestForExpense(String chatId, String field) {
         String fieldDisplayName = switch (field) {
             case "title" -> "название";
             case "amount" -> "сумма";
