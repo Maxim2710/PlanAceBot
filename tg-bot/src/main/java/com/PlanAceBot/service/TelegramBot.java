@@ -63,6 +63,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             /update_income - Обновление существующей записи о доходе.
             /update_expense - Обновление существующей записи о расходе.
             /delete_income - Удаление записи о доходе.
+            /delete_expense - Удаление записи о расходе.
 
             
 
@@ -90,6 +91,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private static final String COMMAND_UPDATE_INCOME = "/update_income";
     private static final String COMMAND_UPDATE_EXPENSE = "/update_expense";
     private static final String COMMAND_DELETE_INCOME = "/delete_income";
+    private static final String COMMAND_DELETE_EXPENSE = "/delete_expense";
 
     private static final String COMMAND_CALC = "/calc";
 
@@ -121,6 +123,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private final Map<String, IncomeUpdateState> incomeUpdateStates = new HashMap<>();
     private final Map<String, ExpenseUpdateState> expenseUpdateStates = new HashMap<>();
     private final Map<String, List<Integer>> incomeDeletionStates = new HashMap<>();
+    private final Map<String, List<Integer>> expenseDeletionStates = new HashMap<>();
 
     private final Map<String, Boolean> calcStates = new HashMap<>();
 
@@ -165,6 +168,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         listofCommands.add(new BotCommand("/update_income", "Обновление существующей записи о доходе"));
         listofCommands.add(new BotCommand("/update_expense", "Обновление существующей записи о расходе"));
         listofCommands.add(new BotCommand("/delete_income", "Удаление записи о доходе"));
+        listofCommands.add(new BotCommand("/delete_expense", "Удаление записи о расходе"));
 
         try {
             this.execute(new SetMyCommands(listofCommands, new BotCommandScopeDefault(), null));
@@ -257,6 +261,8 @@ public class TelegramBot extends TelegramLongPollingBot {
                 processFieldAndValueForExpense(chatId, messageText);
             } else if (incomeDeletionStates.containsKey(chatId)) {
                 sendDeleteIncomeConfirmationMessage(chatId, incomeDeletionStates.get(chatId).get(0));
+            } else if (expenseDeletionStates.containsKey(chatId)) {
+                sendDeleteExpenseConfirmationMessage(chatId, expenseDeletionStates.get(chatId).get(0));
             } else {
                 switch (command) {
                     case COMMAND_START:
@@ -338,6 +344,10 @@ public class TelegramBot extends TelegramLongPollingBot {
 
                     case COMMAND_DELETE_INCOME:
                         handleDeleteIncomeCommand(parts, chatId, messageText);
+                        break;
+
+                    case COMMAND_DELETE_EXPENSE:
+                        handleDeleteExpenseCommand(parts, chatId, messageText);
                         break;
 
                     default:
@@ -1131,6 +1141,8 @@ public class TelegramBot extends TelegramLongPollingBot {
             handleUpdateExpense(data, chatId);
         } else if (data.startsWith("delete_income_")) {
             handleDeleteIncome(data, chatId);
+        } else if (data.startsWith("delete_expense_")) {
+            handleDeleteExpense(data, chatId);
         } else {
             handleOtherStates(data, chatId);
         }
@@ -1325,6 +1337,21 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
+    private void handleDeleteExpense(String data, String chatId) {
+        String expenseIdString = data.substring("delete_expense_".length());
+        try {
+            long expenseId = Long.parseLong(expenseIdString);
+            Expense expense = expenseService.findById(expenseId);
+            if (expense == null || !expense.getUser().getChatId().equals(Long.parseLong(chatId))) {
+                sendMessage(chatId, "Запись о расходе с указанным номером не найдена или не принадлежит вам.");
+                return;
+            }
+            expenseDeletionStates.put(chatId, Collections.singletonList(Math.toIntExact(expenseId)));
+            sendDeleteExpenseConfirmationMessage(chatId, Math.toIntExact(expenseId));
+        } catch (NumberFormatException e) {
+            sendMessage(chatId, "Ошибка при удалении записи о расходе.");
+        }
+    }
 
     private void handleOtherStates(String data, String chatId) {
         TaskUpdateState currentState = taskUpdateStates.get(chatId);
@@ -1335,10 +1362,12 @@ public class TelegramBot extends TelegramLongPollingBot {
         IncomeUpdateState incomeState = incomeUpdateStates.get(chatId);
         ExpenseUpdateState expenseUpdateState = expenseUpdateStates.get(chatId);
         List<Integer> incomeIds = incomeDeletionStates.get(chatId);
+        List<Integer> expenseIds = expenseDeletionStates.get(chatId);
 
         if (currentState == null && curState == null && currentIncomeState == null &&
                 (taskIds == null || taskIds.isEmpty()) && (remindersId == null || remindersId.isEmpty()) &&
-                incomeState == null && expenseUpdateState == null && (incomeIds == null || incomeIds.isEmpty())) {
+                incomeState == null && expenseUpdateState == null && (incomeIds == null || incomeIds.isEmpty()) &&
+                (expenseIds == null || expenseIds.isEmpty())) {
             sendMessage(chatId, "Ошибка при обработке запроса.");
             return;
         }
@@ -1490,6 +1519,17 @@ public class TelegramBot extends TelegramLongPollingBot {
                 break;
             case "cancel_delete_income":
                 cancelDeleteIncome(chatId);
+                break;
+            case "confirm_delete_expense":
+                if (expenseIds != null && !expenseIds.isEmpty()) {
+                    confirmDeleteExpense(chatId, expenseIds);
+                    expenseDeletionStates.remove(chatId);
+                } else {
+                    sendMessage(chatId, "Ошибка при подтверждении удаления записи о доходе.");
+                }
+                break;
+            case "cancel_delete_expense":
+                cancelDeleteExpense(chatId);
                 break;
             default:
                 sendMessage(chatId, "Неверный выбор.");
@@ -3120,8 +3160,104 @@ public class TelegramBot extends TelegramLongPollingBot {
         sendMessage(chatId, "Удаление отменено.");
     }
 
+    private void handleDeleteExpenseCommand(String[] parts, String chatId, String messageText) {
+        if (parts.length > 1 && !(messageText.equals("\uD83D\uDDD1 Удалить расход"))) {
+            sendMessage(chatId, "Неверный формат команды. Используйте /delete_expense без параметров.");
+            return;
+        }
 
+        List<Expense> expenses = expenseService.findExpensesByUserId(Long.parseLong(chatId));
 
+        if (expenses.isEmpty()) {
+            sendMessage(chatId, "У вас нет расходов для удаления.");
+            return;
+        }
+
+        InlineKeyboardMarkup markup = createDeleteExpenseMarkup(expenses);
+
+        SendMessage message = createMessage(chatId, "Выберите расход для удаления:", markup);
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Error sending delete expense selection message: {}", e.getMessage());
+        }
+    }
+
+    private InlineKeyboardMarkup createDeleteExpenseMarkup(List<Expense> expenses) {
+        List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
+
+        for (Expense expense : expenses) {
+            InlineKeyboardButton button = new InlineKeyboardButton();
+            button.setText(expense.getTitle());
+            button.setCallbackData("delete_expense_" + expense.getId());
+            List<InlineKeyboardButton> row = new ArrayList<>();
+            row.add(button);
+            keyboard.add(row);
+        }
+
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        markup.setKeyboard(keyboard);
+
+        return markup;
+    }
+
+    private void sendDeleteExpenseConfirmationMessage(String chatId, int expenseIdToDelete) {
+        Expense expense = expenseService.findById((long) expenseIdToDelete);
+        if (expense == null) {
+            sendMessage(chatId, "Запись о расходе не найдена.");
+            return;
+        }
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+
+        StringBuilder confirmationMessage = new StringBuilder("Вы уверены, что хотите удалить следующую запись о расходе?\n\n");
+        confirmationMessage.append("Название: ").append(expense.getTitle()).append("\n");
+        confirmationMessage.append("Сумма: ").append(expense.getAmount()).append("\n");
+        confirmationMessage.append("Категория: ").append(expense.getCategory()).append("\n");
+        confirmationMessage.append("Дата: ").append(expense.getDate().toLocalDateTime().format(formatter)).append("\n");
+
+        if (expense.getDescription() != null && !expense.getDescription().isEmpty()) {
+            confirmationMessage.append("Описание: ").append(expense.getDescription()).append("\n");
+        }
+
+        InlineKeyboardMarkup markup = createDeleteExpenseConfirmationMarkup();
+
+        SendMessage message = createMessage(chatId, confirmationMessage.toString(), markup);
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Error sending delete confirmation message: {}", e.getMessage());
+        }
+    }
+
+    private InlineKeyboardMarkup createDeleteExpenseConfirmationMarkup() {
+        List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
+
+        List<InlineKeyboardButton> row = createButtonRow(BUTTON_CONFIRM, "confirm_delete_expense");
+        row.add(createInlineButton(BUTTON_CANCEL_UPDATE, "cancel_delete_expense"));
+
+        keyboard.add(row);
+
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        markup.setKeyboard(keyboard);
+
+        return markup;
+    }
+
+    private void confirmDeleteExpense(String chatId, List<Integer> expenseIdsToDelete) {
+        for (Integer expenseId : expenseIdsToDelete) {
+            expenseService.delete(Long.valueOf(expenseId));
+        }
+        expenseDeletionStates.remove(chatId);
+        sendMessage(chatId, "Запись о расходе удалена.");
+    }
+
+    private void cancelDeleteExpense(String chatId) {
+        expenseDeletionStates.remove(chatId);
+        sendMessage(chatId, "Удаление отменено.");
+    }
 }
 
 
