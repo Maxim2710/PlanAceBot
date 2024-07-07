@@ -5,6 +5,8 @@ import com.PlanAceBot.state.*;
 import com.PlanAceBot.config.BotConfig;
 import com.vdurmont.emoji.EmojiParser;
 import lombok.extern.slf4j.Slf4j;
+import net.objecthunter.exp4j.Expression;
+import net.objecthunter.exp4j.ExpressionBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -42,6 +44,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             :information_source: Список доступных команд:
 
             /start - Регистрация пользователя и приветственное сообщение.
+            /calc - Калькулятор. Введите математическое выражение после команды.
             /create_task - Создание новой задачи.
             /update_task - Обновление существующей задачи.
             /delete_task - Удаление задачи.
@@ -82,6 +85,8 @@ public class TelegramBot extends TelegramLongPollingBot {
     private static final String COMMAND_ADD_INCOME = "/add_income";
     private static final String COMMAND_ADD_EXPENSE = "/add_expense";
 
+    private static final String COMMAND_CALC = "/calc";
+
     private static final String BUTTON_TITLE = "Название";
     private static final String BUTTON_DESCRIPTION = "Описание";
     private static final String BUTTON_PRIORITY = "Приоритет";
@@ -107,6 +112,8 @@ public class TelegramBot extends TelegramLongPollingBot {
     private final Map<String, IncomeCreationState> incomeCreationStates = new HashMap<>();
     private final Map<String, ExpenseCreationState> expenseCreationStates = new HashMap<>();
 
+    private final Map<String, Boolean> calcStates = new HashMap<>();
+
     @Autowired
     private UserService userService;
 
@@ -129,6 +136,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         this.botConfig = config;
         List<BotCommand> listofCommands = new ArrayList<>();
         listofCommands.add(new BotCommand("/start", "Регистрация пользователя и приветственное сообщение"));
+        listofCommands.add(new BotCommand("/calc", "Калькулятор. Введите математическое выражение после команды"));
         listofCommands.add(new BotCommand("/create_task", "Создание новой задачи"));
         listofCommands.add(new BotCommand("/update_task", "Обновление существующей задачи"));
         listofCommands.add(new BotCommand("/delete_task", "Удаление задачи"));
@@ -209,6 +217,9 @@ public class TelegramBot extends TelegramLongPollingBot {
 
             if (taskCreationStates.containsKey(chatId)) {
                 processTaskCreation(chatId, messageText);
+            } else if (calcStates.getOrDefault(chatId, false)) {
+                handleCalculateExpression(chatId, messageText);
+                calcStates.put(chatId, false);
             } else if (taskUpdateStates.containsKey(chatId)) {
                 processFieldAndValue(chatId, messageText);
             } else if (taskDeletionStates.containsKey(chatId)) {
@@ -231,6 +242,11 @@ public class TelegramBot extends TelegramLongPollingBot {
                 switch (command) {
                     case COMMAND_START:
                         registerUserAndSendWelcomeMessage(chatId, !messageText.equals("◀ Вернуться назад"));
+                        break;
+
+                    case COMMAND_CALC:
+                        sendMessage(chatId, "Пожалуйста, введите математическое выражение для вычисления:");
+                        calcStates.put(chatId, true);
                         break;
 
                     case COMMAND_CREATE:
@@ -358,6 +374,16 @@ public class TelegramBot extends TelegramLongPollingBot {
             row.add(button);
         }
         return row;
+    }
+
+    private void handleCalculateExpression(String chatId, String expression) {
+        try {
+            Expression e = new ExpressionBuilder(expression).build();
+            double result = e.evaluate();
+            sendMessage(chatId, "Результат: " + result);
+        } catch (Exception ex) {
+            sendMessage(chatId, "Ошибка в выражении. Пожалуйста, проверьте правильность ввода.");
+        }
     }
 
     private void sendHelpMessage(String chatId, String[] parts) {
