@@ -62,6 +62,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             /add_expense - Создание нового расхода.
             /update_income - Обновление существующей записи о доходе.
             /update_expense - Обновление существующей записи о расходе.
+            /delete_income - Удаление записи о доходе.
 
             
 
@@ -88,6 +89,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private static final String COMMAND_ADD_EXPENSE = "/add_expense";
     private static final String COMMAND_UPDATE_INCOME = "/update_income";
     private static final String COMMAND_UPDATE_EXPENSE = "/update_expense";
+    private static final String COMMAND_DELETE_INCOME = "/delete_income";
 
     private static final String COMMAND_CALC = "/calc";
 
@@ -118,6 +120,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private final Map<String, ExpenseCreationState> expenseCreationStates = new HashMap<>();
     private final Map<String, IncomeUpdateState> incomeUpdateStates = new HashMap<>();
     private final Map<String, ExpenseUpdateState> expenseUpdateStates = new HashMap<>();
+    private final Map<String, List<Integer>> incomeDeletionStates = new HashMap<>();
 
     private final Map<String, Boolean> calcStates = new HashMap<>();
 
@@ -161,6 +164,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         listofCommands.add(new BotCommand("/add_expense", "Создание нового расхода"));
         listofCommands.add(new BotCommand("/update_income", "Обновление существующей записи о доходе"));
         listofCommands.add(new BotCommand("/update_expense", "Обновление существующей записи о расходе"));
+        listofCommands.add(new BotCommand("/delete_income", "Удаление записи о доходе"));
 
         try {
             this.execute(new SetMyCommands(listofCommands, new BotCommandScopeDefault(), null));
@@ -251,6 +255,8 @@ public class TelegramBot extends TelegramLongPollingBot {
                 processFieldAndValueForIncome(chatId, messageText);
             } else if (expenseUpdateStates.containsKey(chatId)) {
                 processFieldAndValueForExpense(chatId, messageText);
+            } else if (incomeDeletionStates.containsKey(chatId)) {
+                sendDeleteIncomeConfirmationMessage(chatId, incomeDeletionStates.get(chatId).get(0));
             } else {
                 switch (command) {
                     case COMMAND_START:
@@ -328,6 +334,10 @@ public class TelegramBot extends TelegramLongPollingBot {
 
                     case COMMAND_UPDATE_EXPENSE:
                         handleUpdateExpenseCommand(parts, chatId, messageText);
+                        break;
+
+                    case COMMAND_DELETE_INCOME:
+                        handleDeleteIncomeCommand(parts, chatId, messageText);
                         break;
 
                     default:
@@ -489,7 +499,6 @@ public class TelegramBot extends TelegramLongPollingBot {
             createStartKeyboardForBack(chatId, "Вы вернулись в главное меню");
         }
     }
-
 
     private void sendWelcomeMessage(String chatId) {
         String welcomeMessage = EmojiParser.parseToUnicode("Добро пожаловать! Я бот для управления задачами. :blush:\n" +
@@ -1120,6 +1129,8 @@ public class TelegramBot extends TelegramLongPollingBot {
             handleUpdateIncome(data, chatId);
         } else if (data.startsWith("update_expense_")) {
             handleUpdateExpense(data, chatId);
+        } else if (data.startsWith("delete_income_")) {
+            handleDeleteIncome(data, chatId);
         } else {
             handleOtherStates(data, chatId);
         }
@@ -1298,6 +1309,23 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
+    private void handleDeleteIncome(String data, String chatId) {
+        String incomeIdString = data.substring("delete_income_".length());
+        try {
+            int incomeId = Integer.parseInt(incomeIdString);
+            Income income = incomeService.findById((long) incomeId);
+            if (income == null || !income.getUser().getChatId().equals(Long.parseLong(chatId))) {
+                sendMessage(chatId, "Запись о доходе с указанным номером не найдена или не принадлежит вам.");
+                return;
+            }
+            incomeDeletionStates.put(chatId, Collections.singletonList(incomeId));
+            sendDeleteIncomeConfirmationMessage(chatId, incomeId);
+        } catch (NumberFormatException e) {
+            sendMessage(chatId, "Ошибка при удалении записи о доходе.");
+        }
+    }
+
+
     private void handleOtherStates(String data, String chatId) {
         TaskUpdateState currentState = taskUpdateStates.get(chatId);
         IncomeCreationState currentIncomeState = incomeCreationStates.get(chatId);
@@ -1306,10 +1334,11 @@ public class TelegramBot extends TelegramLongPollingBot {
         List<Long> remindersId = reminderDeletionStates.get(chatId);
         IncomeUpdateState incomeState = incomeUpdateStates.get(chatId);
         ExpenseUpdateState expenseUpdateState = expenseUpdateStates.get(chatId);
+        List<Integer> incomeIds = incomeDeletionStates.get(chatId);
 
         if (currentState == null && curState == null && currentIncomeState == null &&
                 (taskIds == null || taskIds.isEmpty()) && (remindersId == null || remindersId.isEmpty()) &&
-                incomeState == null && expenseUpdateState == null) {
+                incomeState == null && expenseUpdateState == null && (incomeIds == null || incomeIds.isEmpty())) {
             sendMessage(chatId, "Ошибка при обработке запроса.");
             return;
         }
@@ -1451,6 +1480,17 @@ public class TelegramBot extends TelegramLongPollingBot {
             case "cancel_update_expense":
                 assert incomeState != null;
                 cancelExpenseUpdate(chatId, expenseUpdateState);
+            case "confirm_delete_income":
+                if (incomeIds != null && !incomeIds.isEmpty()) {
+                    confirmDeleteIncome(chatId, incomeIds);
+                    incomeDeletionStates.remove(chatId);
+                } else {
+                    sendMessage(chatId, "Ошибка при подтверждении удаления записи о доходе.");
+                }
+                break;
+            case "cancel_delete_income":
+                cancelDeleteIncome(chatId);
+                break;
             default:
                 sendMessage(chatId, "Неверный выбор.");
                 break;
@@ -2980,6 +3020,107 @@ public class TelegramBot extends TelegramLongPollingBot {
         };
         sendMessage(chatId, "Введите новое значение для поля " + fieldDisplayName + ":");
     }
+
+    private void handleDeleteIncomeCommand(String[] parts, String chatId, String messageText) {
+        if (parts.length > 1 && !(messageText.equals("\uD83D\uDDD1 Удалить доход"))) {
+            sendMessage(chatId, "Неверный формат команды. Используйте /delete_income без параметров.");
+            return;
+        }
+
+        List<Income> incomes = incomeService.findIncomesByUserId(Long.parseLong(chatId));
+
+        if (incomes.isEmpty()) {
+            sendMessage(chatId, "У вас нет доходов для удаления.");
+            return;
+        }
+
+        InlineKeyboardMarkup markup = createDeleteIncomeMarkup(incomes);
+
+        SendMessage message = createMessage(chatId, "Выберите доход для удаления:", markup);
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Error sending delete income selection message: {}", e.getMessage());
+        }
+    }
+
+    private InlineKeyboardMarkup createDeleteIncomeMarkup(List<Income> incomes) {
+        List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
+
+        for (Income income : incomes) {
+            InlineKeyboardButton button = new InlineKeyboardButton();
+            button.setText(income.getTitle());
+            button.setCallbackData("delete_income_" + income.getId());
+            List<InlineKeyboardButton> row = new ArrayList<>();
+            row.add(button);
+            keyboard.add(row);
+        }
+
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        markup.setKeyboard(keyboard);
+
+        return markup;
+    }
+
+    private void sendDeleteIncomeConfirmationMessage(String chatId, int incomeIdToDelete) {
+        Income income = incomeService.findById((long) incomeIdToDelete);
+        if (income == null) {
+            sendMessage(chatId, "Запись о доходе не найдена.");
+            return;
+        }
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+
+        StringBuilder confirmationMessage = new StringBuilder("Вы уверены, что хотите удалить следующую запись о доходе?\n\n");
+        confirmationMessage.append("Название: ").append(income.getTitle()).append("\n");
+        confirmationMessage.append("Сумма: ").append(income.getAmount()).append("\n");
+        confirmationMessage.append("Категория: ").append(income.getCategory()).append("\n");
+        confirmationMessage.append("Дата: ").append(income.getDate().toLocalDateTime().format(formatter)).append("\n");
+
+        if (income.getDescription() != null && !income.getDescription().isEmpty()) {
+            confirmationMessage.append("Описание: ").append(income.getDescription()).append("\n");
+        }
+
+        InlineKeyboardMarkup markup = createDeleteIncomeConfirmationMarkup();
+
+        SendMessage message = createMessage(chatId, confirmationMessage.toString(), markup);
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Error sending delete confirmation message: {}", e.getMessage());
+        }
+    }
+
+    private InlineKeyboardMarkup createDeleteIncomeConfirmationMarkup() {
+        List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
+
+        List<InlineKeyboardButton> row = createButtonRow(BUTTON_CONFIRM, "confirm_delete_income");
+        row.add(createInlineButton(BUTTON_CANCEL_UPDATE, "cancel_delete_income"));
+
+        keyboard.add(row);
+
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        markup.setKeyboard(keyboard);
+
+        return markup;
+    }
+
+    private void confirmDeleteIncome(String chatId, List<Integer> incomeIdsToDelete) {
+        for (Integer incomeId : incomeIdsToDelete) {
+            incomeService.delete(incomeId);
+        }
+        incomeDeletionStates.remove(chatId);
+        sendMessage(chatId, "Запись о доходе удалена.");
+    }
+
+    private void cancelDeleteIncome(String chatId) {
+        incomeDeletionStates.remove(chatId);
+        sendMessage(chatId, "Удаление отменено.");
+    }
+
+
 
 }
 
