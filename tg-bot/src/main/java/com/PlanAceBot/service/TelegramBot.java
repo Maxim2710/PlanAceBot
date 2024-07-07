@@ -1,9 +1,6 @@
 package com.PlanAceBot.service;
 
-import com.PlanAceBot.model.Income;
-import com.PlanAceBot.model.Reminder;
-import com.PlanAceBot.model.Task;
-import com.PlanAceBot.model.User;
+import com.PlanAceBot.model.*;
 import com.PlanAceBot.state.*;
 import com.PlanAceBot.config.BotConfig;
 import com.vdurmont.emoji.EmojiParser;
@@ -24,7 +21,6 @@ import org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScope
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
@@ -59,7 +55,9 @@ public class TelegramBot extends TelegramLongPollingBot {
             /list_reminders - Показать все напоминания пользователя.
             /show_task_commands - Отобразить все команды для взаимодействия с задачами.
             /show_reminder_commands - Отобразить все команды для взаимодействия с напоминаниями.
-            /create_income - Создание нового дохода.
+            /add_income - Создание нового дохода.
+            /add_expense - Создание нового расхода.
+
             
 
             """;
@@ -81,8 +79,8 @@ public class TelegramBot extends TelegramLongPollingBot {
     private static final String COMMAND_SHOW_TASK_COMMANDS = "/show_task_commands";
     private static final String COMMAND_SHOW_REMINDER_COMMANDS = "/show_reminder_commands";
 
-    private static final String COMMAND_CREATE_INCOME = "/create_income";
-    private static final String COMMAND_CREATE_EXPENSE = "/create_expense";
+    private static final String COMMAND_ADD_INCOME = "/add_income";
+    private static final String COMMAND_ADD_EXPENSE = "/add_expense";
 
     private static final String BUTTON_TITLE = "Название";
     private static final String BUTTON_DESCRIPTION = "Описание";
@@ -124,6 +122,9 @@ public class TelegramBot extends TelegramLongPollingBot {
     @Autowired
     private IncomeService incomeService;
 
+    @Autowired
+    private ExpenseService expenseService;
+
     public TelegramBot(BotConfig config) {
         this.botConfig = config;
         List<BotCommand> listofCommands = new ArrayList<>();
@@ -141,7 +142,8 @@ public class TelegramBot extends TelegramLongPollingBot {
         listofCommands.add(new BotCommand("/list_reminders", "Показать все напоминания пользователя"));
         listofCommands.add(new BotCommand("/show_task_commands", "Отобразить все команды для взаимодействия с задачами"));
         listofCommands.add(new BotCommand("/show_reminder_commands", "Отобразить все команды для взаимодействия с напоминаниями"));
-        listofCommands.add(new BotCommand("/create_income", "Создание нового дохода"));
+        listofCommands.add(new BotCommand("/add_income", "Создание нового дохода"));
+        listofCommands.add(new BotCommand("/add_expense", "Создание нового расхода"));
 
         try {
             this.execute(new SetMyCommands(listofCommands, new BotCommandScopeDefault(), null));
@@ -223,6 +225,8 @@ public class TelegramBot extends TelegramLongPollingBot {
                 sendDeleteReminderConfirmationMessage(chatId, reminderDeletionStates.get(chatId).get(0));
             } else if (incomeCreationStates.containsKey(chatId)) {
                 processIncomeCreation(chatId, messageText);
+            } else if (expenseCreationStates.containsKey(chatId)) {
+                processExpenseCreation(chatId, messageText);
             } else {
                 switch (command) {
                     case COMMAND_START:
@@ -281,13 +285,13 @@ public class TelegramBot extends TelegramLongPollingBot {
                         showReminderCommandsKeyboard(chatId);
                         break;
 
-                    case COMMAND_CREATE_INCOME:
+                    case COMMAND_ADD_INCOME:
                         handleIncomeCreationCommand(chatId, parts, messageText);
                         break;
 
-//                    case COMMAND_CREATE_EXPENSE:
-//                        handleExpenseCreationCommand(chatId, parts, messageText);
-//                        break;
+                    case COMMAND_ADD_EXPENSE:
+                        handleExpenseCreationCommand(chatId, parts, messageText);
+                        break;
 
                     default:
                         sendUnknownCommandMessage(chatId);
@@ -1024,8 +1028,14 @@ public class TelegramBot extends TelegramLongPollingBot {
                 data.equals("Стипендия") || data.equals("Пособие") ||
                 data.equals("Доход от продажи товаров")) {
             processIncomeCreation(chatId, data);
-        } else if (data.equals("Другое")) {
-            processIncomeCreation(chatId, data);
+        } else if (data.equals("income_other")) {
+            processIncomeCreation(chatId, "Другое");
+        } else if (data.equals("Еда") || data.equals("Транспорт") ||
+                data.equals("Развлечения") || data.equals("Коммунальные услуги") ||
+                data.equals("Медицина")) {
+            processExpenseCreation(chatId, data);
+        } else if (data.equals("expense_other")) {
+            processExpenseCreation(chatId, "Другое");
         } else if (data.startsWith("reschedule_")) {
             handleReschedule(data, chatId);
         } else if ("confirm_yes".equals(data)) {
@@ -2074,10 +2084,10 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void handleIncomeCreationCommand(String chatId, String[] parts, String messageText) {
-        if (parts.length == 1 || messageText.equals("\uD83D\uDCB8 Создать доход")) {
+        if (parts.length == 1 || messageText.equals("\uD83D\uDCB8 Добавить доход")) {
             startIncomeCreation(chatId);
         } else {
-            sendMessage(chatId, "Неверный формат команды. Используйте /create_income без параметров.");
+            sendMessage(chatId, "Неверный формат команды. Используйте /add_income без параметров.");
         }
     }
 
@@ -2205,7 +2215,6 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         rowsInline.add(row2);
 
-        // Ряд 3
         List<InlineKeyboardButton> row3 = new ArrayList<>();
         InlineKeyboardButton button3_1 = new InlineKeyboardButton();
         button3_1.setText("Доход от продажи товаров");
@@ -2214,7 +2223,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         InlineKeyboardButton button3_2 = new InlineKeyboardButton();
         button3_2.setText("Другое");
-        button3_2.setCallbackData("Другое");
+        button3_2.setCallbackData("income_other");
         row3.add(button3_2);
 
         rowsInline.add(row3);
@@ -2231,6 +2240,159 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
+    private void handleExpenseCreationCommand(String chatId, String[] parts, String messageText) {
+        if (parts.length == 1 || messageText.equals("\uD83D\uDCB0 Добавить расход")) {
+            startExpenseCreation(chatId);
+        } else {
+            sendMessage(chatId, "Неверный формат команды. Используйте /add_expense без параметров.");
+        }
+    }
+
+    private void startExpenseCreation(String chatId) {
+        ExpenseCreationState currentState = expenseCreationStates.get(chatId);
+        if (currentState == null) {
+            currentState = new ExpenseCreationState();
+            expenseCreationStates.put(chatId, currentState);
+        }
+
+        currentState.setState(ExpenseState.ENTER_TITLE);
+
+        SendMessage message = new SendMessage();
+        message.setChatId(chatId);
+        message.setText("Выберите тип расхода или введите своё значение:");
+        message.setReplyMarkup(getExpenseSuggestionsInlineKeyboard());
+
+        sendMessageForExpense(message);
+    }
+
+    private void processExpenseCreation(String chatId, String messageText) {
+        ExpenseCreationState currentState = expenseCreationStates.get(chatId);
+
+        if (currentState.getState() == ExpenseState.ENTER_TITLE) {
+            if ("Еда".equals(messageText) || "Транспорт".equals(messageText) ||
+                    "Развлечения".equals(messageText) || "Коммунальные услуги".equals(messageText) ||
+                    "Медицина".equals(messageText)) {
+
+                currentState.setTitle(messageText);
+                currentState.setState(ExpenseState.ENTER_AMOUNT);
+                sendMessage(chatId, "Введите сумму расхода для '" + messageText + "':");
+
+            } else if ("Другое".equals(messageText)) {
+                currentState.setTitle("Другое");
+                currentState.setState(ExpenseState.ENTER_CUSTOM_TITLE);
+                sendMessage(chatId, "Введите тип расхода:");
+
+            } else {
+                sendMessage(chatId, "Пожалуйста, выберите тип расхода из предложенных кнопок.");
+            }
+
+        } else if (currentState.getState() == ExpenseState.ENTER_CUSTOM_TITLE) {
+            currentState.setTitle(messageText);
+            currentState.setState(ExpenseState.ENTER_AMOUNT);
+            sendMessage(chatId, "Введите сумму расхода для '" + messageText + "':");
+
+        } else if (currentState.getState() == ExpenseState.ENTER_AMOUNT) {
+            try {
+                double amount = Double.parseDouble(messageText);
+                currentState.setAmount(amount);
+                currentState.setState(ExpenseState.ENTER_DATE);
+                sendMessage(chatId, "Введите дату расхода (в формате ГГГГ-ММ-ДД):");
+            } catch (NumberFormatException e) {
+                sendMessage(chatId, "Пожалуйста, введите корректное числовое значение для суммы расхода:");
+            }
+        } else if (currentState.getState() == ExpenseState.ENTER_DATE) {
+            try {
+                Timestamp date = Timestamp.valueOf(messageText + " 00:00:00");
+                currentState.setDate(date);
+                currentState.setState(ExpenseState.ENTER_DESCRIPTION);
+                sendMessage(chatId, "Введите описание расхода:");
+            } catch (IllegalArgumentException e) {
+                sendMessage(chatId, "Пожалуйста, введите корректную дату в формате ГГГГ-ММ-ДД:");
+            }
+        } else if (currentState.getState() == ExpenseState.ENTER_DESCRIPTION) {
+            currentState.setDescription(messageText);
+            currentState.setState(ExpenseState.ENTER_CATEGORY);
+            sendMessage(chatId, "Введите категорию расхода:");
+        } else if (currentState.getState() == ExpenseState.ENTER_CATEGORY) {
+            currentState.setCategory(messageText);
+            createExpense(currentState.getTitle(), currentState.getAmount(), currentState.getDate(), currentState.getDescription(), currentState.getCategory(), chatId);
+            expenseCreationStates.remove(chatId);
+            sendMessage(chatId, "Расход '" + currentState.getTitle() + "' на сумму " + currentState.getAmount() + " создан.");
+        }
+    }
+
+    private void createExpense(String title, double amount, Timestamp date, String description, String category, String chatId) {
+        User user = userService.findByChatId(Long.parseLong(chatId));
+        if (user == null) {
+            sendMessage(chatId, "Пользователь не зарегистрирован. Используйте /start для регистрации.");
+            return;
+        }
+
+        Expense expense = new Expense();
+        expense.setTitle(title);
+        expense.setAmount(amount);
+        expense.setDate(date);
+        expense.setDescription(description);
+        expense.setCategory(category);
+        expense.setUser(user);
+
+        expenseService.save(expense);
+    }
+
+    public static InlineKeyboardMarkup getExpenseSuggestionsInlineKeyboard() {
+        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rowsInline = new ArrayList<>();
+
+        List<InlineKeyboardButton> row1 = new ArrayList<>();
+        InlineKeyboardButton button1_1 = new InlineKeyboardButton();
+        button1_1.setText("Еда");
+        button1_1.setCallbackData("Еда");
+        row1.add(button1_1);
+
+        InlineKeyboardButton button1_2 = new InlineKeyboardButton();
+        button1_2.setText("Транспорт");
+        button1_2.setCallbackData("Транспорт");
+        row1.add(button1_2);
+
+        rowsInline.add(row1);
+
+        List<InlineKeyboardButton> row2 = new ArrayList<>();
+        InlineKeyboardButton button2_1 = new InlineKeyboardButton();
+        button2_1.setText("Развлечения");
+        button2_1.setCallbackData("Развлечения");
+        row2.add(button2_1);
+
+        InlineKeyboardButton button2_2 = new InlineKeyboardButton();
+        button2_2.setText("Коммунальные услуги");
+        button2_2.setCallbackData("Коммунальные услуги");
+        row2.add(button2_2);
+
+        rowsInline.add(row2);
+
+        List<InlineKeyboardButton> row3 = new ArrayList<>();
+        InlineKeyboardButton button3_1 = new InlineKeyboardButton();
+        button3_1.setText("Медицина");
+        button3_1.setCallbackData("Медицина");
+        row3.add(button3_1);
+
+        InlineKeyboardButton button3_2 = new InlineKeyboardButton();
+        button3_2.setText("Другое");
+        button3_2.setCallbackData("expense_other");
+        row3.add(button3_2);
+
+        rowsInline.add(row3);
+
+        inlineKeyboardMarkup.setKeyboard(rowsInline);
+        return inlineKeyboardMarkup;
+    }
+
+    public void sendMessageForExpense(SendMessage message) {
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Error occurred: {}", e.getMessage());
+        }
+    }
 }
 
 

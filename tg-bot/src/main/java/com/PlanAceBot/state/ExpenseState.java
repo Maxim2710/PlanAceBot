@@ -2,6 +2,7 @@ package com.PlanAceBot.state;
 
 public enum ExpenseState {
     ENTER_TITLE,
+    ENTER_CUSTOM_TITLE,
     ENTER_AMOUNT,
     ENTER_DATE,
     ENTER_DESCRIPTION,
