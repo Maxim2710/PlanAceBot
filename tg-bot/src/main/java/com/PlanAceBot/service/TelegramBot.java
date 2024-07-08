@@ -68,6 +68,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             /add_budget - Создание нового бюджета.
             /update_budget - Обновление существующей записи о бюджете.
             /delete_budget - Удаление бюджета.
+            /get_budget_info - Получить информацию о текущем бюджете.
 
             
 
@@ -99,6 +100,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private static final String COMMAND_ADD_BUDGET = "/add_budget";
     private static final String COMMAND_UPDATE_BUDGET = "/update_budget";
     private static final String COMMAND_DELETE_BUDGET = "/delete_budget";
+    private static final String COMMAND_INFO_ABOUT_BUDGET = "/get_budget_info";
 
     private static final String COMMAND_CALC = "/calc";
 
@@ -185,6 +187,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         listofCommands.add(new BotCommand("/add_budget", "Создание нового бюджета"));
         listofCommands.add(new BotCommand("/update_budget", "Обновление существующей записи о бюджете"));
         listofCommands.add(new BotCommand("/delete_budget", "Удаление записи о бюджете"));
+        listofCommands.add(new BotCommand("/get_budget_info", "Получить информацию о текущем бюджете"));
 
         try {
             this.execute(new SetMyCommands(listofCommands, new BotCommandScopeDefault(), null));
@@ -382,6 +385,10 @@ public class TelegramBot extends TelegramLongPollingBot {
 
                     case COMMAND_DELETE_BUDGET:
                         handleDeleteBudgetCommand(parts, chatId, messageText);
+                        break;
+
+                    case COMMAND_INFO_ABOUT_BUDGET:
+                        sendCurrentBudgetInfo(chatId, parts, messageText);
                         break;
 
                     default:
@@ -3078,7 +3085,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         String selectionMessage = "Выберите, что вы хотите обновить для дохода:\n";
         selectionMessage += "Текущее название: " + currentTitle + "\n";
-        selectionMessage += "Текущая сумма: " + formatNumber(currentAmount) + "\n";
+        selectionMessage += "Текущая сумма: " + formatNumber(currentAmount) + " руб.\n";
         selectionMessage += "Дата дохода: " + formattedDate + "\n";
         selectionMessage += "Описание: " + currentDescription + "\n";
         selectionMessage += "Категория: " + currentCategory + "\n";
@@ -3175,7 +3182,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         StringBuilder confirmationMessage = new StringBuilder("Изменения сохранены:\n");
         confirmationMessage.append("Название: ").append(income.getTitle()).append("\n");
         confirmationMessage.append("Описание: ").append(income.getDescription()).append("\n");
-        confirmationMessage.append("Сумма: ").append(formatNumber(income.getAmount())).append("\n");
+        confirmationMessage.append("Сумма: ").append(formatNumber(income.getAmount())).append(" руб.\n");
         confirmationMessage.append("Категория: ").append(income.getCategory()).append("\n");
         confirmationMessage.append("\nДата создания: ").append(income.getDate().toLocalDateTime().format(formatter));
 
@@ -3342,7 +3349,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         String selectionMessage = "Выберите, что вы хотите обновить для расхода:\n";
         selectionMessage += "Текущее название: " + currentTitle + "\n";
-        selectionMessage += "Текущая сумма: " + formatNumber(currentAmount) + "\n";
+        selectionMessage += "Текущая сумма: " + formatNumber(currentAmount) + " руб.\n";
         selectionMessage += "Дата расхода: " + formattedDate + "\n";
         selectionMessage += "Описание: " + currentDescription + "\n";
         selectionMessage += "Категория: " + currentCategory + "\n";
@@ -3443,7 +3450,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         StringBuilder confirmationMessage = new StringBuilder("Изменения сохранены:\n");
         confirmationMessage.append("Название: ").append(expense.getTitle()).append("\n");
         confirmationMessage.append("Описание: ").append(expense.getDescription()).append("\n");
-        confirmationMessage.append("Сумма: ").append(formatNumber(expense.getAmount())).append("\n");
+        confirmationMessage.append("Сумма: ").append(formatNumber(expense.getAmount())).append(" руб.\n");
         confirmationMessage.append("Категория: ").append(expense.getCategory()).append("\n");
         confirmationMessage.append("\nДата создания: ").append(expense.getDate().toLocalDateTime().format(formatter));
 
@@ -3568,7 +3575,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         StringBuilder confirmationMessage = new StringBuilder("Вы уверены, что хотите удалить следующую запись о доходе?\n\n");
         confirmationMessage.append("Название: ").append(income.getTitle()).append("\n");
-        confirmationMessage.append("Сумма: ").append(formatNumber(income.getAmount())).append("\n");
+        confirmationMessage.append("Сумма: ").append(formatNumber(income.getAmount())).append(" руб.\n");
         confirmationMessage.append("Категория: ").append(income.getCategory()).append("\n");
         confirmationMessage.append("Дата: ").append(income.getDate().toLocalDateTime().format(formatter)).append("\n");
 
@@ -3667,7 +3674,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         StringBuilder confirmationMessage = new StringBuilder("Вы уверены, что хотите удалить следующую запись о расходе?\n\n");
         confirmationMessage.append("Название: ").append(expense.getTitle()).append("\n");
-        confirmationMessage.append("Сумма: ").append(formatNumber(expense.getAmount())).append("\n");
+        confirmationMessage.append("Сумма: ").append(formatNumber(expense.getAmount())).append(" руб.\n");
         confirmationMessage.append("Категория: ").append(expense.getCategory()).append("\n");
         confirmationMessage.append("Дата: ").append(expense.getDate().toLocalDateTime().format(formatter)).append("\n");
 
@@ -3918,11 +3925,11 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         String selectionMessage = "Выберите, что вы хотите обновить для бюджета:\n";
         selectionMessage += "Текущее название: " + currentName + "\n";
-        selectionMessage += "Текущая сумма: " + formatNumber(currentAmount) + "\n";
+        selectionMessage += "Текущая сумма: " + formatNumber(currentAmount) + " руб.\n";
         selectionMessage += "Дата начала: " + formattedStartDate + "\n";
         selectionMessage += "Дата окончания: " + formattedEndDate + "\n";
         selectionMessage += "Категория: " + currentCategory + "\n";
-        selectionMessage += "Текущий порог предупреждения: " + formatNumber(currentWarningThreshold) + "\n";
+        selectionMessage += "Текущий порог предупреждения: " + formatNumber(currentWarningThreshold) + " руб.\n";
 
         InlineKeyboardMarkup markup = createUpdateMarkupForBudget();
 
@@ -4025,11 +4032,11 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         StringBuilder confirmationMessage = new StringBuilder("Изменения сохранены:\n");
         confirmationMessage.append("Название: ").append(budget.getName()).append("\n");
-        confirmationMessage.append("Сумма: ").append(formatNumber(budget.getAmount())).append("\n");
+        confirmationMessage.append("Сумма: ").append(formatNumber(budget.getAmount())).append(" руб.\n");
         confirmationMessage.append("Дата начала: ").append(budget.getStartDate().toLocalDateTime().format(formatter)).append("\n");
         confirmationMessage.append("Дата окончания: ").append(budget.getEndDate().toLocalDateTime().format(formatter)).append("\n");
         confirmationMessage.append("Категория: ").append(budget.getCategory()).append("\n");
-        confirmationMessage.append("Текущий порог предупреждения: ").append(budget.getWarningThreshold()).append("\n");
+        confirmationMessage.append("Текущий порог предупреждения: ").append(budget.getWarningThreshold()).append(" руб.\n");
 
         confirmationMessage.append("\n\nПодтвердить изменения?");
 
@@ -4130,11 +4137,11 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         StringBuilder confirmationMessage = new StringBuilder("Вы уверены, что хотите удалить следующий бюджет?\n\n");
         confirmationMessage.append("Название: ").append(budget.getName()).append("\n");
-        confirmationMessage.append("Сумма: ").append(formatNumber(budget.getAmount())).append("\n");
+        confirmationMessage.append("Сумма: ").append(formatNumber(budget.getAmount())).append(" руб.\n");
         confirmationMessage.append("Категория: ").append(budget.getCategory()).append("\n");
         confirmationMessage.append("Начальная дата: ").append(budget.getStartDate().toLocalDateTime().format(formatter)).append("\n");
         confirmationMessage.append("Конечная дата: ").append(budget.getEndDate().toLocalDateTime().format(formatter)).append("\n");
-        confirmationMessage.append("Порог предупреждения: ").append(formatNumber(budget.getWarningThreshold())).append("\n");
+        confirmationMessage.append("Порог предупреждения: ").append(formatNumber(budget.getWarningThreshold())).append(" руб.\n");
 
         InlineKeyboardMarkup markup = createDeleteBudgetConfirmationMarkup();
 
@@ -4182,6 +4189,49 @@ public class TelegramBot extends TelegramLongPollingBot {
             formattedNumber = String.format(Locale.US, "%.2f", number.doubleValue());
         }
         return formattedNumber;
+    }
+
+    private void sendCurrentBudgetInfo(String chatId, String[] parts, String messageText) {
+        if (parts.length == 1 || messageText.equals("\uD83D\uDCB8 Текущий бюджет")) {
+            String budgetInfo = getCurrentBudgetInfo(chatId);
+
+            SendMessage sendMessage = new SendMessage();
+            sendMessage.setChatId(chatId);
+            sendMessage.setText(budgetInfo);
+
+            try {
+                execute(sendMessage);
+            } catch (TelegramApiException e) {
+                e.printStackTrace();
+            }
+        } else {
+            sendMessage(chatId, "Неверный формат команды. Используйте /current_budget без параметров.");
+        }
+    }
+
+    public String getCurrentBudgetInfo(String chatId) {
+        User user = userService.findByChatId(Long.parseLong(chatId));
+        if (user == null) {
+            return "Пользователь не зарегистрирован. Используйте /start для регистрации.";
+        }
+
+        Budget currentBudget = budgetService.findByUserChatId(user.getChatId());
+        if (currentBudget == null) {
+            return "У вас нет текущего бюджета.";
+        }
+
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("Информация о текущем бюджете:\n");
+        sb.append("Название: ").append(currentBudget.getName()).append("\n");
+        sb.append("Сумма: ").append(formatNumber(currentBudget.getAmount())).append(" руб.\n");
+        sb.append("Категория: ").append(currentBudget.getCategory()).append("\n");
+        sb.append("Начало: ").append(currentBudget.getStartDate().toLocalDateTime().format(dateFormatter)).append("\n");
+        sb.append("Окончание: ").append(currentBudget.getEndDate().toLocalDateTime().format(dateFormatter)).append("\n");
+        sb.append("Порог предупреждения: ").append(formatNumber(currentBudget.getWarningThreshold())).append(" руб.\n");
+
+        return sb.toString();
     }
 
 }
