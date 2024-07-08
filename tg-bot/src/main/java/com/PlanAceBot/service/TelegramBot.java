@@ -3556,7 +3556,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             try {
                 double amount = Double.parseDouble(messageText);
                 currentState.setAmount(amount);
-                currentState.setState(BudgetState.ENTER_WARNING_THRESHOLD); // Переход к вводу порога предупреждения
+                currentState.setState(BudgetState.ENTER_WARNING_THRESHOLD);
                 sendMessage(chatId, "Введите сумму, при которой хотите получать предупреждение о малом бюджете (в рублях):");
 
             } catch (NumberFormatException e) {
@@ -3704,7 +3704,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         Timestamp currentStartDate = budget.getStartDate();
         Timestamp currentEndDate = budget.getEndDate();
         String currentCategory = budget.getCategory();
-        Double currentWarningThreshold = budget.getWarningThreshold(); // Добавлено получение warningThreshold
+        Double currentWarningThreshold = budget.getWarningThreshold();
 
         String selectionMessage = "Выберите, что вы хотите обновить для бюджета:\n";
         selectionMessage += "Текущее название: " + currentName + "\n";
@@ -3712,7 +3712,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         selectionMessage += "Дата начала: " + currentStartDate + "\n";
         selectionMessage += "Дата окончания: " + currentEndDate + "\n";
         selectionMessage += "Категория: " + currentCategory + "\n";
-        selectionMessage += "Текущий порог предупреждения: " + currentWarningThreshold + "\n"; // Добавлен вывод текущего warningThreshold
+        selectionMessage += "Текущий порог предупреждения: " + currentWarningThreshold + "\n";
 
         InlineKeyboardMarkup markup = createUpdateMarkupForBudget();
 
