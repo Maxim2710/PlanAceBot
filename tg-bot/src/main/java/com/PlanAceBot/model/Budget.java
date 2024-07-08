@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -35,4 +36,13 @@ public class Budget {
 
     @Column(name = "category")
     private String category;
+
+    @Column(name = "warning_threshold")
+    private Double warningThreshold;
+
+    @Column(name = "notification_sent")
+    private boolean notificationSent;
+
+    @Column(name = "last_notification_sent_time")
+    private LocalDateTime lastNotificationSentTime;
 }
