@@ -94,6 +94,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private static final String COMMAND_DELETE_EXPENSE = "/delete_expense";
     private static final String COMMAND_ADD_BUDGET = "/add_budget";
     private static final String COMMAND_UPDATE_BUDGET = "/update_budget";
+    private static final String COMMAND_DELETE_BUDGET = "/delete_budget";
 
     private static final String COMMAND_CALC = "/calc";
 
@@ -128,6 +129,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private final Map<String, List<Integer>> expenseDeletionStates = new HashMap<>();
     private final Map<String, BudgetCreationState> budgetCreationStates = new HashMap<>();
     private final Map<String, BudgetUpdateState> budgetUpdateStates = new HashMap<>();
+    private final Map<String, Long> budgetDeletionStates = new HashMap<>();
 
     private final Map<String, Boolean> calcStates = new HashMap<>();
 
@@ -275,6 +277,8 @@ public class TelegramBot extends TelegramLongPollingBot {
                 processBudgetCreation(chatId, messageText);
             } else if (budgetUpdateStates.containsKey(chatId)) {
                 processFieldAndValueForBudget(chatId, messageText);
+            } else if (budgetDeletionStates.containsKey(chatId)) {
+                sendDeleteBudgetConfirmationMessage(chatId, budgetDeletionStates.get(chatId));
             }else {
                 switch (command) {
                     case COMMAND_START:
@@ -368,6 +372,10 @@ public class TelegramBot extends TelegramLongPollingBot {
 
                     case COMMAND_UPDATE_BUDGET:
                         handleUpdateBudgetCommand(parts, chatId, messageText);
+                        break;
+
+                    case COMMAND_DELETE_BUDGET:
+                        handleDeleteBudgetCommand(parts, chatId, messageText);
                         break;
 
                     default:
@@ -1197,6 +1205,8 @@ public class TelegramBot extends TelegramLongPollingBot {
             }
         } else if (data.startsWith("update_budget_")) {
             handleUpdateBudget(data, chatId);
+        } else if (data.startsWith("delete_budget_")) {
+            handleDeleteBudget(data, chatId);
         } else {
             handleOtherStates(data, chatId);
         }
@@ -1427,6 +1437,23 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
+    private void handleDeleteBudget(String data, String chatId) {
+        String budgetIdString = data.substring("delete_budget_".length());
+        try {
+            long budgetId = Long.parseLong(budgetIdString);
+            Budget budget = budgetService.findById(budgetId);
+            if (budget == null || !budget.getUser().getChatId().equals(Long.parseLong(chatId))) {
+                sendMessage(chatId, "Бюджет с указанным номером не найден или не принадлежит вам.");
+                return;
+            }
+            budgetDeletionStates.put(chatId, budgetId);
+            sendDeleteBudgetConfirmationMessage(chatId, budgetId);
+        } catch (NumberFormatException e) {
+            sendMessage(chatId, "Ошибка при удалении записи о бюджете.");
+        }
+    }
+
+
     private void handleOtherStates(String data, String chatId) {
         TaskUpdateState currentState = taskUpdateStates.get(chatId);
         IncomeCreationState currentIncomeState = incomeCreationStates.get(chatId);
@@ -1438,11 +1465,12 @@ public class TelegramBot extends TelegramLongPollingBot {
         List<Integer> incomeIds = incomeDeletionStates.get(chatId);
         List<Integer> expenseIds = expenseDeletionStates.get(chatId);
         BudgetUpdateState budgetState = budgetUpdateStates.get(chatId);
+        Long budgetId = budgetDeletionStates.get(chatId);
 
         if (currentState == null && curState == null && currentIncomeState == null &&
                 (taskIds == null || taskIds.isEmpty()) && (remindersId == null || remindersId.isEmpty()) &&
                 incomeState == null && expenseUpdateState == null && (incomeIds == null || incomeIds.isEmpty()) &&
-                (expenseIds == null || expenseIds.isEmpty()) && budgetState == null) {
+                (expenseIds == null || expenseIds.isEmpty()) && budgetState == null && budgetId == null) {
             sendMessage(chatId, "Ошибка при обработке запроса.");
             return;
         }
@@ -1642,6 +1670,13 @@ public class TelegramBot extends TelegramLongPollingBot {
             case "cancel_update_budget":
                 assert budgetState != null;
                 cancelBudgetUpdate(chatId, budgetState);
+                break;
+            case "confirm_delete_budget":
+                confirmDeleteBudget(chatId, budgetId);
+                budgetDeletionStates.remove(chatId);
+                break;
+            case "cancel_delete_budget":
+                cancelDeleteBudget(chatId);
                 break;
             default:
                 sendMessage(chatId, "Неверный выбор.");
@@ -3800,6 +3835,100 @@ public class TelegramBot extends TelegramLongPollingBot {
             default -> "";
         };
         sendMessage(chatId, "Введите новое значение для поля " + fieldDisplayName + ":");
+    }
+
+    private void handleDeleteBudgetCommand(String[] parts, String chatId, String messageText) {
+        if (parts.length > 1 && !(messageText.equals("\uD83D\uDDD1 Удалить бюджет"))) {
+            sendMessage(chatId, "Неверный формат команды. Используйте /delete_budget без параметров.");
+            return;
+        }
+
+        List<Budget> budgets = budgetService.findBudgetsByUserId(Long.parseLong(chatId));
+
+        if (budgets.isEmpty()) {
+            sendMessage(chatId, "У вас нет бюджетов для удаления.");
+            return;
+        }
+
+        InlineKeyboardMarkup markup = createDeleteBudgetMarkup(budgets);
+
+        SendMessage message = createMessage(chatId, "Выберите бюджет для удаления:", markup);
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Error sending delete budget selection message: {}", e.getMessage());
+        }
+    }
+
+    private InlineKeyboardMarkup createDeleteBudgetMarkup(List<Budget> budgets) {
+        List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
+
+        for (Budget budget : budgets) {
+            InlineKeyboardButton button = new InlineKeyboardButton();
+            button.setText(budget.getName());
+            button.setCallbackData("delete_budget_" + budget.getId());
+            List<InlineKeyboardButton> row = new ArrayList<>();
+            row.add(button);
+            keyboard.add(row);
+        }
+
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        markup.setKeyboard(keyboard);
+
+        return markup;
+    }
+
+    private void sendDeleteBudgetConfirmationMessage(String chatId, Long budgetIdToDelete) {
+        Budget budget = budgetService.findById(budgetIdToDelete);
+        if (budget == null) {
+            sendMessage(chatId, "Запись о бюджете не найдена.");
+            return;
+        }
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+
+        StringBuilder confirmationMessage = new StringBuilder("Вы уверены, что хотите удалить следующий бюджет?\n\n");
+        confirmationMessage.append("Название: ").append(budget.getName()).append("\n");
+        confirmationMessage.append("Сумма: ").append(budget.getAmount()).append("\n");
+        confirmationMessage.append("Категория: ").append(budget.getCategory()).append("\n");
+        confirmationMessage.append("Начальная дата: ").append(budget.getStartDate().toLocalDateTime().format(formatter)).append("\n");
+        confirmationMessage.append("Конечная дата: ").append(budget.getEndDate().toLocalDateTime().format(formatter)).append("\n");
+
+        InlineKeyboardMarkup markup = createDeleteBudgetConfirmationMarkup();
+
+        SendMessage message = createMessage(chatId, confirmationMessage.toString(), markup);
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Error sending delete confirmation message: {}", e.getMessage());
+        }
+    }
+
+    private InlineKeyboardMarkup createDeleteBudgetConfirmationMarkup() {
+        List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
+
+        List<InlineKeyboardButton> row = createButtonRow(BUTTON_CONFIRM, "confirm_delete_budget");
+        row.add(createInlineButton(BUTTON_CANCEL_UPDATE, "cancel_delete_budget"));
+
+        keyboard.add(row);
+
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        markup.setKeyboard(keyboard);
+
+        return markup;
+    }
+
+    private void confirmDeleteBudget(String chatId, Long budgetIdToDelete) {
+        budgetService.deleteById(budgetIdToDelete);
+        budgetDeletionStates.remove(chatId);
+        sendMessage(chatId, "Запись о бюджете удалена.");
+    }
+
+    private void cancelDeleteBudget(String chatId) {
+        budgetDeletionStates.remove(chatId);
+        sendMessage(chatId, "Удаление отменено.");
     }
 
 }
