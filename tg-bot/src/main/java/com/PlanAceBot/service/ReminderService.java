@@ -50,5 +50,4 @@ public class ReminderService {
         return reminderRepository.countByUser(user);
     }
 
-
 }

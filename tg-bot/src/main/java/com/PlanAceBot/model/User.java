@@ -32,4 +32,8 @@ public class User {
 
     @Column(name = "registered_at")
     private Timestamp registeredAt;
+
+    public User(String chatId) {
+        this.chatId = Long.valueOf(chatId);
+    }
 }
