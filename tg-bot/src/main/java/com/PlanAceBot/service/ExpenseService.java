@@ -1,6 +1,7 @@
 package com.PlanAceBot.service;
 
 import com.PlanAceBot.model.Expense;
+import com.PlanAceBot.model.User;
 import com.PlanAceBot.repository.ExpenseRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -35,6 +36,10 @@ public class ExpenseService {
         } else {
             throw new RuntimeException("Expense with id " + id + " not found.");
         }
+    }
+
+    public int countByUser(User user) {
+        return expenseRepository.countByUser(user);
     }
 
 }
