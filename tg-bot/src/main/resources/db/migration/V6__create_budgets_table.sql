@@ -6,5 +6,6 @@ CREATE TABLE budgets (
     start_date TIMESTAMP,
     end_date TIMESTAMP,
     category VARCHAR(255),
+    warning_threshold DOUBLE PRECISION,
     FOREIGN KEY (user_id) REFERENCES users(chat_id)
 );

@@ -14,4 +14,5 @@ public class BudgetCreationState {
     private Timestamp startDate;
     private Timestamp endDate;
     private String category;
+    private double warningThreshold;
 }

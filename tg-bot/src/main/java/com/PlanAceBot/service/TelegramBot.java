@@ -3551,10 +3551,21 @@ public class TelegramBot extends TelegramLongPollingBot {
             try {
                 double amount = Double.parseDouble(messageText);
                 currentState.setAmount(amount);
-                currentState.setState(BudgetState.ENTER_START_DATE);
-                sendMessage(chatId, "Введите дату начала бюджета (в формате ГГГГ-ММ-ДД):");
+                currentState.setState(BudgetState.ENTER_WARNING_THRESHOLD); // Переход к вводу порога предупреждения
+                sendMessage(chatId, "Введите сумму, при которой хотите получать предупреждение о малом бюджете (в рублях):");
+
             } catch (NumberFormatException e) {
                 sendMessage(chatId, "Пожалуйста, введите корректное числовое значение для суммы бюджета:");
+            }
+        } else if (currentState.getState() == BudgetState.ENTER_WARNING_THRESHOLD) {
+            try {
+                double warningThreshold = Double.parseDouble(messageText);
+                currentState.setWarningThreshold(warningThreshold);
+                currentState.setState(BudgetState.ENTER_START_DATE);
+                sendMessage(chatId, "Введите дату начала бюджета (в формате ГГГГ-ММ-ДД):");
+
+            } catch (NumberFormatException e) {
+                sendMessage(chatId, "Пожалуйста, введите корректное числовое значение для порога предупреждения:");
             }
         } else if (currentState.getState() == BudgetState.ENTER_START_DATE) {
             try {
@@ -3589,14 +3600,14 @@ public class TelegramBot extends TelegramLongPollingBot {
             }
 
             createBudget(currentState.getName(), currentState.getAmount(), currentState.getStartDate(),
-                    currentState.getEndDate(), currentState.getCategory(), chatId);
+                    currentState.getEndDate(), currentState.getCategory(), currentState.getWarningThreshold(), chatId);
             budgetCreationStates.remove(chatId);
 
             sendMessage(chatId, "Бюджет '" + currentState.getName() + "' с суммой " + formattedAmount + " руб. создан.");
         }
     }
 
-    private void createBudget(String name, double amount, Timestamp startDate, Timestamp endDate, String category, String chatId) {
+    private void createBudget(String name, double amount, Timestamp startDate, Timestamp endDate, String category, double warningThreshold, String chatId) {
         User user = userService.findByChatId(Long.parseLong(chatId));
         if (user == null) {
             sendMessage(chatId, "Пользователь не зарегистрирован. Используйте /start для регистрации.");
@@ -3609,6 +3620,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         budget.setStartDate(startDate);
         budget.setEndDate(endDate);
         budget.setCategory(category);
+        budget.setWarningThreshold(warningThreshold);
         budget.setUser(user);
 
         budgetService.save(budget);

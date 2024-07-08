@@ -35,4 +35,7 @@ public class Budget {
 
     @Column(name = "category")
     private String category;
+
+    @Column(name = "warning_threshold")
+    private Double warningThreshold;
 }
