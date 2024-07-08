@@ -1659,6 +1659,11 @@ public class TelegramBot extends TelegramLongPollingBot {
                 budgetState.setFieldToUpdate("category");
                 sendNewValueRequestForBudget(chatId, "category");
                 break;
+            case "update_warning_threshold_budget":
+                assert budgetState != null;
+                budgetState.setFieldToUpdate("warning_threshold");
+                sendNewValueRequestForBudget(chatId, "warning_threshold");
+                break;
             case "update_cancel_budget":
                 budgetUpdateStates.remove(chatId);
                 sendMessage(chatId, "Обновление бюджета отменено.");
@@ -3699,6 +3704,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         Timestamp currentStartDate = budget.getStartDate();
         Timestamp currentEndDate = budget.getEndDate();
         String currentCategory = budget.getCategory();
+        Double currentWarningThreshold = budget.getWarningThreshold(); // Добавлено получение warningThreshold
 
         String selectionMessage = "Выберите, что вы хотите обновить для бюджета:\n";
         selectionMessage += "Текущее название: " + currentName + "\n";
@@ -3706,6 +3712,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         selectionMessage += "Дата начала: " + currentStartDate + "\n";
         selectionMessage += "Дата окончания: " + currentEndDate + "\n";
         selectionMessage += "Категория: " + currentCategory + "\n";
+        selectionMessage += "Текущий порог предупреждения: " + currentWarningThreshold + "\n"; // Добавлен вывод текущего warningThreshold
 
         InlineKeyboardMarkup markup = createUpdateMarkupForBudget();
 
@@ -3733,8 +3740,12 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         List<InlineKeyboardButton> row3 = new ArrayList<>();
         row3.add(createInlineButton("Категория", "update_category_budget"));
-        row3.add(createInlineButton("Отмена", "update_cancel_budget"));
+        row3.add(createInlineButton("Предупреждение", "update_warning_threshold_budget"));
         keyboard.add(row3);
+
+        List<InlineKeyboardButton> row4 = new ArrayList<>();
+        row4.add(createInlineButton("Отмена", "update_cancel_budget"));
+        keyboard.add(row4);
 
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
         markup.setKeyboard(keyboard);
@@ -3780,6 +3791,10 @@ public class TelegramBot extends TelegramLongPollingBot {
                 case "category":
                     budget.setCategory(messageText);
                     break;
+                case "warning_threshold":
+                    double warningThreshold = Double.parseDouble(messageText);
+                    budget.setWarningThreshold(warningThreshold);
+                    break;
                 default:
                     sendMessage(chatId, "Ошибка при обновлении бюджета.");
                     budgetUpdateStates.remove(chatId);
@@ -3789,6 +3804,8 @@ public class TelegramBot extends TelegramLongPollingBot {
             budgetService.save(budget);
 
             sendBudgetUpdateConfirmationMessage(chatId, budget);
+        } catch (NumberFormatException e) {
+            sendMessage(chatId, "Ошибка при обработке введенного значения. Попробуйте снова.");
         } catch (IllegalArgumentException e) {
             sendMessage(chatId, "Ошибка при обработке введенного значения. Попробуйте снова.");
         }
@@ -3803,6 +3820,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         confirmationMessage.append("Дата начала: ").append(budget.getStartDate().toLocalDateTime().format(formatter)).append("\n");
         confirmationMessage.append("Дата окончания: ").append(budget.getEndDate().toLocalDateTime().format(formatter)).append("\n");
         confirmationMessage.append("Категория: ").append(budget.getCategory()).append("\n");
+        confirmationMessage.append("Текущий порог предупреждения: ").append(budget.getWarningThreshold()).append("\n");
 
         confirmationMessage.append("\n\nПодтвердить изменения?");
 
@@ -3844,6 +3862,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             case "start_date" -> "дата начала";
             case "end_date" -> "дата окончания";
             case "category" -> "категория";
+            case "warning_threshold" -> "предупреждение о малом бюджете";
             default -> "";
         };
         sendMessage(chatId, "Введите новое значение для поля " + fieldDisplayName + ":");
