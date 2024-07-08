@@ -30,6 +30,7 @@ import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -64,6 +65,9 @@ public class TelegramBot extends TelegramLongPollingBot {
             /update_expense - Обновление существующей записи о расходе.
             /delete_income - Удаление записи о доходе.
             /delete_expense - Удаление записи о расходе.
+            /add_budget - Создание нового бюджета.
+            /update_budget - Обновление существующей записи о бюджете.
+            /delete_budget - Удаление бюджета.
 
             
 
@@ -179,6 +183,8 @@ public class TelegramBot extends TelegramLongPollingBot {
         listofCommands.add(new BotCommand("/delete_income", "Удаление записи о доходе"));
         listofCommands.add(new BotCommand("/delete_expense", "Удаление записи о расходе"));
         listofCommands.add(new BotCommand("/add_budget", "Создание нового бюджета"));
+        listofCommands.add(new BotCommand("/update_budget", "Обновление существующей записи о бюджете"));
+        listofCommands.add(new BotCommand("/delete_budget", "Удаление записи о бюджете"));
 
         try {
             this.execute(new SetMyCommands(listofCommands, new BotCommandScopeDefault(), null));
@@ -1117,6 +1123,8 @@ public class TelegramBot extends TelegramLongPollingBot {
         CallbackQuery callbackQuery = update.getCallbackQuery();
         String chatId = callbackQuery.getMessage().getChatId().toString();
         String data = callbackQuery.getData();
+        ExpenseCreationState expenseState = expenseCreationStates.get(chatId);
+        ExpenseUpdateState expState = expenseUpdateStates.get(chatId);
 
         if ("check_subscription".equals(data)) {
             if (isUserSubscribed(chatId)) {
@@ -1190,7 +1198,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                     double newAmount = updatedIncome.getAmount();
                     double amountDifference = newAmount - oldAmount;
 
-                    boolean budgetUpdated = adjustBudget(chatId, amountDifference);
+                    boolean budgetUpdated = adjustBudgetForIncome(chatId, amountDifference);
 
                     if (budgetUpdated) {
                         sendMessage(chatId, "Изменения сохранены и бюджет обновлен.");
@@ -1207,6 +1215,24 @@ public class TelegramBot extends TelegramLongPollingBot {
             handleUpdateBudget(data, chatId);
         } else if (data.startsWith("delete_budget_")) {
             handleDeleteBudget(data, chatId);
+        } else if ("DEDUCT_FROM_BUDGET_YES".equals(data)) {
+            deductExpenseFromBudget(chatId, expenseState);
+        } else if ("DEDUCT_FROM_BUDGET_NO".equals(data)) {
+            finalizeExpenseCreation(chatId);
+        } else if ("confirm_update_expense_change_budget".equals(data)) {
+            Expense expense = expenseService.findById(expState.getExpenseId());
+            double originalAmount = expState.getOriginalAmount();
+            double newAmount = expState.getNewAmount();
+            double amountDifference = newAmount - originalAmount;
+            if (adjustBudgetForExpense(chatId, amountDifference)) {
+                expense.setAmount(newAmount);
+                expenseService.save(expense);
+                sendMessage(chatId, "Изменения и корректировка бюджета успешно сохранены.");
+
+                expenseUpdateStates.remove(chatId);
+            } else {
+                sendMessage(chatId, "Ошибка при корректировке бюджета.");
+            }
         } else {
             handleOtherStates(data, chatId);
         }
@@ -1453,7 +1479,6 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
-
     private void handleOtherStates(String data, String chatId) {
         TaskUpdateState currentState = taskUpdateStates.get(chatId);
         IncomeCreationState currentIncomeState = incomeCreationStates.get(chatId);
@@ -1481,42 +1506,51 @@ public class TelegramBot extends TelegramLongPollingBot {
                 currentState.setFieldToUpdate("title");
                 sendNewValueRequest(chatId, "title");
                 break;
+
             case "update_description":
                 assert currentState != null;
                 currentState.setFieldToUpdate("description");
                 sendNewValueRequest(chatId, "description");
                 break;
+
             case "update_message":
                 assert curState != null;
                 curState.setFieldToUpdate("message");
                 sendNewValueRequestForReminder(chatId, "message");
                 break;
+
             case "update_remind_at":
                 assert curState != null;
                 curState.setFieldToUpdate("remindAt");
                 sendNewValueRequestForReminder(chatId, "remindAt");
                 break;
+
             case "update_priority":
                 assert currentState != null;
                 currentState.setFieldToUpdate("priority");
                 sendNewValueRequest(chatId, "priority");
                 break;
+
             case "confirm_update":
                 taskUpdateStates.remove(chatId);
                 sendMessage(chatId, "Изменения подтверждены.");
                 break;
+
             case "cancel_update", "update_cancel":
                 assert currentState != null;
                 cancelUpdate(chatId, currentState);
                 break;
+
             case "confirm_update_reminder":
                 reminderUpdateStates.remove(chatId);
                 sendMessage(chatId, "Изменения подтверждены.");
                 break;
+
             case "cancel_update_reminder", "update_cancel_reminder":
                 assert curState != null;
                 cancelReminderUpdate(chatId, curState);
                 break;
+
             case "confirm_delete":
                 if (taskIds != null && !taskIds.isEmpty()) {
                     confirmDelete(chatId, taskIds);
@@ -1525,9 +1559,11 @@ public class TelegramBot extends TelegramLongPollingBot {
                     sendMessage(chatId, "Ошибка при подтверждении удаления задачи.");
                 }
                 break;
+
             case "cancel_delete":
                 cancelDelete(chatId);
                 break;
+
             case "confirm_delete_reminder":
                 if (remindersId != null && !remindersId.isEmpty()) {
                     confirmDeleteReminder(chatId, remindersId);
@@ -1536,82 +1572,101 @@ public class TelegramBot extends TelegramLongPollingBot {
                     sendMessage(chatId, "Ошибка при подтверждении удаления напоминания.");
                 }
                 break;
+
             case "cancel_delete_reminder":
                 cancelDeleteReminder(chatId);
                 break;
+
             case "update_title_income":
                 assert incomeState != null;
                 incomeState.setFieldToUpdate("title");
                 sendNewValueRequestForIncome(chatId, "title");
                 break;
+
             case "update_amount_income":
                 assert incomeState != null;
                 incomeState.setFieldToUpdate("amount");
                 sendNewValueRequestForIncome(chatId, "amount");
                 break;
+
             case "update_date_income":
                 assert incomeState != null;
                 incomeState.setFieldToUpdate("date");
                 sendNewValueRequestForIncome(chatId, "date");
                 break;
+
             case "update_description_income":
                 assert incomeState != null;
                 incomeState.setFieldToUpdate("description");
                 sendNewValueRequestForIncome(chatId, "description");
                 break;
+
             case "update_category_income":
                 assert incomeState != null;
                 incomeState.setFieldToUpdate("category");
                 sendNewValueRequestForIncome(chatId, "category");
                 break;
+
             case "update_cancel_income":
                 incomeUpdateStates.remove(chatId);
                 sendMessage(chatId, "Обновление дохода отменено.");
                 break;
+
             case "cancel_update_income":
                 assert incomeState != null;
                 cancelIncomeUpdate(chatId, incomeState);
                 break;
+
             case "confirm_update_income", "confirm_update_income_add_to_budget":
                 incomeUpdateStates.remove(chatId);
                 sendMessage(chatId, "Изменения подтверждены.");
                 break;
+
             case "update_title_expense":
                 assert expenseUpdateState != null;
                 expenseUpdateState.setFieldToUpdate("title");
                 sendNewValueRequestForExpense(chatId, "title");
                 break;
+
             case "update_amount_expense":
                 assert expenseUpdateState != null;
                 expenseUpdateState.setFieldToUpdate("amount");
                 sendNewValueRequestForExpense(chatId, "amount");
                 break;
+
             case "update_date_expense":
                 assert expenseUpdateState != null;
                 expenseUpdateState.setFieldToUpdate("date");
                 sendNewValueRequestForExpense(chatId, "date");
                 break;
+
             case "update_description_expense":
                 assert expenseUpdateState != null;
                 expenseUpdateState.setFieldToUpdate("description");
                 sendNewValueRequestForExpense(chatId, "description");
                 break;
+
             case "update_category_expense":
                 assert expenseUpdateState != null;
                 expenseUpdateState.setFieldToUpdate("category");
                 sendNewValueRequestForExpense(chatId, "category");
                 break;
+
             case "update_cancel_expense":
                 expenseUpdateStates.remove(chatId);
                 sendMessage(chatId, "Обновление расхода отменено.");
                 break;
+
             case "confirm_update_expense":
                 expenseUpdateStates.remove(chatId);
                 sendMessage(chatId, "Изменения подтверждены.");
                 break;
+
             case "cancel_update_expense":
                 assert expenseUpdateState != null;
                 cancelExpenseUpdate(chatId, expenseUpdateState);
+                break;
+
             case "confirm_delete_income":
                 if (incomeIds != null && !incomeIds.isEmpty()) {
                     confirmDeleteIncome(chatId, incomeIds);
@@ -1620,9 +1675,11 @@ public class TelegramBot extends TelegramLongPollingBot {
                     sendMessage(chatId, "Ошибка при подтверждении удаления записи о доходе.");
                 }
                 break;
+
             case "cancel_delete_income":
                 cancelDeleteIncome(chatId);
                 break;
+
             case "confirm_delete_expense":
                 if (expenseIds != null && !expenseIds.isEmpty()) {
                     confirmDeleteExpense(chatId, expenseIds);
@@ -1631,58 +1688,71 @@ public class TelegramBot extends TelegramLongPollingBot {
                     sendMessage(chatId, "Ошибка при подтверждении удаления записи о доходе.");
                 }
                 break;
+
             case "cancel_delete_expense":
                 cancelDeleteExpense(chatId);
                 break;
+
             case "update_name_budget":
                 assert budgetState != null;
                 budgetState.setFieldToUpdate("name");
                 sendNewValueRequestForBudget(chatId, "name");
                 break;
+
             case "update_amount_budget":
                 assert budgetState != null;
                 budgetState.setFieldToUpdate("amount");
                 sendNewValueRequestForBudget(chatId, "amount");
                 break;
+
             case "update_start_date_budget":
                 assert budgetState != null;
                 budgetState.setFieldToUpdate("start_date");
                 sendNewValueRequestForBudget(chatId, "start_date");
                 break;
+
             case "update_end_date_budget":
                 assert budgetState != null;
                 budgetState.setFieldToUpdate("end_date");
                 sendNewValueRequestForBudget(chatId, "end_date");
                 break;
+
             case "update_category_budget":
                 assert budgetState != null;
                 budgetState.setFieldToUpdate("category");
                 sendNewValueRequestForBudget(chatId, "category");
                 break;
+
             case "update_warning_threshold_budget":
                 assert budgetState != null;
                 budgetState.setFieldToUpdate("warning_threshold");
                 sendNewValueRequestForBudget(chatId, "warning_threshold");
                 break;
+
             case "update_cancel_budget":
                 budgetUpdateStates.remove(chatId);
                 sendMessage(chatId, "Обновление бюджета отменено.");
                 break;
+
             case "confirm_update_budget":
                 budgetUpdateStates.remove(chatId);
                 sendMessage(chatId, "Изменения подтверждены.");
                 break;
+
             case "cancel_update_budget":
                 assert budgetState != null;
                 cancelBudgetUpdate(chatId, budgetState);
                 break;
+
             case "confirm_delete_budget":
                 confirmDeleteBudget(chatId, budgetId);
                 budgetDeletionStates.remove(chatId);
                 break;
+
             case "cancel_delete_budget":
                 cancelDeleteBudget(chatId);
                 break;
+
             default:
                 sendMessage(chatId, "Неверный выбор.");
                 break;
@@ -2473,12 +2543,26 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void handleIncomeCreationCommand(String chatId, String[] parts, String messageText) {
-        if (parts.length == 1 || messageText.equals("\uD83D\uDCB8 Добавить доход")) {
-            startIncomeCreation(chatId);
-        } else {
+        if (parts.length > 1 && !messageText.equals("\uD83D\uDCB8 Добавить доход")) {
             sendMessage(chatId, "Неверный формат команды. Используйте /add_income без параметров.");
+            return;
         }
+
+        User user = userService.findByChatId(Long.parseLong(chatId));
+        if (user == null) {
+            sendMessage(chatId, "Пользователь не зарегистрирован. Используйте /start для регистрации.");
+            return;
+        }
+
+        int existingIncomeCount = incomeService.countByUser(user);
+        if (existingIncomeCount > 25) {
+            sendMessage(chatId, "Вы уже создали максимальное количество записей о доходах (25 штук).");
+            return;
+        }
+
+        startIncomeCreation(chatId);
     }
+
 
     private void startIncomeCreation(String chatId) {
         IncomeCreationState currentState = incomeCreationStates.get(chatId);
@@ -2555,7 +2639,15 @@ public class TelegramBot extends TelegramLongPollingBot {
     private void sendAddToBudgetPrompt(String chatId, IncomeCreationState currentState) {
         SendMessage message = new SendMessage();
         message.setChatId(chatId);
-        message.setText("Добавить сумму " + currentState.getAmount() + " руб. к текущему бюджету?");
+
+        String formattedAmount;
+        if (currentState.getAmount() == Math.floor(currentState.getAmount())) {
+            formattedAmount = String.format("%.0f", currentState.getAmount());
+        } else {
+            formattedAmount = String.format("%.2f", currentState.getAmount());
+        }
+
+        message.setText("Добавить сумму " + formattedAmount + " руб. к текущему бюджету?");
 
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> buttons = new ArrayList<>();
@@ -2685,11 +2777,24 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void handleExpenseCreationCommand(String chatId, String[] parts, String messageText) {
-        if (parts.length == 1 || messageText.equals("\uD83D\uDCB0 Добавить расход")) {
-            startExpenseCreation(chatId);
-        } else {
+        if (parts.length > 1 && !messageText.equals("\uD83D\uDCB0 Добавить расход")) {
             sendMessage(chatId, "Неверный формат команды. Используйте /add_expense без параметров.");
+            return;
         }
+
+        User user = userService.findByChatId(Long.parseLong(chatId));
+        if (user == null) {
+            sendMessage(chatId, "Пользователь не зарегистрирован. Используйте /start для регистрации.");
+            return;
+        }
+
+        int existingExpenseCount = expenseService.countByUser(user);
+        if (existingExpenseCount > 25) {
+            sendMessage(chatId, "Вы уже создали максимальное количество записей о расходах (25 штук).");
+            return;
+        }
+
+        startExpenseCreation(chatId);
     }
 
     private void startExpenseCreation(String chatId) {
@@ -2760,19 +2865,73 @@ public class TelegramBot extends TelegramLongPollingBot {
         } else if (currentState.getState() == ExpenseState.ENTER_CATEGORY) {
             currentState.setCategory(messageText);
 
-            String formattedAmount;
-            if (currentState.getAmount() == Math.floor(currentState.getAmount())) {
-                formattedAmount = String.format("%.0f", currentState.getAmount());
-            } else {
-                formattedAmount = String.format("%.2f", currentState.getAmount());
-            }
-
-            createExpense(currentState.getTitle(), currentState.getAmount(), currentState.getDate(),
-                    currentState.getDescription(), currentState.getCategory(), chatId);
-            expenseCreationStates.remove(chatId);
-
-            sendMessage(chatId, "Расход '" + currentState.getTitle() + "' на сумму " + formattedAmount + " руб. создан.");
+            sendDeductFromBudgetPrompt(chatId, currentState);
         }
+    }
+
+    private void sendDeductFromBudgetPrompt(String chatId, ExpenseCreationState currentState) {
+        SendMessage message = new SendMessage();
+        message.setChatId(chatId);
+
+        String formattedAmount;
+        if (currentState.getAmount() == Math.floor(currentState.getAmount())) {
+            formattedAmount = String.format("%.0f", currentState.getAmount());
+        } else {
+            formattedAmount = String.format("%.2f", currentState.getAmount());
+        }
+
+        message.setText("Вычесть сумму " + formattedAmount + " руб. из текущего бюджета?");
+
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> buttons = new ArrayList<>();
+
+        InlineKeyboardButton yesButton = new InlineKeyboardButton();
+        yesButton.setText("Да");
+        yesButton.setCallbackData("DEDUCT_FROM_BUDGET_YES");
+
+        InlineKeyboardButton noButton = new InlineKeyboardButton();
+        noButton.setText("Нет");
+        noButton.setCallbackData("DEDUCT_FROM_BUDGET_NO");
+
+        buttons.add(Arrays.asList(yesButton, noButton));
+        markup.setKeyboard(buttons);
+        message.setReplyMarkup(markup);
+
+        sendMessageForExpense(message);
+    }
+
+    private void deductExpenseFromBudget(String chatId, ExpenseCreationState currentState) {
+        User user = userService.findByChatId(Long.parseLong(chatId));
+        if (user == null) {
+            sendMessage(chatId, "Пользователь не зарегистрирован. Используйте /start для регистрации.");
+            return;
+        }
+
+        Budget existingBudget = budgetService.findByUserChatId(user.getChatId());
+        if (existingBudget != null) {
+            existingBudget.setAmount(existingBudget.getAmount() - currentState.getAmount());
+            budgetService.save(existingBudget);
+        }
+
+        finalizeExpenseCreation(chatId);
+    }
+
+    private void finalizeExpenseCreation(String chatId) {
+        ExpenseCreationState currentState = expenseCreationStates.get(chatId);
+
+        createExpense(currentState.getTitle(), currentState.getAmount(), currentState.getDate(),
+                currentState.getDescription(), currentState.getCategory(), chatId);
+
+        expenseCreationStates.remove(chatId);
+
+        String formattedAmount;
+        if (currentState.getAmount() == Math.floor(currentState.getAmount())) {
+            formattedAmount = String.format("%.0f", currentState.getAmount());
+        } else {
+            formattedAmount = String.format("%.2f", currentState.getAmount());
+        }
+
+        sendMessage(chatId, "Расход '" + currentState.getTitle() + "' на сумму " + formattedAmount + " руб. создан.");
     }
 
     private void createExpense(String title, double amount, Timestamp date, String description, String category, String chatId) {
@@ -2914,10 +3073,13 @@ public class TelegramBot extends TelegramLongPollingBot {
         String currentDescription = income.getDescription();
         String currentCategory = income.getCategory();
 
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        String formattedDate = currentDate.toLocalDateTime().format(formatter);
+
         String selectionMessage = "Выберите, что вы хотите обновить для дохода:\n";
         selectionMessage += "Текущее название: " + currentTitle + "\n";
-        selectionMessage += "Текущая сумма: " + currentAmount + "\n";
-        selectionMessage += "Дата дохода: " + currentDate + "\n";
+        selectionMessage += "Текущая сумма: " + formatNumber(currentAmount) + "\n";
+        selectionMessage += "Дата дохода: " + formattedDate + "\n";
         selectionMessage += "Описание: " + currentDescription + "\n";
         selectionMessage += "Категория: " + currentCategory + "\n";
 
@@ -3008,12 +3170,12 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void sendIncomeUpdateConfirmationMessage(String chatId, Income income, String updatedField) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
         StringBuilder confirmationMessage = new StringBuilder("Изменения сохранены:\n");
         confirmationMessage.append("Название: ").append(income.getTitle()).append("\n");
         confirmationMessage.append("Описание: ").append(income.getDescription()).append("\n");
-        confirmationMessage.append("Сумма: ").append(income.getAmount()).append("\n");
+        confirmationMessage.append("Сумма: ").append(formatNumber(income.getAmount())).append("\n");
         confirmationMessage.append("Категория: ").append(income.getCategory()).append("\n");
         confirmationMessage.append("\nДата создания: ").append(income.getDate().toLocalDateTime().format(formatter));
 
@@ -3053,10 +3215,21 @@ public class TelegramBot extends TelegramLongPollingBot {
         return markup;
     }
 
-    private boolean adjustBudget(String chatId, double amountDifference) {
+    private boolean adjustBudgetForIncome(String chatId, double amountDifference) {
         Budget budget = budgetService.findByUserChatId(Long.parseLong(chatId));
         if (budget != null) {
             budget.setAmount(budget.getAmount() + amountDifference);
+            budgetService.save(budget);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private boolean adjustBudgetForExpense(String chatId, double amountDifference) {
+        Budget budget = budgetService.findByUserChatId(Long.parseLong(chatId));
+        if (budget != null) {
+            budget.setAmount(budget.getAmount() - amountDifference);
             budgetService.save(budget);
             return true;
         } else {
@@ -3156,16 +3329,21 @@ public class TelegramBot extends TelegramLongPollingBot {
             return;
         }
 
+        currentState.setOriginalAmount(expense.getAmount());
+
         String currentTitle = expense.getTitle();
         Double currentAmount = expense.getAmount();
         Timestamp currentDate = expense.getDate();
         String currentDescription = expense.getDescription();
         String currentCategory = expense.getCategory();
 
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        String formattedDate = currentDate.toLocalDateTime().format(formatter);
+
         String selectionMessage = "Выберите, что вы хотите обновить для расхода:\n";
         selectionMessage += "Текущее название: " + currentTitle + "\n";
-        selectionMessage += "Текущая сумма: " + currentAmount + "\n";
-        selectionMessage += "Дата расхода: " + currentDate + "\n";
+        selectionMessage += "Текущая сумма: " + formatNumber(currentAmount) + "\n";
+        selectionMessage += "Дата расхода: " + formattedDate + "\n";
         selectionMessage += "Описание: " + currentDescription + "\n";
         selectionMessage += "Категория: " + currentCategory + "\n";
 
@@ -3179,6 +3357,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             log.error("Error sending field selection message for expense: {}", e.getMessage());
         }
     }
+
 
     public InlineKeyboardMarkup createUpdateMarkupForExpense() {
         List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
@@ -3228,8 +3407,8 @@ public class TelegramBot extends TelegramLongPollingBot {
                     expense.setTitle(messageText);
                     break;
                 case "amount":
-                    double amount = Double.parseDouble(messageText);
-                    expense.setAmount(amount);
+                    double newAmount = Double.parseDouble(messageText);
+                    currentState.setNewAmount(newAmount);
                     break;
                 case "date":
                     Timestamp date = Timestamp.valueOf(messageText + " 00:00:00");
@@ -3247,28 +3426,35 @@ public class TelegramBot extends TelegramLongPollingBot {
                     return;
             }
 
-            expenseService.save(expense);
+            if (!"amount".equals(fieldToUpdate)) {
+                expenseService.save(expense);
+            }
 
-            sendExpenseUpdateConfirmationMessage(chatId, expense);
+            sendExpenseUpdateConfirmationMessage(chatId, expense, fieldToUpdate);
         } catch (IllegalArgumentException e) {
             sendMessage(chatId, "Ошибка при обработке введенного значения. Попробуйте снова.");
         }
     }
 
-    public void sendExpenseUpdateConfirmationMessage(String chatId, Expense expense) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+
+    private void sendExpenseUpdateConfirmationMessage(String chatId, Expense expense, String updatedField) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
         StringBuilder confirmationMessage = new StringBuilder("Изменения сохранены:\n");
         confirmationMessage.append("Название: ").append(expense.getTitle()).append("\n");
         confirmationMessage.append("Описание: ").append(expense.getDescription()).append("\n");
-        confirmationMessage.append("Сумма: ").append(expense.getAmount()).append("\n");
+        confirmationMessage.append("Сумма: ").append(formatNumber(expense.getAmount())).append("\n");
         confirmationMessage.append("Категория: ").append(expense.getCategory()).append("\n");
-
         confirmationMessage.append("\nДата создания: ").append(expense.getDate().toLocalDateTime().format(formatter));
 
-        confirmationMessage.append("\n\nПодтвердить изменения?");
-
-        InlineKeyboardMarkup markup = createExpenseConfirmationMarkup();
+        InlineKeyboardMarkup markup;
+        if ("amount".equals(updatedField)) {
+            confirmationMessage.append("\n\nПодтвердить изменения и как вы хотите внести изменения в бюджет?");
+            markup = createExpenseAmountConfirmationMarkup();
+        } else {
+            confirmationMessage.append("\n\nПодтвердить изменения?");
+            markup = createExpenseConfirmationMarkup();
+        }
 
         SendMessage message = createMessage(chatId, confirmationMessage.toString(), markup);
 
@@ -3277,6 +3463,24 @@ public class TelegramBot extends TelegramLongPollingBot {
         } catch (TelegramApiException e) {
             log.error("Error sending confirmation message: {}", e.getMessage());
         }
+    }
+
+    private InlineKeyboardMarkup createExpenseAmountConfirmationMarkup() {
+        List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
+
+        List<InlineKeyboardButton> row1 = new ArrayList<>();
+        row1.add(createInlineButton("Да", "confirm_update_expense"));
+        row1.add(createInlineButton("Нет", "cancel_update_expense"));
+        keyboard.add(row1);
+
+        List<InlineKeyboardButton> row2 = new ArrayList<>();
+        row2.add(createInlineButton("Да, изменить бюджет", "confirm_update_expense_change_budget"));
+        keyboard.add(row2);
+
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        markup.setKeyboard(keyboard);
+
+        return markup;
     }
 
     private InlineKeyboardMarkup createExpenseConfirmationMarkup() {
@@ -3340,7 +3544,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         for (Income income : incomes) {
             InlineKeyboardButton button = new InlineKeyboardButton();
-            button.setText(income.getTitle());
+            button.setText("Запись о доходах №" + income.getId() + ": " + income.getTitle());
             button.setCallbackData("delete_income_" + income.getId());
             List<InlineKeyboardButton> row = new ArrayList<>();
             row.add(button);
@@ -3360,11 +3564,11 @@ public class TelegramBot extends TelegramLongPollingBot {
             return;
         }
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
         StringBuilder confirmationMessage = new StringBuilder("Вы уверены, что хотите удалить следующую запись о доходе?\n\n");
         confirmationMessage.append("Название: ").append(income.getTitle()).append("\n");
-        confirmationMessage.append("Сумма: ").append(income.getAmount()).append("\n");
+        confirmationMessage.append("Сумма: ").append(formatNumber(income.getAmount())).append("\n");
         confirmationMessage.append("Категория: ").append(income.getCategory()).append("\n");
         confirmationMessage.append("Дата: ").append(income.getDate().toLocalDateTime().format(formatter)).append("\n");
 
@@ -3439,7 +3643,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         for (Expense expense : expenses) {
             InlineKeyboardButton button = new InlineKeyboardButton();
-            button.setText(expense.getTitle());
+            button.setText("Запись о расходах №" + expense.getId() + ": " + expense.getTitle());
             button.setCallbackData("delete_expense_" + expense.getId());
             List<InlineKeyboardButton> row = new ArrayList<>();
             row.add(button);
@@ -3459,11 +3663,11 @@ public class TelegramBot extends TelegramLongPollingBot {
             return;
         }
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
         StringBuilder confirmationMessage = new StringBuilder("Вы уверены, что хотите удалить следующую запись о расходе?\n\n");
         confirmationMessage.append("Название: ").append(expense.getTitle()).append("\n");
-        confirmationMessage.append("Сумма: ").append(expense.getAmount()).append("\n");
+        confirmationMessage.append("Сумма: ").append(formatNumber(expense.getAmount())).append("\n");
         confirmationMessage.append("Категория: ").append(expense.getCategory()).append("\n");
         confirmationMessage.append("Дата: ").append(expense.getDate().toLocalDateTime().format(formatter)).append("\n");
 
@@ -3701,18 +3905,24 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         String currentName = budget.getName();
         Double currentAmount = budget.getAmount();
-        Timestamp currentStartDate = budget.getStartDate();
-        Timestamp currentEndDate = budget.getEndDate();
+
+        LocalDate startDate = budget.getStartDate().toLocalDateTime().toLocalDate();
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        String formattedStartDate = startDate.format(dateFormatter);
+
+        LocalDate endDate = budget.getEndDate().toLocalDateTime().toLocalDate();
+        String formattedEndDate = endDate.format(dateFormatter);
+
         String currentCategory = budget.getCategory();
         Double currentWarningThreshold = budget.getWarningThreshold();
 
         String selectionMessage = "Выберите, что вы хотите обновить для бюджета:\n";
         selectionMessage += "Текущее название: " + currentName + "\n";
-        selectionMessage += "Текущая сумма: " + currentAmount + "\n";
-        selectionMessage += "Дата начала: " + currentStartDate + "\n";
-        selectionMessage += "Дата окончания: " + currentEndDate + "\n";
+        selectionMessage += "Текущая сумма: " + formatNumber(currentAmount) + "\n";
+        selectionMessage += "Дата начала: " + formattedStartDate + "\n";
+        selectionMessage += "Дата окончания: " + formattedEndDate + "\n";
         selectionMessage += "Категория: " + currentCategory + "\n";
-        selectionMessage += "Текущий порог предупреждения: " + currentWarningThreshold + "\n";
+        selectionMessage += "Текущий порог предупреждения: " + formatNumber(currentWarningThreshold) + "\n";
 
         InlineKeyboardMarkup markup = createUpdateMarkupForBudget();
 
@@ -3724,7 +3934,6 @@ public class TelegramBot extends TelegramLongPollingBot {
             log.error("Error sending field selection message for budget: {}", e.getMessage());
         }
     }
-
     public InlineKeyboardMarkup createUpdateMarkupForBudget() {
         List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
 
@@ -3816,7 +4025,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         StringBuilder confirmationMessage = new StringBuilder("Изменения сохранены:\n");
         confirmationMessage.append("Название: ").append(budget.getName()).append("\n");
-        confirmationMessage.append("Сумма: ").append(budget.getAmount()).append("\n");
+        confirmationMessage.append("Сумма: ").append(formatNumber(budget.getAmount())).append("\n");
         confirmationMessage.append("Дата начала: ").append(budget.getStartDate().toLocalDateTime().format(formatter)).append("\n");
         confirmationMessage.append("Дата окончания: ").append(budget.getEndDate().toLocalDateTime().format(formatter)).append("\n");
         confirmationMessage.append("Категория: ").append(budget.getCategory()).append("\n");
@@ -3917,14 +4126,15 @@ public class TelegramBot extends TelegramLongPollingBot {
             return;
         }
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
         StringBuilder confirmationMessage = new StringBuilder("Вы уверены, что хотите удалить следующий бюджет?\n\n");
         confirmationMessage.append("Название: ").append(budget.getName()).append("\n");
-        confirmationMessage.append("Сумма: ").append(budget.getAmount()).append("\n");
+        confirmationMessage.append("Сумма: ").append(formatNumber(budget.getAmount())).append("\n");
         confirmationMessage.append("Категория: ").append(budget.getCategory()).append("\n");
         confirmationMessage.append("Начальная дата: ").append(budget.getStartDate().toLocalDateTime().format(formatter)).append("\n");
         confirmationMessage.append("Конечная дата: ").append(budget.getEndDate().toLocalDateTime().format(formatter)).append("\n");
+        confirmationMessage.append("Порог предупреждения: ").append(formatNumber(budget.getWarningThreshold())).append("\n");
 
         InlineKeyboardMarkup markup = createDeleteBudgetConfirmationMarkup();
 
@@ -3960,6 +4170,18 @@ public class TelegramBot extends TelegramLongPollingBot {
     private void cancelDeleteBudget(String chatId) {
         budgetDeletionStates.remove(chatId);
         sendMessage(chatId, "Удаление отменено.");
+    }
+
+    private String formatNumber(Number number) {
+        String formattedNumber;
+        if (number == null) {
+            formattedNumber = "0";
+        } else if (number.doubleValue() == Math.floor(number.doubleValue())) {
+            formattedNumber = String.format("%.0f", number.doubleValue());
+        } else {
+            formattedNumber = String.format(Locale.US, "%.2f", number.doubleValue());
+        }
+        return formattedNumber;
     }
 
 }

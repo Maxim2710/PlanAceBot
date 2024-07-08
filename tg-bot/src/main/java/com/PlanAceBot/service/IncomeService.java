@@ -1,6 +1,7 @@
 package com.PlanAceBot.service;
 
 import com.PlanAceBot.model.Income;
+import com.PlanAceBot.model.User;
 import com.PlanAceBot.repository.IncomeRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,4 +36,7 @@ public class IncomeService {
         }
     }
 
+    public int countByUser(User user) {
+        return incomeRepository.countByUser(user);
+    }
 }
