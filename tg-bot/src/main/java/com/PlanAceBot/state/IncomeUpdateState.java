@@ -10,6 +10,7 @@ public class IncomeUpdateState {
     private Long incomeId;
     private String fieldToUpdate;
     private Income originalIncome;
+    private double originalAmount;
 
     public IncomeUpdateState(Long incomeId, String fieldToUpdate, Income originalIncome) {
         this.incomeId = incomeId;
