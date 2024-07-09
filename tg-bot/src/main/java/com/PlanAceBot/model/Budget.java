@@ -28,6 +28,9 @@ public class Budget {
     @Column(name = "amount")
     private Double amount;
 
+    @Column(name = "initial_amount")
+    private Double initialAmount;
+
     @Column(name = "start_date")
     private Timestamp startDate;
 

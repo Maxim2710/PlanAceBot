@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
+import java.sql.Timestamp;
 import java.util.List;
 
 @Service
@@ -33,6 +34,10 @@ public class BudgetService {
 
     public void deleteById(Long budgetId) {
         budgetRepository.deleteById(budgetId);
+    }
+
+    public List<Budget> findBudgetsByUser(User user) {
+        return budgetRepository.findByUser(user);
     }
 
 }

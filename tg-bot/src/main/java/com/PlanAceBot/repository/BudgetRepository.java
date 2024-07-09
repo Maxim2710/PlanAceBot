@@ -5,6 +5,7 @@ import com.PlanAceBot.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.sql.Timestamp;
 import java.util.List;
 
 
@@ -13,4 +14,6 @@ public interface BudgetRepository extends JpaRepository<Budget, Long> {
     Budget findByUserChatId(Long chatId);
 
     List<Budget> findByUser_ChatId(Long userId);
+
+    List<Budget> findByUser(User user);
 }
