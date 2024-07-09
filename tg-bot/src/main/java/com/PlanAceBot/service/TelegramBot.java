@@ -3,19 +3,32 @@ package com.PlanAceBot.service;
 import com.PlanAceBot.model.*;
 import com.PlanAceBot.state.*;
 import com.PlanAceBot.config.BotConfig;
+import com.itextpdf.kernel.font.PdfFont;
+import com.itextpdf.kernel.font.PdfFontFactory;
+import com.itextpdf.kernel.geom.PageSize;
+import com.itextpdf.layout.element.AreaBreak;
+import com.itextpdf.layout.element.IElement;
+import com.itextpdf.layout.layout.LayoutArea;
+import com.itextpdf.layout.layout.LayoutContext;
+import com.itextpdf.layout.layout.LayoutResult;
+import com.itextpdf.layout.property.AreaBreakType;
 import com.vdurmont.emoji.EmojiParser;
 import lombok.extern.slf4j.Slf4j;
 import net.objecthunter.exp4j.Expression;
 import net.objecthunter.exp4j.ExpressionBuilder;
+import org.jfree.chart.labels.StandardPieSectionLabelGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.methods.groupadministration.GetChatMember;
+import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageReplyMarkup;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
+import org.telegram.telegrambots.meta.api.objects.InputFile;
+import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.chatmember.ChatMember;
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
@@ -26,7 +39,11 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import java.awt.*;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.sql.Timestamp;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
@@ -36,6 +53,32 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+
+import com.itextpdf.kernel.pdf.PdfDocument;
+import com.itextpdf.kernel.pdf.PdfWriter;
+import com.itextpdf.layout.Document;
+import com.itextpdf.layout.element.Paragraph;
+import com.itextpdf.layout.element.Image;
+import com.itextpdf.io.image.ImageDataFactory;
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartUtils;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.plot.PiePlot;
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.ChartUtils;
+import org.jfree.data.category.DefaultCategoryDataset;
+import org.jfree.chart.plot.PiePlot3D;
+import org.jfree.data.general.DefaultPieDataset;
+import org.jfree.chart.plot.PlotOrientation;
+
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.sql.Timestamp;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 @Slf4j
@@ -109,6 +152,8 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     private static final String COMMAND_CALC = "/calc";
 
+    private static final String COMMAND_SHOW_ANALYTIC = "/show_analytic";
+
     private static final String BUTTON_TITLE = "Название";
     private static final String BUTTON_DESCRIPTION = "Описание";
     private static final String BUTTON_PRIORITY = "Приоритет";
@@ -143,6 +188,9 @@ public class TelegramBot extends TelegramLongPollingBot {
     private final Map<String, Long> budgetDeletionStates = new HashMap<>();
 
     private final Map<String, Boolean> calcStates = new HashMap<>();
+
+    private final Map<String, ReportCreationState> reportCreationStates = new HashMap<>();
+
 
     @Autowired
     private UserService userService;
@@ -197,6 +245,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         listofCommands.add(new BotCommand("/show_income_commands", "Отобразить все команды для взаимодействия с доходами"));
         listofCommands.add(new BotCommand("/show_expense_commands", "Отобразить все команды для взаимодействия с расходами"));
         listofCommands.add(new BotCommand("/show_budget_commands", "Отобразить все команды для взаимодействия с бюджетом"));
+        listofCommands.add(new BotCommand("/analytics", "Получить аналитический отчет за период"));
 
         try {
             this.execute(new SetMyCommands(listofCommands, new BotCommandScopeDefault(), null));
@@ -313,10 +362,12 @@ public class TelegramBot extends TelegramLongPollingBot {
                 processFieldAndValueForBudget(chatId, messageText);
             } else if (budgetDeletionStates.containsKey(chatId)) {
                 sendDeleteBudgetConfirmationMessage(chatId, budgetDeletionStates.get(chatId));
-            }else {
+            } else if (reportCreationStates.containsKey(chatId)) {
+                processReportCreation(chatId, messageText);
+            } else {
                 switch (command) {
                     case COMMAND_START:
-                        registerUserAndSendWelcomeMessage(chatId, !messageText.equals("\uD83C\uDFE0 Вернуться в главное меню"));
+                        registerUserAndSendWelcomeMessage(chatId, update.getMessage(), !messageText.equals("\uD83C\uDFE0 Вернуться в главное меню"));
                         break;
 
                     case COMMAND_CALC:
@@ -429,6 +480,10 @@ public class TelegramBot extends TelegramLongPollingBot {
 
                     case COMMAND_SHOW_BUDGET_COMMANDS:
                         showBudgetCommandsKeyboard(chatId);
+                        break;
+
+                    case COMMAND_SHOW_ANALYTIC:
+                        handleReportCreationCommand(chatId, parts, messageText);
                         break;
 
                     default:
@@ -680,12 +735,17 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
-    private void registerUserAndSendWelcomeMessage(String chatId, boolean flag) {
+    private void registerUserAndSendWelcomeMessage(String chatId, Message msg, boolean flag) {
         boolean isNewUser = false;
 
         if (!userService.existByChatId(Long.parseLong(chatId))) {
+            var chat = msg.getChat();
+
             User currentUser = new User(chatId);
             currentUser.setChatId(Long.parseLong(chatId));
+            currentUser.setFirstName(chat.getFirstName());
+            currentUser.setLastName(chat.getLastName());
+            currentUser.setUsername(chat.getUserName());
             currentUser.setRegisteredAt(new Timestamp(System.currentTimeMillis()));
             userService.save(currentUser);
             isNewUser = true;
@@ -1305,7 +1365,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         if ("check_subscription".equals(data)) {
             if (isUserSubscribed(chatId)) {
-                registerUserAndSendWelcomeMessage(chatId, true);
+                registerUserAndSendWelcomeMessage(chatId, (Message) callbackQuery.getMessage(),true);
             } else {
                 sendMessage(chatId, "Вы еще не подписались на канал. Пожалуйста, подпишитесь и нажмите \"Проверить подписку\".");
             }
@@ -2720,7 +2780,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void handleIncomeCreationCommand(String chatId, String[] parts, String messageText) {
-        if (parts.length > 1 && !messageText.equals("\uD83D\uDCB8 Добавить доход")) {
+        if (parts.length > 1 && !messageText.equals("\uD83D\uDCB0 Добавить доход")) {
             sendMessage(chatId, "Неверный формат команды. Используйте /add_income без параметров.");
             return;
         }
@@ -4003,6 +4063,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         Budget budget = new Budget();
         budget.setName(name);
         budget.setAmount(amount);
+        budget.setInitialAmount(amount);
         budget.setStartDate(startDate);
         budget.setEndDate(endDate);
         budget.setCategory(category);
@@ -4402,6 +4463,238 @@ public class TelegramBot extends TelegramLongPollingBot {
         sb.append("Порог предупреждения: ").append(formatNumber(currentBudget.getWarningThreshold())).append(" руб.\n");
 
         return sb.toString();
+    }
+
+    private void handleReportCreationCommand(String chatId, String[] parts, String messageText) {
+        User user = userService.findByChatId(Long.parseLong(chatId));
+        if (user == null) {
+            sendMessage(chatId, "Пользователь не зарегистрирован. Используйте /start для регистрации.");
+            return;
+        }
+
+        if (parts.length == 1 || messageText.equals("\uD83D\uDCDD Создать отчет")) {
+            startReportCreation(chatId);
+        } else {
+            sendMessage(chatId, "Неверный формат команды. Используйте /add_report без параметров.");
+        }
+    }
+
+    private void startReportCreation(String chatId) {
+        ReportCreationState currentState = reportCreationStates.get(chatId);
+        if (currentState == null) {
+            currentState = new ReportCreationState();
+            reportCreationStates.put(chatId, currentState);
+        }
+
+        currentState.setState(ReportState.ENTER_START_DATE);
+
+        SendMessage message = new SendMessage();
+        message.setChatId(chatId);
+        message.setText("Введите дату начала периода отчета (в формате ГГГГ-ММ-ДД):");
+        sendMessageForReport(message);
+    }
+
+    private void processReportCreation(String chatId, String messageText) {
+        ReportCreationState currentState = reportCreationStates.get(chatId);
+
+        if (currentState.getState() == ReportState.ENTER_START_DATE) {
+            try {
+                Timestamp startDate = Timestamp.valueOf(messageText + " 00:00:00");
+                currentState.setStartDate(startDate);
+                currentState.setState(ReportState.ENTER_END_DATE);
+                sendMessage(chatId, "Введите дату окончания периода отчета (в формате ГГГГ-ММ-ДД):");
+            } catch (IllegalArgumentException e) {
+                sendMessage(chatId, "Пожалуйста, введите корректную дату в формате ГГГГ-ММ-ДД:");
+            }
+        } else if (currentState.getState() == ReportState.ENTER_END_DATE) {
+            try {
+                Timestamp endDate = Timestamp.valueOf(messageText + " 00:00:00");
+                if (currentState.getStartDate().after(endDate)) {
+                    sendMessage(chatId, "Дата окончания не может предшествовать дате начала. Пожалуйста, введите корректную дату окончания периода отчета (в формате ГГГГ-ММ-ДД):");
+                } else {
+                    currentState.setEndDate(endDate);
+                    generateReport(chatId, currentState);
+                    reportCreationStates.remove(chatId);
+                }
+            } catch (IllegalArgumentException e) {
+                sendMessage(chatId, "Пожалуйста, введите корректную дату в формате ГГГГ-ММ-ДД:");
+            }
+        }
+    }
+
+    private void generateReport(String chatId, ReportCreationState currentState) {
+        User user = userService.findByChatId(Long.parseLong(chatId));
+
+        Timestamp startDate = currentState.getStartDate();
+        Timestamp endDate = currentState.getEndDate();
+
+        List<Expense> expenses = expenseService.findExpensesByUserAndDateBetween(user, startDate, endDate);
+        List<Income> incomes = incomeService.findIncomesByUserAndDateBetween(user, startDate, endDate);
+
+        List<Budget> budgets = budgetService.findBudgetsByUser(user);
+
+        try {
+            byte[] pdfBytes = generatePdfReport(user, startDate, endDate, expenses, incomes, budgets);
+            sendPdfReport(chatId, pdfBytes);
+        } catch (Exception e) {
+            sendMessage(chatId, "Ошибка при генерации отчета: " + e.getMessage());
+        }
+    }
+
+    private byte[] generatePdfReport(User user, Timestamp startDate, Timestamp endDate, List<Expense> expenses, List<Income> incomes, List<Budget> budgets) throws Exception {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        PdfWriter writer = new PdfWriter(baos);
+        PdfDocument pdf = new PdfDocument(writer);
+        Document document = new Document(pdf, PageSize.A4);
+
+        PdfFont font = PdfFontFactory.createFont("fonts/FreeSans.ttf", "CP1251", true);
+
+        String creationDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Timestamp(System.currentTimeMillis()));
+
+        document.add(new Paragraph("Отчет за период " + formatTimestamp(startDate) + " - " + formatTimestamp(endDate)).setFontSize(14).setBold().setFont(font));
+        document.add(new Paragraph("Пользователь: " + user.getFirstName()).setFontSize(12).setFont(font));
+        document.add(new Paragraph("Дата создания: " + creationDate).setFontSize(10).setItalic().setFont(font));
+
+        JFreeChart expenseChart = createPieChart("Расходы", expenses.stream().collect(Collectors.toMap(Expense::getTitle, Expense::getAmount, Double::sum)));
+        Image expenseChartImage = convertChartToImage(expenseChart);
+        document.add(expenseChartImage);
+        addAnalyticsText(document, "Расходы", expenses.stream().collect(Collectors.toMap(Expense::getTitle, Expense::getAmount, Double::sum)), font);
+
+        document.add(new AreaBreak());
+
+        JFreeChart incomeChart = createPieChart("Доходы", incomes.stream().collect(Collectors.toMap(Income::getTitle, Income::getAmount, Double::sum)));
+        Image incomeChartImage = convertChartToImage(incomeChart);
+        document.add(incomeChartImage);
+        addAnalyticsText(document, "Доходы", incomes.stream().collect(Collectors.toMap(Income::getTitle, Income::getAmount, Double::sum)), font);
+
+        document.add(new AreaBreak());
+
+        Map<String, Double> budgetData = budgets.stream().collect(Collectors.toMap(Budget::getName, Budget::getAmount, Double::sum));
+        Map<String, Double> initialBudgetData = budgets.stream().collect(Collectors.toMap(Budget::getName, Budget::getInitialAmount, Double::sum));
+        JFreeChart budgetChart = createBudgetPieChart("Бюджет", budgetData, initialBudgetData);
+        Image budgetChartImage = convertChartToImage(budgetChart);
+        document.add(budgetChartImage);
+        addBudgetAnalyticsText(document, budgets, font);
+
+        document.close();
+        return baos.toByteArray();
+    }
+
+    private void addBudgetAnalyticsText(Document document, List<Budget> budgets, PdfFont font) {
+        if (budgets.isEmpty()) {
+            document.add(new Paragraph("Нет данных для отображения аналитики по бюджету").setFontSize(10).setFont(font));
+            return;
+        }
+
+        StringBuilder analyticsText = new StringBuilder();
+        analyticsText.append("Аналитика по бюджету:\n\n");
+        for (Budget budget : budgets) {
+            double usedAmount = budget.getInitialAmount() - budget.getAmount();
+            double usedPercentage = (usedAmount / budget.getInitialAmount()) * 100;
+            double remainingPercentage = 100 - usedPercentage;
+            analyticsText.append(String.format("Бюджет '%s':\n", budget.getName()));
+            analyticsText.append(String.format("- Изначальная сумма: %.2f\n", budget.getInitialAmount()));
+            analyticsText.append(String.format("- Потрачено: %.2f (%.2f%%)\n", usedAmount, usedPercentage));
+            analyticsText.append(String.format("- Осталось: %.2f (%.2f%%)\n", budget.getAmount(), remainingPercentage));
+            analyticsText.append("\n");
+        }
+
+        document.add(new Paragraph(analyticsText.toString()).setFontSize(10).setFont(font));
+    }
+
+    private JFreeChart createBudgetPieChart(String title, Map<String, Double> budgetData, Map<String, Double> initialBudgetData) {
+        DefaultPieDataset dataset = new DefaultPieDataset();
+        for (Map.Entry<String, Double> entry : budgetData.entrySet()) {
+            double initialAmount = initialBudgetData.get(entry.getKey());
+            double remainingAmount = entry.getValue();
+            double usedAmount = initialAmount - remainingAmount;
+
+            dataset.setValue(entry.getKey() + " (Потрачено)", usedAmount);
+            dataset.setValue(entry.getKey() + " (Осталось)", remainingAmount);
+        }
+        JFreeChart chart = ChartFactory.createPieChart(title, dataset, true, true, false);
+        PiePlot plot = (PiePlot) chart.getPlot();
+
+        plot.setLabelFont(new Font("SansSerif", Font.PLAIN, 12));
+        plot.setNoDataMessage("Нет данных для отображения");
+        plot.setCircular(true);
+        plot.setLabelGap(0.02);
+
+        plot.setLabelGenerator(new StandardPieSectionLabelGenerator("{2}", new DecimalFormat("0.00%"), new DecimalFormat("0.00%")));
+
+        return chart;
+    }
+
+    private void addAnalyticsText(Document document, String title, Map<String, Double> data, PdfFont font) {
+        if (data.isEmpty()) {
+            document.add(new Paragraph("Нет данных для отображения аналитики по " + title).setFontSize(10).setFont(font));
+            return;
+        }
+
+        List<Map.Entry<String, Double>> topEntries = data.entrySet().stream()
+                .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
+                .limit(3)
+                .collect(Collectors.toList());
+
+        double total = data.values().stream().mapToDouble(Double::doubleValue).sum();
+        StringBuilder analyticsText = new StringBuilder();
+        analyticsText.append(String.format("Общая сумма в категории '%s': %.2f%n", title, total));
+        analyticsText.append(String.format("Общее количество элементов: %d%n", data.size()));
+        analyticsText.append("Топ элементы:\n");
+
+        for (Map.Entry<String, Double> entry : topEntries) {
+            double percentage = (entry.getValue() / total) * 100;
+            analyticsText.append(String.format("- %s: сумма: %.2f, процент: %.2f%%%n", entry.getKey(), entry.getValue(), percentage));
+        }
+
+        analyticsText.append("\n");
+
+        document.add(new Paragraph(analyticsText.toString()).setFontSize(10).setFont(font));
+    }
+
+
+    private JFreeChart createPieChart(String title, Map<String, Double> data) {
+        DefaultPieDataset dataset = new DefaultPieDataset();
+        for (Map.Entry<String, Double> entry : data.entrySet()) {
+            dataset.setValue(entry.getKey(), entry.getValue());
+        }
+        JFreeChart chart = ChartFactory.createPieChart(title, dataset, true, true, false);
+        PiePlot plot = (PiePlot) chart.getPlot();
+
+        plot.setLabelFont(new Font("SansSerif", Font.PLAIN, 12));
+        plot.setNoDataMessage("Нет данных для отображения");
+        plot.setCircular(true);
+        plot.setLabelGap(0.02);
+
+        plot.setLabelGenerator(new StandardPieSectionLabelGenerator("{2}", new DecimalFormat("0.00%"), new DecimalFormat("0.00%")));
+
+        return chart;
+    }
+
+    private Image convertChartToImage(JFreeChart chart) throws Exception {
+        BufferedImage bufferedImage = chart.createBufferedImage(500, 300);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ChartUtils.writeBufferedImageAsPNG(baos, bufferedImage);
+        return new Image(ImageDataFactory.create(baos.toByteArray()));
+    }
+
+    private void sendPdfReport(String chatId, byte[] pdfBytes) throws TelegramApiException {
+        SendDocument sendDocument = new SendDocument();
+        sendDocument.setChatId(chatId);
+        sendDocument.setDocument(new InputFile(new ByteArrayInputStream(pdfBytes), "report.pdf"));
+        execute(sendDocument);
+    }
+
+    private void sendMessageForReport(SendMessage message) {
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private String formatTimestamp(Timestamp timestamp) {
+        return new SimpleDateFormat("yyyy-MM-dd").format(timestamp);
     }
 
 }

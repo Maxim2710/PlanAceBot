@@ -7,6 +7,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.sql.Timestamp;
 import java.util.List;
 
 @Service
@@ -38,5 +39,9 @@ public class IncomeService {
 
     public int countByUser(User user) {
         return incomeRepository.countByUser(user);
+    }
+
+    public List<Income> findIncomesByUserAndDateBetween(User user, Timestamp startDate, Timestamp endDate) {
+        return incomeRepository.findByUserAndDateBetween(user, startDate, endDate);
     }
 }
