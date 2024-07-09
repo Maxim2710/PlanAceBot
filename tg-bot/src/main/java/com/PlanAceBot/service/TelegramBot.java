@@ -57,8 +57,6 @@ public class TelegramBot extends TelegramLongPollingBot {
             /update_reminder - Обновление существующего напоминания.
             /delete_reminder - Удаление напоминания.
             /list_reminders - Показать все напоминания пользователя.
-            /show_task_commands - Отобразить все команды для взаимодействия с задачами.
-            /show_reminder_commands - Отобразить все команды для взаимодействия с напоминаниями.
             /add_income - Создание нового дохода.
             /add_expense - Создание нового расхода.
             /update_income - Обновление существующей записи о доходе.
@@ -69,9 +67,12 @@ public class TelegramBot extends TelegramLongPollingBot {
             /update_budget - Обновление существующей записи о бюджете.
             /delete_budget - Удаление бюджета.
             /get_budget_info - Получить информацию о текущем бюджете.
-
-            
-
+            /show_task_commands - Отобразить все команды для взаимодействия с задачами.
+            /show_reminder_commands - Отобразить все команды для взаимодействия с напоминаниями.
+            /show_finance_commands - Отобразить все команды для взаимодействия с финансами.
+            /show_income_commands - Отобразить все команды для взаимодействия с доходами.
+            /show_expense_commands - Отобразить все команды для взаимодействия с расходами.
+            /show_budget_commands - Отобразить все команды для взаимодействия с бюджетом.
             """;
 
     private static final String COMMAND_START = "/start";
@@ -90,6 +91,10 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     private static final String COMMAND_SHOW_TASK_COMMANDS = "/show_task_commands";
     private static final String COMMAND_SHOW_REMINDER_COMMANDS = "/show_reminder_commands";
+    private static final String COMMAND_SHOW_FINANCE_COMMANDS = "/show_finance_commands";
+    private static final String COMMAND_SHOW_INCOME_COMMANDS = "/show_income_commands";
+    private static final String COMMAND_SHOW_EXPENSE_COMMANDS = "/show_expense_commands";
+    private static final String COMMAND_SHOW_BUDGET_COMMANDS = "/show_budget_commands";
 
     private static final String COMMAND_ADD_INCOME = "/add_income";
     private static final String COMMAND_ADD_EXPENSE = "/add_expense";
@@ -176,8 +181,6 @@ public class TelegramBot extends TelegramLongPollingBot {
         listofCommands.add(new BotCommand("/update_reminder", "Обновление существующего напоминания"));
         listofCommands.add(new BotCommand("/delete_reminder", "Удаление напоминания"));
         listofCommands.add(new BotCommand("/list_reminders", "Показать все напоминания пользователя"));
-        listofCommands.add(new BotCommand("/show_task_commands", "Отобразить все команды для взаимодействия с задачами"));
-        listofCommands.add(new BotCommand("/show_reminder_commands", "Отобразить все команды для взаимодействия с напоминаниями"));
         listofCommands.add(new BotCommand("/add_income", "Создание нового дохода"));
         listofCommands.add(new BotCommand("/add_expense", "Создание нового расхода"));
         listofCommands.add(new BotCommand("/update_income", "Обновление существующей записи о доходе"));
@@ -188,6 +191,12 @@ public class TelegramBot extends TelegramLongPollingBot {
         listofCommands.add(new BotCommand("/update_budget", "Обновление существующей записи о бюджете"));
         listofCommands.add(new BotCommand("/delete_budget", "Удаление записи о бюджете"));
         listofCommands.add(new BotCommand("/get_budget_info", "Получить информацию о текущем бюджете"));
+        listofCommands.add(new BotCommand("/show_task_commands", "Отобразить все команды для взаимодействия с задачами"));
+        listofCommands.add(new BotCommand("/show_reminder_commands", "Отобразить все команды для взаимодействия с напоминаниями"));
+        listofCommands.add(new BotCommand("/show_finance_commands", "Отобразить все команды для взаимодействия с финансами"));
+        listofCommands.add(new BotCommand("/show_income_commands", "Отобразить все команды для взаимодействия с доходами"));
+        listofCommands.add(new BotCommand("/show_expense_commands", "Отобразить все команды для взаимодействия с расходами"));
+        listofCommands.add(new BotCommand("/show_budget_commands", "Отобразить все команды для взаимодействия с бюджетом"));
 
         try {
             this.execute(new SetMyCommands(listofCommands, new BotCommandScopeDefault(), null));
@@ -242,12 +251,28 @@ public class TelegramBot extends TelegramLongPollingBot {
                 case "\uD83D\uDDD1 Удалить задачу" -> COMMAND_DELETE;
                 case "\uD83D\uDCDB Изменить статус" -> COMMAND_CHANGE_STATUS;
                 case "\uD83D\uDCCB Список задач" -> COMMAND_LIST_TASKS;
-                case "\u23F0 Установить дедлайн" -> COMMAND_SET_DEADLINE;
-                case "◀ Вернуться назад" -> COMMAND_START;
+                case "⏰ Установить дедлайн" -> COMMAND_SET_DEADLINE;
+                case "\uD83C\uDFE0 Вернуться в главное меню" -> COMMAND_START;
+                case "◀ Вернуться назад", "\uD83D\uDCB0 Финансы" -> COMMAND_SHOW_FINANCE_COMMANDS;
                 case "\uD83D\uDCDD Создать напоминание" -> COMMAND_CREATE_REMINDER;
                 case "\uD83D\uDD8A Обновить напоминание" -> COMMAND_UPDATE_REMINDER;
                 case "\uD83D\uDDD1 Удалить напоминание" -> COMMAND_DELETE_REMINDER;
                 case "\uD83D\uDCCB Список напоминаний" -> COMMAND_LIST_REMINDERS;
+                case "\uD83D\uDCB5 Доход" -> COMMAND_SHOW_INCOME_COMMANDS;
+                case "\uD83D\uDCB8 Расход" -> COMMAND_SHOW_EXPENSE_COMMANDS;
+                case "\uD83D\uDCCB Бюджет" -> COMMAND_SHOW_BUDGET_COMMANDS;
+                case "\uD83D\uDEA7 Калькулятор" -> COMMAND_CALC;
+                case "\uD83D\uDCB0 Добавить доход" -> COMMAND_ADD_INCOME;
+                case "✏️ Обновить доход" -> COMMAND_UPDATE_INCOME;
+                case "❌ Удалить доход" -> COMMAND_DELETE_INCOME;
+                case "\uD83D\uDCB8 Добавить расход" -> COMMAND_ADD_EXPENSE;
+                case "✏️ Обновить расход" -> COMMAND_UPDATE_EXPENSE;
+                case "❌ Удалить расход" -> COMMAND_DELETE_EXPENSE;
+                case "\uD83D\uDCDD Создать бюджет" -> COMMAND_ADD_BUDGET;
+                case "✏️ Обновить бюджет" -> COMMAND_UPDATE_BUDGET;
+                case "❌ Удалить бюджет" -> COMMAND_DELETE_BUDGET;
+                case "\uD83D\uDCCB Информация о бюджете" -> COMMAND_INFO_ABOUT_BUDGET;
+                case "❓ Помощь" -> COMMAND_HELP;
                 default -> messageText.split(" ", 2)[0];
             };
 
@@ -291,12 +316,11 @@ public class TelegramBot extends TelegramLongPollingBot {
             }else {
                 switch (command) {
                     case COMMAND_START:
-                        registerUserAndSendWelcomeMessage(chatId, !messageText.equals("◀ Вернуться назад"));
+                        registerUserAndSendWelcomeMessage(chatId, !messageText.equals("\uD83C\uDFE0 Вернуться в главное меню"));
                         break;
 
                     case COMMAND_CALC:
-                        sendMessage(chatId, "Пожалуйста, введите математическое выражение для вычисления:");
-                        calcStates.put(chatId, true);
+                        handleCalculateCommand(chatId, parts, messageText);
                         break;
 
                     case COMMAND_CREATE:
@@ -316,7 +340,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                         break;
 
                     case COMMAND_HELP:
-                        sendHelpMessage(chatId, parts);
+                        sendHelpMessage(chatId, parts, messageText);
                         break;
 
                     case COMMAND_LIST_TASKS:
@@ -344,7 +368,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                         break;
 
                     case COMMAND_SHOW_TASK_COMMANDS:
-                        showCommandsKeyboard(chatId);
+                        showTaskCommandsKeyboard(chatId);
                         break;
 
                     case COMMAND_SHOW_REMINDER_COMMANDS:
@@ -391,6 +415,22 @@ public class TelegramBot extends TelegramLongPollingBot {
                         sendCurrentBudgetInfo(chatId, parts, messageText);
                         break;
 
+                    case COMMAND_SHOW_FINANCE_COMMANDS:
+                        showFinanceCommandsKeyboard(chatId);
+                        break;
+
+                    case COMMAND_SHOW_INCOME_COMMANDS:
+                        showIncomeCommandsKeyboard(chatId);
+                        break;
+
+                    case COMMAND_SHOW_EXPENSE_COMMANDS:
+                        showExpenseCommandsKeyboard(chatId);
+                        break;
+
+                    case COMMAND_SHOW_BUDGET_COMMANDS:
+                        showBudgetCommandsKeyboard(chatId);
+                        break;
+
                     default:
                         sendUnknownCommandMessage(chatId);
                         break;
@@ -401,14 +441,14 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
-    private void showCommandsKeyboard(String chatId) {
+    private void showTaskCommandsKeyboard(String chatId) {
         ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
         List<KeyboardRow> keyboard = new ArrayList<>();
 
         keyboard.add(createKeyboardRow("\uD83D\uDCDD Создать задачу", "\uD83D\uDD8A Обновить задачу", "\uD83D\uDDD1 Удалить задачу"));
         keyboard.add(createKeyboardRow("\uD83D\uDCDB Изменить статус", "\uD83D\uDCCB Список задач"));
         keyboard.add(createKeyboardRow("\u23F0 Установить дедлайн"));
-        keyboard.add(createKeyboardRow("◀ Вернуться назад"));
+        keyboard.add(createKeyboardRow("\uD83C\uDFE0 Вернуться в главное меню"));
 
         keyboardMarkup.setKeyboard(keyboard);
         keyboardMarkup.setResizeKeyboard(true);
@@ -432,7 +472,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         keyboard.add(createKeyboardRow("\uD83D\uDCDD Создать напоминание", "\uD83D\uDD8A Обновить напоминание", "\uD83D\uDDD1 Удалить напоминание"));
         keyboard.add(createKeyboardRow("\uD83D\uDCCB Список напоминаний"));
-        keyboard.add(createKeyboardRow("◀ Вернуться назад"));
+        keyboard.add(createKeyboardRow("\uD83C\uDFE0 Вернуться в главное меню"));
 
         keyboardMarkup.setKeyboard(keyboard);
         keyboardMarkup.setResizeKeyboard(true);
@@ -450,12 +490,115 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
+    private void showFinanceCommandsKeyboard(String chatId) {
+        ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
+        List<KeyboardRow> keyboard = new ArrayList<>();
+
+        keyboard.add(createKeyboardRow("\uD83D\uDCB5 Доход", "\uD83D\uDCB8 Расход"));
+        keyboard.add(createKeyboardRow("\uD83D\uDCCB Бюджет", "\uD83D\uDEA7 Калькулятор"));
+        keyboard.add(createKeyboardRow("\uD83C\uDFE0 Вернуться в главное меню"));
+
+        keyboardMarkup.setKeyboard(keyboard);
+        keyboardMarkup.setResizeKeyboard(true);
+
+        SendMessage message = SendMessage.builder()
+                .chatId(chatId)
+                .text("Выберите раздел финансов:")
+                .replyMarkup(keyboardMarkup)
+                .build();
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Error sending finance commands keyboard: {}", e.getMessage());
+        }
+    }
+
+    private void showIncomeCommandsKeyboard(String chatId) {
+        ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
+        List<KeyboardRow> keyboard = new ArrayList<>();
+
+        keyboard.add(createKeyboardRow("💰 Добавить доход", "✏️ Обновить доход", "❌ Удалить доход"));
+        keyboard.add(createKeyboardRow("◀ Вернуться назад"));
+
+        keyboardMarkup.setKeyboard(keyboard);
+        keyboardMarkup.setResizeKeyboard(true);
+
+        SendMessage message = SendMessage.builder()
+                .chatId(chatId)
+                .text("Выберите действие с доходом:")
+                .replyMarkup(keyboardMarkup)
+                .build();
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Error sending income commands keyboard: {}", e.getMessage());
+        }
+    }
+
+    private void showExpenseCommandsKeyboard(String chatId) {
+        ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
+        List<KeyboardRow> keyboard = new ArrayList<>();
+
+        keyboard.add(createKeyboardRow("💸 Добавить расход", "✏️ Обновить расход", "❌ Удалить расход"));
+        keyboard.add(createKeyboardRow("◀ Вернуться назад"));
+
+        keyboardMarkup.setKeyboard(keyboard);
+        keyboardMarkup.setResizeKeyboard(true);
+
+        SendMessage message = SendMessage.builder()
+                .chatId(chatId)
+                .text("Выберите действие с расходом:")
+                .replyMarkup(keyboardMarkup)
+                .build();
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Error sending expense commands keyboard: {}", e.getMessage());
+        }
+    }
+
+    private void showBudgetCommandsKeyboard(String chatId) {
+        ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
+        List<KeyboardRow> keyboard = new ArrayList<>();
+
+        keyboard.add(createKeyboardRow("📝 Создать бюджет", "✏️ Обновить бюджет", "❌ Удалить бюджет"));
+        keyboard.add(createKeyboardRow("📋 Информация о бюджете"));
+        keyboard.add(createKeyboardRow("◀ Вернуться назад"));
+
+        keyboardMarkup.setKeyboard(keyboard);
+        keyboardMarkup.setResizeKeyboard(true);
+
+        SendMessage message = SendMessage.builder()
+                .chatId(chatId)
+                .text("Выберите действие с бюджетом:")
+                .replyMarkup(keyboardMarkup)
+                .build();
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Error sending budget commands keyboard: {}", e.getMessage());
+        }
+    }
+
     private KeyboardRow createKeyboardRow(String... buttons) {
         KeyboardRow row = new KeyboardRow();
         for (String button : buttons) {
             row.add(button);
         }
         return row;
+    }
+
+    private void handleCalculateCommand(String chatId, String[] parts, String messageText) {
+        if (parts.length == 1 || messageText.equals("\uD83D\uDEA7 Калькулятор")) {
+            sendMessage(chatId, "Пожалуйста, введите математическое выражение для вычисления:");
+            calcStates.put(chatId, true);
+        } else {
+            sendMessage(chatId, "Неверный формат команды. Используйте /calc без параметров.");
+        }
     }
 
     private void handleCalculateExpression(String chatId, String expression) {
@@ -474,8 +617,8 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
-    private void sendHelpMessage(String chatId, String[] parts) {
-        if (parts.length > 1) {
+    private void sendHelpMessage(String chatId, String[] parts, String messageText) {
+        if (parts.length > 1 && !(messageText.equals("❓ Помощь"))) {
             sendMessage(chatId, "Неверный формат команды. Используйте команду /help только без параметров.");
             return;
         }
@@ -583,8 +726,17 @@ public class TelegramBot extends TelegramLongPollingBot {
         KeyboardRow reminderCommandsRow = new KeyboardRow();
         reminderCommandsRow.add("\uD83D\uDD14 Напоминания");
 
+        KeyboardRow financesCommandsRow = new KeyboardRow();
+        financesCommandsRow.add("\uD83D\uDCB0 Финансы");
+
+        KeyboardRow helpCommandsRow = new KeyboardRow();
+        helpCommandsRow.add("❓ Помощь");
+
         keyboard.add(taskCommandsRow);
         keyboard.add(reminderCommandsRow);
+        keyboard.add(financesCommandsRow);
+        keyboard.add(helpCommandsRow);
+
         keyboardMarkup.setKeyboard(keyboard);
 
         SendMessage message = SendMessage.builder()
@@ -611,8 +763,17 @@ public class TelegramBot extends TelegramLongPollingBot {
         KeyboardRow reminderCommandsRow = new KeyboardRow();
         reminderCommandsRow.add("\uD83D\uDD14 Напоминания");
 
+        KeyboardRow financesCommandsRow = new KeyboardRow();
+        financesCommandsRow.add("\uD83D\uDCB0 Финансы");
+
+        KeyboardRow helpCommandsRow = new KeyboardRow();
+        helpCommandsRow.add("❓ Помощь");
+
         keyboard.add(taskCommandsRow);
         keyboard.add(reminderCommandsRow);
+        keyboard.add(financesCommandsRow);
+        keyboard.add(helpCommandsRow);
+
         keyboardMarkup.setKeyboard(keyboard);
 
         SendMessage message = SendMessage.builder()
@@ -639,8 +800,17 @@ public class TelegramBot extends TelegramLongPollingBot {
         KeyboardRow reminderCommandsRow = new KeyboardRow();
         reminderCommandsRow.add("\uD83D\uDD14 Напоминания");
 
+        KeyboardRow financesCommandsRow = new KeyboardRow();
+        financesCommandsRow.add("\uD83D\uDCB0 Финансы");
+
+        KeyboardRow helpCommandsRow = new KeyboardRow();
+        helpCommandsRow.add("❓ Помощь");
+
         keyboard.add(taskCommandsRow);
         keyboard.add(reminderCommandsRow);
+        keyboard.add(financesCommandsRow);
+        keyboard.add(helpCommandsRow);
+
         keyboardMarkup.setKeyboard(keyboard);
 
         SendMessage message = SendMessage.builder()
@@ -2784,7 +2954,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void handleExpenseCreationCommand(String chatId, String[] parts, String messageText) {
-        if (parts.length > 1 && !messageText.equals("\uD83D\uDCB0 Добавить расход")) {
+        if (parts.length > 1 && !messageText.equals("\uD83D\uDCB8 Добавить расход")) {
             sendMessage(chatId, "Неверный формат команды. Используйте /add_expense без параметров.");
             return;
         }
@@ -3015,7 +3185,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void handleUpdateIncomeCommand(String[] parts, String chatId, String messageText) {
-        if (parts.length > 1 && !messageText.equals("\uD83D\uDD8A Обновить доход")) {
+        if (parts.length > 1 && !messageText.equals("✏️ Обновить доход")) {
             sendMessage(chatId, "Неверный формат команды. Используйте команду /update_income только без параметров.");
             return;
         }
@@ -3277,7 +3447,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     public void handleUpdateExpenseCommand(String[] parts, String chatId, String messageText) {
-        if (parts.length > 1 && !messageText.equals("\uD83D\uDD8A Обновить расход")) {
+        if (parts.length > 1 && !messageText.equals("✏️ Обновить расход")) {
             sendMessage(chatId, "Неверный формат команды. Используйте команду /update_expense только без параметров.");
             return;
         }
@@ -3523,7 +3693,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void handleDeleteIncomeCommand(String[] parts, String chatId, String messageText) {
-        if (parts.length > 1 && !(messageText.equals("\uD83D\uDDD1 Удалить доход"))) {
+        if (parts.length > 1 && !(messageText.equals("❌ Удалить доход"))) {
             sendMessage(chatId, "Неверный формат команды. Используйте /delete_income без параметров.");
             return;
         }
@@ -3622,7 +3792,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void handleDeleteExpenseCommand(String[] parts, String chatId, String messageText) {
-        if (parts.length > 1 && !(messageText.equals("\uD83D\uDDD1 Удалить расход"))) {
+        if (parts.length > 1 && !(messageText.equals("❌ Удалить расход"))) {
             sendMessage(chatId, "Неверный формат команды. Используйте /delete_expense без параметров.");
             return;
         }
@@ -3733,7 +3903,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             return;
         }
 
-        if (parts.length == 1 || messageText.equals("\uD83D\uDCB8 Добавить бюджет")) {
+        if (parts.length == 1 || messageText.equals("\uD83D\uDCDD Создать бюджет")) {
             startBudgetCreation(chatId);
         } else {
             sendMessage(chatId, "Неверный формат команды. Используйте /add_budget без параметров.");
@@ -3851,7 +4021,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     public void handleUpdateBudgetCommand(String[] parts, String chatId, String messageText) {
-        if (parts.length > 1 && !messageText.equals("\uD83D\uDD8A Обновить бюджет")) {
+        if (parts.length > 1 && !messageText.equals("✏️ Обновить бюджет")) {
             sendMessage(chatId, "Неверный формат команды. Используйте команду /update_budget только без параметров.");
             return;
         }
@@ -4085,7 +4255,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void handleDeleteBudgetCommand(String[] parts, String chatId, String messageText) {
-        if (parts.length > 1 && !(messageText.equals("\uD83D\uDDD1 Удалить бюджет"))) {
+        if (parts.length > 1 && !(messageText.equals("❌ Удалить бюджет"))) {
             sendMessage(chatId, "Неверный формат команды. Используйте /delete_budget без параметров.");
             return;
         }
@@ -4192,7 +4362,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void sendCurrentBudgetInfo(String chatId, String[] parts, String messageText) {
-        if (parts.length == 1 || messageText.equals("\uD83D\uDCB8 Текущий бюджет")) {
+        if (parts.length == 1 || messageText.equals("\uD83D\uDCCB Информация о бюджете")) {
             String budgetInfo = getCurrentBudgetInfo(chatId);
 
             SendMessage sendMessage = new SendMessage();
