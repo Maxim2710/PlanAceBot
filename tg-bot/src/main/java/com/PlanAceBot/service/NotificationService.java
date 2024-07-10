@@ -1,6 +1,7 @@
 package com.PlanAceBot.service;
 
 import com.PlanAceBot.model.Budget;
+import com.PlanAceBot.model.Pomodoro;
 import com.PlanAceBot.model.Task;
 import com.PlanAceBot.model.User;
 import com.PlanAceBot.repository.AdsRepository;
@@ -10,8 +11,8 @@ import com.PlanAceBot.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -33,6 +34,9 @@ public class NotificationService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private PomodoroService pomodoroService;
 
     @Scheduled(fixedRate = 1000)
     public void checkDeadlines() {
@@ -137,5 +141,37 @@ public class NotificationService {
             }
         });
     }
+
+    @Scheduled(fixedRate = 1000)
+    public void checkPomodoroSessions() {
+        List<Pomodoro> allSessions = pomodoroService.getAllPomodoroSessions();
+
+        Timestamp currentTime = new Timestamp(System.currentTimeMillis());
+
+        for (Pomodoro pomodoro : allSessions) {
+            Timestamp endTime = pomodoro.getEndTime();
+
+            if (endTime != null && currentTime.after(endTime)) {
+                if ("work".equals(pomodoro.getIntervalType())) {
+                    pomodoro.setSessionActive(false);
+                    pomodoro.setIntervalType("rest");
+                    pomodoro.setEndTime(new Timestamp(currentTime.getTime() + 5 * 60 * 1000));
+                    pomodoroService.savePomodoroSession(pomodoro);
+
+                    String chatId = String.valueOf(pomodoro.getUser().getChatId());
+                    telegramBot.sendPomodoroMessage(chatId, "Время рабочего интервала истекло. Отдохните 5 минут!", telegramBot.createPomodoroKeyboard());
+                } else if ("rest".equals(pomodoro.getIntervalType())) {
+                    pomodoro.setSessionActive(true);
+                    pomodoro.setIntervalType("work");
+                    pomodoro.setEndTime(new Timestamp(currentTime.getTime() + 25 * 60 * 1000));
+                    pomodoroService.savePomodoroSession(pomodoro);
+
+                    String chatId = String.valueOf(pomodoro.getUser().getChatId());
+                    telegramBot.sendPomodoroMessage(chatId, "Отдых завершен. Сфокусируйтесь на работе в течение 25 минут!", telegramBot.createPomodoroKeyboard());
+                }
+            }
+        }
+    }
+
 
 }
