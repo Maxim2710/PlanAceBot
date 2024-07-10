@@ -133,6 +133,8 @@ public class TelegramBot extends TelegramLongPollingBot {
     private static final String COMMAND_SHOW_TIME_MANAGEMENT_COMMANDS = "/show_time_management_commands";
     private static final String COMMAND_SHOW_POMODORO_COMMANDS = "/show_pomodoro_commands";
     private static final String COMMAND_SHOW_POMODORO_COMMANDS_FOR_INTERACTION = "/show_pomodoro_commands_for_interactions";
+    private static final String COMMAND_SHOW_NINETY_THIRTY_COMMANDS = "/show_ninety_thirty_commands";
+    private static final String COMMAND_SHOW_NINETY_THIRTY_COMMANDS_FOR_INTERACTION = "/show_ninety_thirty_commands_for_interactions";
 
     private static final String COMMAND_ADD_INCOME = "/add_income";
     private static final String COMMAND_ADD_EXPENSE = "/add_expense";
@@ -150,9 +152,12 @@ public class TelegramBot extends TelegramLongPollingBot {
     private static final String COMMAND_SHOW_ANALYTIC = "/show_analytic";
 
     private static final String COMMAND_START_POMODORO = "/start_pomodoro";
+    private static final String COMMAND_START_NINETY_THIRTY = "/start_ninety_thirty";
 
     private static final String COMMAND_CONTINUE_POMODORO = "/continue_pomodoro_now";
     private static final String COMMAND_BREAK_POMODORO = "/break_pomodoro_now";
+    private static final String COMMAND_CONTINUE_NINETY_THIRTY = "/continue_ninety_thirty_now";
+    private static final String COMMAND_BREAK_NINETY_THIRTY = "/break_ninety_thirty_now";
 
     private static final String BUTTON_TITLE = "Название";
     private static final String BUTTON_DESCRIPTION = "Описание";
@@ -215,6 +220,9 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     @Autowired
     private PomodoroService pomodoroService;
+
+    @Autowired
+    private NinetyThirtyService ninetyThirtyService;
 
     public TelegramBot(BotConfig config) {
         this.botConfig = config;
@@ -334,6 +342,11 @@ public class TelegramBot extends TelegramLongPollingBot {
                 case "\uD83C\uDF45 Метод помодоро" -> COMMAND_SHOW_POMODORO_COMMANDS;
                 case "\uD83C\uDF45 Начать метод помодоро" -> COMMAND_START_POMODORO;
                 case "\uD83D\uDD27 Команды для работы с помодоро" -> COMMAND_SHOW_POMODORO_COMMANDS_FOR_INTERACTION;
+                case "⏰ Продлить рабочий интервал на 10 минут" -> COMMAND_CONTINUE_NINETY_THIRTY;
+                case "\uD83D\uDED1 Завершить сессию 90 на 30" -> COMMAND_BREAK_NINETY_THIRTY;
+                case "\uD83C\uDFC5 Метод 90 на 30" -> COMMAND_SHOW_NINETY_THIRTY_COMMANDS;
+                case "\uD83C\uDFC5 Начать сессию 90 на 30" -> COMMAND_START_NINETY_THIRTY;
+                case "🔧 Команды для работы с 90 на 30" -> COMMAND_SHOW_NINETY_THIRTY_COMMANDS_FOR_INTERACTION;
                 default -> messageText.split(" ", 2)[0];
             };
 
@@ -515,7 +528,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                         break;
 
                     case COMMAND_SHOW_TIME_MANAGEMENT_COMMANDS:
-                        showPomodoroMenuKeyboard(chatId);
+                        showTimeManagementMenuKeyboard(chatId);
                         break;
 
                     case COMMAND_SHOW_POMODORO_COMMANDS:
@@ -524,6 +537,26 @@ public class TelegramBot extends TelegramLongPollingBot {
 
                     case COMMAND_SHOW_POMODORO_COMMANDS_FOR_INTERACTION:
                         showPomodoroCommandsKeyboard(chatId);
+                        break;
+
+                    case COMMAND_START_NINETY_THIRTY:
+                        handleNinetyThirtyCommands(chatId, parts, messageText);
+                        break;
+
+                    case COMMAND_CONTINUE_NINETY_THIRTY:
+                        extendNinetyThirtyWorkInterval(chatId);
+                        break;
+
+                    case COMMAND_BREAK_NINETY_THIRTY:
+                        endNinetyThirtySession(chatId);
+                        break;
+
+                    case COMMAND_SHOW_NINETY_THIRTY_COMMANDS:
+                        showNinetyThirtyManagementKeyboard(chatId);
+                        break;
+
+                    case COMMAND_SHOW_NINETY_THIRTY_COMMANDS_FOR_INTERACTION:
+                        showNinetyThirtyCommandsKeyboard(chatId);
                         break;
 
                     default:
@@ -619,6 +652,104 @@ public class TelegramBot extends TelegramLongPollingBot {
         KeyboardRow row1 = new KeyboardRow();
         row1.add("⏰ Продлить рабочий интервал на 5 минут");
         row1.add("⏹ Завершить помодоро сессию");
+        keyboard.add(row1);
+
+        KeyboardRow row2 = new KeyboardRow();
+        row2.add("\uD83C\uDFE0 Вернуться в главное меню");
+        keyboard.add(row2);
+
+        keyboardMarkup.setKeyboard(keyboard);
+        keyboardMarkup.setResizeKeyboard(true);
+
+        return keyboardMarkup;
+    }
+
+    private void handleNinetyThirtyCommands(String chatId, String[] parts, String messageText) {
+        if (parts.length == 1 || messageText.equals("\uD83C\uDFC5 Начать сессию 90 на 30")) {
+            startNinetyThirtySession(chatId);
+        } else {
+            sendMessage(chatId, "Неверный формат команды. Используйте /start_ninety_thirty без параметров.");
+        }
+    }
+
+    public void startNinetyThirtySession(String chatId) {
+        User user = userService.getUserByChatId(chatId);
+
+        NinetyThirty activeSession = ninetyThirtyService.getActiveNinetyThirtySessionByUserId(user);
+        if (activeSession != null) {
+            sendMessage(chatId, "У вас уже есть активная сессия. Завершите её перед началом новой.");
+            return;
+        }
+
+        NinetyThirty session = new NinetyThirty();
+        session.setUser(user);
+
+        Timestamp startTime = new Timestamp(System.currentTimeMillis());
+        session.setStartTime(startTime);
+
+        Timestamp endTime = new Timestamp(startTime.getTime() + 90 * 60 * 1000);
+        session.setEndTime(endTime);
+
+        session.setIntervalType("work90");
+        session.setSessionActive(true);
+        ninetyThirtyService.saveNinetyThirtySession(session);
+
+        sendNinetyThirtyMessage(chatId, "Сессия 90 на 30 начата. Сфокусируйтесь на 90 минут!", createNinetyThirtyKeyboard());
+    }
+
+    public void extendNinetyThirtyWorkInterval(String chatId) {
+        NinetyThirty session = ninetyThirtyService.getActiveNinetyThirtySessionByChatId(chatId);
+        if (session != null) {
+            if ("work90".equals(session.getIntervalType())) {
+                Timestamp currentEndTime = session.getEndTime();
+                Timestamp newEndTime = new Timestamp(currentEndTime.getTime() + 10 * 60 * 1000);
+
+                session.setEndTime(newEndTime);
+                ninetyThirtyService.saveNinetyThirtySession(session);
+
+                sendNinetyThirtyMessage(chatId, "Рабочий интервал продлен на 10 минут!", createNinetyThirtyKeyboard());
+            } else {
+                sendMessage(chatId, "Текущая сессия не является рабочей сессией 90 на 30.");
+            }
+        } else {
+            sendMessage(chatId, "Активная сессия 90 на 30 не найдена.");
+        }
+    }
+
+    public void endNinetyThirtySession(String chatId) {
+        NinetyThirty session = ninetyThirtyService.getActiveNinetyThirtySessionByChatId(chatId);
+        if (session != null) {
+            session.setSessionActive(false);
+            ninetyThirtyService.saveNinetyThirtySession(session);
+
+            ninetyThirtyService.deleteNinetyThirtySession(session);
+
+            createMainMenuKeyboard(chatId, "Сессия 90 на 30 завершена. Отличная работа!");
+        } else {
+            sendMessage(chatId, "Активная сессия 90 на 30 не найдена.");
+        }
+    }
+
+    public void sendNinetyThirtyMessage(String chatId, String text, ReplyKeyboardMarkup keyboardMarkup) {
+        SendMessage message = new SendMessage();
+        message.setChatId(chatId);
+        message.setText(text);
+        message.setReplyMarkup(keyboardMarkup);
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public ReplyKeyboardMarkup createNinetyThirtyKeyboard() {
+        ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
+        List<KeyboardRow> keyboard = new ArrayList<>();
+
+        KeyboardRow row1 = new KeyboardRow();
+        row1.add("⏰ Продлить рабочий интервал на 10 минут");
+        row1.add("\uD83D\uDED1 Завершить сессию 90 на 30");
         keyboard.add(row1);
 
         KeyboardRow row2 = new KeyboardRow();
@@ -797,7 +928,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
-    private void showPomodoroMenuKeyboard(String chatId) {
+    private void showTimeManagementMenuKeyboard(String chatId) {
         ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
         List<KeyboardRow> keyboard = new ArrayList<>();
 
@@ -805,10 +936,14 @@ public class TelegramBot extends TelegramLongPollingBot {
         firstRow.add("\uD83C\uDF45 Метод помодоро");
 
         KeyboardRow secondRow = new KeyboardRow();
-        secondRow.add("\uD83C\uDFE0 Вернуться в главное меню");
+        secondRow.add("\uD83C\uDFC5 Метод 90 на 30");
+
+        KeyboardRow thirdRow = new KeyboardRow();
+        thirdRow.add("\uD83C\uDFE0 Вернуться в главное меню");
 
         keyboard.add(firstRow);
         keyboard.add(secondRow);
+        keyboard.add(thirdRow);
 
         keyboardMarkup.setKeyboard(keyboard);
         keyboardMarkup.setResizeKeyboard(true);
@@ -825,6 +960,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             log.error("Error sending pomodoro menu keyboard: {}", e.getMessage());
         }
     }
+
 
     private void showPomodoroManagementKeyboard(String chatId) {
         ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
@@ -863,7 +999,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
         List<KeyboardRow> keyboard = new ArrayList<>();
 
-        keyboard.add(createKeyboardRow("\u23F0 Продлить рабочий интервал на 5 минут", "\u23F9 Завершить помодоро сессию"));
+        keyboard.add(createKeyboardRow("⏰ Продлить рабочий интервал на 5 минут", "\u23F9 Завершить помодоро сессию"));
         keyboard.add(createKeyboardRow("\uD83C\uDFE0 Вернуться в главное меню"));
 
         keyboardMarkup.setKeyboard(keyboard);
@@ -882,6 +1018,62 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
+    private void showNinetyThirtyManagementKeyboard(String chatId) {
+        ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
+        List<KeyboardRow> keyboard = new ArrayList<>();
+
+        KeyboardRow firstRow = new KeyboardRow();
+        firstRow.add("\uD83C\uDFC5 Начать сессию 90 на 30");
+
+        KeyboardRow secondRow = new KeyboardRow();
+        secondRow.add("🔧 Команды для работы с 90 на 30");
+
+        KeyboardRow thirdRow = new KeyboardRow();
+        thirdRow.add("🔙 Вернуться назад");
+
+        keyboard.add(firstRow);
+        keyboard.add(secondRow);
+        keyboard.add(thirdRow);
+
+        keyboardMarkup.setKeyboard(keyboard);
+        keyboardMarkup.setResizeKeyboard(true);
+
+        SendMessage message = SendMessage.builder()
+                .chatId(chatId)
+                .text("Выберите действие:")
+                .replyMarkup(keyboardMarkup)
+                .build();
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Error sending ninety-thirty management keyboard: {}", e.getMessage());
+        }
+    }
+
+    private void showNinetyThirtyCommandsKeyboard(String chatId) {
+        ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
+        List<KeyboardRow> keyboard = new ArrayList<>();
+
+        keyboard.add(createKeyboardRow("⏰ Продлить рабочий интервал на 10 минут", "🛑 Завершить сессию 90 на 30"));
+
+        keyboard.add(createKeyboardRow("🔙 Вернуться назад"));
+
+        keyboardMarkup.setKeyboard(keyboard);
+        keyboardMarkup.setResizeKeyboard(true);
+
+        SendMessage message = SendMessage.builder()
+                .chatId(chatId)
+                .text("Выберите действие для сессии 90 на 30:")
+                .replyMarkup(keyboardMarkup)
+                .build();
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Error sending ninety-thirty commands keyboard: {}", e.getMessage());
+        }
+    }
 
     private KeyboardRow createKeyboardRow(String... buttons) {
         KeyboardRow row = new KeyboardRow();
