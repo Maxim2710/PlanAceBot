@@ -1,9 +1,6 @@
 package com.PlanAceBot.service;
 
-import com.PlanAceBot.model.Budget;
-import com.PlanAceBot.model.Pomodoro;
-import com.PlanAceBot.model.Task;
-import com.PlanAceBot.model.User;
+import com.PlanAceBot.model.*;
 import com.PlanAceBot.repository.AdsRepository;
 import com.PlanAceBot.repository.BudgetRepository;
 import com.PlanAceBot.repository.TaskRepository;
@@ -37,6 +34,9 @@ public class NotificationService {
 
     @Autowired
     private PomodoroService pomodoroService;
+
+    @Autowired
+    private NinetyThirtyService ninetyThirtyService;
 
     @Scheduled(fixedRate = 1000)
     public void checkDeadlines() {
@@ -168,6 +168,37 @@ public class NotificationService {
 
                     String chatId = String.valueOf(pomodoro.getUser().getChatId());
                     telegramBot.sendPomodoroMessage(chatId, "Отдых завершен. Сфокусируйтесь на работе в течение 25 минут!", telegramBot.createPomodoroKeyboard());
+                }
+            }
+        }
+    }
+
+    @Scheduled(fixedRate = 1000)
+    public void checkNinetyThirtySessions() {
+        List<NinetyThirty> allSessions = ninetyThirtyService.getAllNinetyThirtySessions();
+
+        Timestamp currentTime = new Timestamp(System.currentTimeMillis());
+
+        for (NinetyThirty session : allSessions) {
+            Timestamp endTime = session.getEndTime();
+
+            if (endTime != null && currentTime.after(endTime)) {
+                if ("work90".equals(session.getIntervalType())) {
+                    session.setSessionActive(false);
+                    session.setIntervalType("rest30");
+                    session.setEndTime(new Timestamp(currentTime.getTime() + 30 * 60 * 1000));
+                    ninetyThirtyService.saveNinetyThirtySession(session);
+
+                    String chatId = String.valueOf(session.getUser().getChatId());
+                    telegramBot.sendNinetyThirtyMessage(chatId, "Время рабочего интервала истекло. Отдохните 30 минут!", telegramBot.createNinetyThirtyKeyboard());
+                } else if ("rest30".equals(session.getIntervalType())) {
+                    session.setSessionActive(true);
+                    session.setIntervalType("work90");
+                    session.setEndTime(new Timestamp(currentTime.getTime() + 90 * 60 * 1000));
+                    ninetyThirtyService.saveNinetyThirtySession(session);
+
+                    String chatId = String.valueOf(session.getUser().getChatId());
+                    telegramBot.sendNinetyThirtyMessage(chatId, "Отдых завершен. Сфокусируйтесь на работе в течение 90 минут!", telegramBot.createNinetyThirtyKeyboard());
                 }
             }
         }
