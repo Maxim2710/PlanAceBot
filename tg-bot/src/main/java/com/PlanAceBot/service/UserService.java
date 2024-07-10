@@ -23,5 +23,7 @@ public class UserService {
         return userRepository.findByChatId(chatId);
     }
 
-    // Дополнительные методы для управления пользователями, если необходимо
+    public User getUserByChatId(String chatId) {
+        return userRepository.findByChatId(Long.parseLong(chatId));
+    }
 }

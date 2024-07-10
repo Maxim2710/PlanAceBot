@@ -130,6 +130,9 @@ public class TelegramBot extends TelegramLongPollingBot {
     private static final String COMMAND_SHOW_EXPENSE_COMMANDS = "/show_expense_commands";
     private static final String COMMAND_SHOW_BUDGET_COMMANDS = "/show_budget_commands";
     private static final String COMMAND_SHOW_ANALYTIC_COMMANDS = "/show_analytic_commands";
+    private static final String COMMAND_SHOW_TIME_MANAGEMENT_COMMANDS = "/show_time_management_commands";
+    private static final String COMMAND_SHOW_POMODORO_COMMANDS = "/show_pomodoro_commands";
+    private static final String COMMAND_SHOW_POMODORO_COMMANDS_FOR_INTERACTION = "/show_pomodoro_commands_for_interactions";
 
     private static final String COMMAND_ADD_INCOME = "/add_income";
     private static final String COMMAND_ADD_EXPENSE = "/add_expense";
@@ -145,6 +148,11 @@ public class TelegramBot extends TelegramLongPollingBot {
     private static final String COMMAND_CALC = "/calc";
 
     private static final String COMMAND_SHOW_ANALYTIC = "/show_analytic";
+
+    private static final String COMMAND_START_POMODORO = "/start_pomodoro";
+
+    private static final String COMMAND_CONTINUE_POMODORO = "/continue_pomodoro_now";
+    private static final String COMMAND_BREAK_POMODORO = "/break_pomodoro_now";
 
     private static final String BUTTON_TITLE = "Название";
     private static final String BUTTON_DESCRIPTION = "Описание";
@@ -204,6 +212,9 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     @Autowired
     private BudgetService budgetService;
+
+    @Autowired
+    private PomodoroService pomodoroService;
 
     public TelegramBot(BotConfig config) {
         this.botConfig = config;
@@ -317,6 +328,12 @@ public class TelegramBot extends TelegramLongPollingBot {
                 case "❓ Помощь" -> COMMAND_HELP;
                 case "\uD83D\uDCCA Аналитика" -> COMMAND_SHOW_ANALYTIC_COMMANDS;
                 case "📊 Аналитика бюджета" -> COMMAND_SHOW_ANALYTIC;
+                case "⏰ Продлить рабочий интервал на 5 минут" -> COMMAND_CONTINUE_POMODORO;
+                case "⏹ Завершить помодоро сессию" -> COMMAND_BREAK_POMODORO;
+                case "\uD83D\uDD50 Тайм-менеджмент", "\uD83D\uDD19 Вернуться назад" -> COMMAND_SHOW_TIME_MANAGEMENT_COMMANDS;
+                case "\uD83C\uDF45 Метод помодоро" -> COMMAND_SHOW_POMODORO_COMMANDS;
+                case "\uD83C\uDF45 Начать метод помодоро" -> COMMAND_START_POMODORO;
+                case "\uD83D\uDD27 Команды для работы с помодоро" -> COMMAND_SHOW_POMODORO_COMMANDS_FOR_INTERACTION;
                 default -> messageText.split(" ", 2)[0];
             };
 
@@ -485,6 +502,30 @@ public class TelegramBot extends TelegramLongPollingBot {
                         showBudgetAnalyticsKeyboard(chatId);
                         break;
 
+                    case COMMAND_START_POMODORO:
+                        handlePomodoroCommands(chatId, parts, messageText);
+                        break;
+
+                    case COMMAND_CONTINUE_POMODORO:
+                        extendWorkInterval(chatId);
+                        break;
+
+                    case COMMAND_BREAK_POMODORO:
+                        endPomodoroSession(chatId);
+                        break;
+
+                    case COMMAND_SHOW_TIME_MANAGEMENT_COMMANDS:
+                        showPomodoroMenuKeyboard(chatId);
+                        break;
+
+                    case COMMAND_SHOW_POMODORO_COMMANDS:
+                        showPomodoroManagementKeyboard(chatId);
+                        break;
+
+                    case COMMAND_SHOW_POMODORO_COMMANDS_FOR_INTERACTION:
+                        showPomodoroCommandsKeyboard(chatId);
+                        break;
+
                     default:
                         sendUnknownCommandMessage(chatId);
                         break;
@@ -493,6 +534,101 @@ public class TelegramBot extends TelegramLongPollingBot {
         } else if (update.hasCallbackQuery()) {
             handleCallbackQuery(update);
         }
+    }
+
+    private void handlePomodoroCommands(String chatId, String[] parts, String messageText) {
+        if (parts.length == 1 || messageText.equals("\uD83C\uDF45 Начать метод помодоро")) {
+            startPomodoroSession(chatId);
+        } else {
+            sendMessage(chatId, "Неверный формат команды. Используйте /start_pomodoro без параметров.");
+        }
+    }
+
+
+    public void startPomodoroSession(String chatId) {
+        User user = userService.getUserByChatId(chatId);
+
+        Pomodoro activePomodoro = pomodoroService.getActivePomodoroSessionByUserId(user);
+        if (activePomodoro != null) {
+            sendMessage(chatId, "У вас уже есть активная помодоро-сессия. Завершите её перед началом новой.");
+            return;
+        }
+
+        Pomodoro pomodoro = new Pomodoro();
+        pomodoro.setUser(user);
+
+        Timestamp startTime = new Timestamp(System.currentTimeMillis());
+        pomodoro.setStartTime(startTime);
+
+        Timestamp endTime = new Timestamp(startTime.getTime() + 25 * 60 * 1000);
+        pomodoro.setEndTime(endTime);
+
+        pomodoro.setIntervalType("work");
+        pomodoro.setSessionActive(true);
+        pomodoroService.savePomodoroSession(pomodoro);
+
+        sendPomodoroMessage(chatId, "Помодоро сессия начата. Сфокусируйтесь на 25 минут!", createPomodoroKeyboard());
+    }
+
+    public void extendWorkInterval(String chatId) {
+        Pomodoro pomodoro = pomodoroService.getActivePomodoroSessionByChatId(chatId);
+        if (pomodoro != null) {
+            Timestamp currentEndTime = pomodoro.getEndTime();
+            Timestamp newEndTime = new Timestamp(currentEndTime.getTime() + 5 * 60 * 1000);
+
+            pomodoro.setEndTime(newEndTime);
+            pomodoroService.savePomodoroSession(pomodoro);
+
+            sendPomodoroMessage(chatId, "Рабочий интервал продлен на 5 минут!", createPomodoroKeyboard());
+        } else {
+            sendMessage(chatId, "Активная помодоро-сессия не найдена.");
+        }
+    }
+
+    public void endPomodoroSession(String chatId) {
+        Pomodoro pomodoro = pomodoroService.getActivePomodoroSessionByChatId(chatId);
+        if (pomodoro != null) {
+            pomodoro.setSessionActive(false);
+            pomodoroService.savePomodoroSession(pomodoro);
+
+            pomodoroService.deletePomodoroSession(pomodoro);
+
+            createMainMenuKeyboard(chatId, "Помодоро сессия завершена. Отличная работа!");
+        } else {
+            sendMessage(chatId, "Активная помодоро-сессия не найдена.");
+        }
+    }
+
+    public void sendPomodoroMessage(String chatId, String text, ReplyKeyboardMarkup keyboardMarkup) {
+        SendMessage message = new SendMessage();
+        message.setChatId(chatId);
+        message.setText(text);
+        message.setReplyMarkup(keyboardMarkup);
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public ReplyKeyboardMarkup createPomodoroKeyboard() {
+        ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
+        List<KeyboardRow> keyboard = new ArrayList<>();
+
+        KeyboardRow row1 = new KeyboardRow();
+        row1.add("⏰ Продлить рабочий интервал на 5 минут");
+        row1.add("⏹ Завершить помодоро сессию");
+        keyboard.add(row1);
+
+        KeyboardRow row2 = new KeyboardRow();
+        row2.add("\uD83C\uDFE0 Вернуться в главное меню");
+        keyboard.add(row2);
+
+        keyboardMarkup.setKeyboard(keyboard);
+        keyboardMarkup.setResizeKeyboard(true);
+
+        return keyboardMarkup;
     }
 
     private void showTaskCommandsKeyboard(String chatId) {
@@ -661,6 +797,91 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
+    private void showPomodoroMenuKeyboard(String chatId) {
+        ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
+        List<KeyboardRow> keyboard = new ArrayList<>();
+
+        KeyboardRow firstRow = new KeyboardRow();
+        firstRow.add("\uD83C\uDF45 Метод помодоро");
+
+        KeyboardRow secondRow = new KeyboardRow();
+        secondRow.add("\uD83C\uDFE0 Вернуться в главное меню");
+
+        keyboard.add(firstRow);
+        keyboard.add(secondRow);
+
+        keyboardMarkup.setKeyboard(keyboard);
+        keyboardMarkup.setResizeKeyboard(true);
+
+        SendMessage message = SendMessage.builder()
+                .chatId(chatId)
+                .text("Выберите действие:")
+                .replyMarkup(keyboardMarkup)
+                .build();
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Error sending pomodoro menu keyboard: {}", e.getMessage());
+        }
+    }
+
+    private void showPomodoroManagementKeyboard(String chatId) {
+        ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
+        List<KeyboardRow> keyboard = new ArrayList<>();
+
+        KeyboardRow firstRow = new KeyboardRow();
+        firstRow.add("\uD83C\uDF45 Начать метод помодоро");
+
+        KeyboardRow secondRow = new KeyboardRow();
+        secondRow.add("🔧 Команды для работы с помодоро");
+
+        KeyboardRow thirdRow = new KeyboardRow();
+        thirdRow.add("\uD83D\uDD19 Вернуться назад");
+
+        keyboard.add(firstRow);
+        keyboard.add(secondRow);
+        keyboard.add(thirdRow);
+
+        keyboardMarkup.setKeyboard(keyboard);
+        keyboardMarkup.setResizeKeyboard(true);
+
+        SendMessage message = SendMessage.builder()
+                .chatId(chatId)
+                .text("Выберите действие:")
+                .replyMarkup(keyboardMarkup)
+                .build();
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Error sending pomodoro management keyboard: {}", e.getMessage());
+        }
+    }
+
+    private void showPomodoroCommandsKeyboard(String chatId) {
+        ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
+        List<KeyboardRow> keyboard = new ArrayList<>();
+
+        keyboard.add(createKeyboardRow("\u23F0 Продлить рабочий интервал на 5 минут", "\u23F9 Завершить помодоро сессию"));
+        keyboard.add(createKeyboardRow("\uD83C\uDFE0 Вернуться в главное меню"));
+
+        keyboardMarkup.setKeyboard(keyboard);
+        keyboardMarkup.setResizeKeyboard(true);
+
+        SendMessage message = SendMessage.builder()
+                .chatId(chatId)
+                .text("Выберите действие с помодоро:")
+                .replyMarkup(keyboardMarkup)
+                .build();
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Error sending pomodoro commands keyboard: {}", e.getMessage());
+        }
+    }
+
 
     private KeyboardRow createKeyboardRow(String... buttons) {
         KeyboardRow row = new KeyboardRow();
@@ -798,6 +1019,45 @@ public class TelegramBot extends TelegramLongPollingBot {
         createStartKeyboardForWelcomeBack(chatId, welcomeBackMessage);
     }
 
+    private void createMainMenuKeyboard(String chatId, String backMenu) {
+        ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
+        keyboardMarkup.setResizeKeyboard(true);
+        List<KeyboardRow> keyboard = new ArrayList<>();
+
+        KeyboardRow firstRow = new KeyboardRow();
+        firstRow.add("\uD83D\uDCCB Задачи");
+        firstRow.add("\uD83D\uDD14 Напоминания");
+
+        KeyboardRow secondRow = new KeyboardRow();
+        secondRow.add("\uD83D\uDCB0 Финансы");
+        secondRow.add("\uD83D\uDCCA Аналитика");
+
+        KeyboardRow thirdRow = new KeyboardRow();
+        thirdRow.add("\uD83D\uDD50 Тайм-менеджмент");
+
+        KeyboardRow fourthRow = new KeyboardRow();
+        fourthRow.add("❓ Помощь");
+
+        keyboard.add(firstRow);
+        keyboard.add(secondRow);
+        keyboard.add(thirdRow);
+        keyboard.add(fourthRow);
+
+        keyboardMarkup.setKeyboard(keyboard);
+
+        SendMessage message = SendMessage.builder()
+                .chatId(chatId)
+                .text(backMenu)
+                .replyMarkup(keyboardMarkup)
+                .build();
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Error sending welcome message: {}", e.getMessage());
+        }
+    }
+
     private void createStartKeyboardForBack(String chatId, String backMessage) {
         ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
         keyboardMarkup.setResizeKeyboard(true);
@@ -812,11 +1072,15 @@ public class TelegramBot extends TelegramLongPollingBot {
         secondRow.add("\uD83D\uDCCA Аналитика");
 
         KeyboardRow thirdRow = new KeyboardRow();
-        thirdRow.add("❓ Помощь");
+        thirdRow.add("\uD83D\uDD50 Тайм-менеджмент");
+
+        KeyboardRow fourthRow = new KeyboardRow();
+        fourthRow.add("❓ Помощь");
 
         keyboard.add(firstRow);
         keyboard.add(secondRow);
         keyboard.add(thirdRow);
+        keyboard.add(fourthRow);
 
         keyboardMarkup.setKeyboard(keyboard);
 
@@ -848,11 +1112,15 @@ public class TelegramBot extends TelegramLongPollingBot {
         secondRow.add("\uD83D\uDCCA Аналитика");
 
         KeyboardRow thirdRow = new KeyboardRow();
-        thirdRow.add("❓ Помощь");
+        thirdRow.add("\uD83D\uDD50 Тайм-менеджмент");
+
+        KeyboardRow fourthRow = new KeyboardRow();
+        fourthRow.add("❓ Помощь");
 
         keyboard.add(firstRow);
         keyboard.add(secondRow);
         keyboard.add(thirdRow);
+        keyboard.add(fourthRow);
 
         keyboardMarkup.setKeyboard(keyboard);
 
@@ -883,11 +1151,15 @@ public class TelegramBot extends TelegramLongPollingBot {
         secondRow.add("\uD83D\uDCCA Аналитика");
 
         KeyboardRow thirdRow = new KeyboardRow();
-        thirdRow.add("❓ Помощь");
+        thirdRow.add("\uD83D\uDD50 Тайм-менеджмент");
+
+        KeyboardRow fourthRow = new KeyboardRow();
+        fourthRow.add("❓ Помощь");
 
         keyboard.add(firstRow);
         keyboard.add(secondRow);
         keyboard.add(thirdRow);
+        keyboard.add(fourthRow);
 
         keyboardMarkup.setKeyboard(keyboard);
 
