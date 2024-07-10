@@ -7,11 +7,6 @@ import com.itextpdf.kernel.font.PdfFont;
 import com.itextpdf.kernel.font.PdfFontFactory;
 import com.itextpdf.kernel.geom.PageSize;
 import com.itextpdf.layout.element.AreaBreak;
-import com.itextpdf.layout.element.IElement;
-import com.itextpdf.layout.layout.LayoutArea;
-import com.itextpdf.layout.layout.LayoutContext;
-import com.itextpdf.layout.layout.LayoutResult;
-import com.itextpdf.layout.property.AreaBreakType;
 import com.vdurmont.emoji.EmojiParser;
 import lombok.extern.slf4j.Slf4j;
 import net.objecthunter.exp4j.Expression;
@@ -41,7 +36,6 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.awt.*;
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.sql.Timestamp;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
@@ -64,19 +58,12 @@ import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartUtils;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.PiePlot;
-import org.jfree.chart.ChartFactory;
-import org.jfree.chart.plot.PlotOrientation;
-import org.jfree.chart.JFreeChart;
-import org.jfree.chart.ChartUtils;
-import org.jfree.data.category.DefaultCategoryDataset;
-import org.jfree.chart.plot.PiePlot3D;
+
 import org.jfree.data.general.DefaultPieDataset;
-import org.jfree.chart.plot.PlotOrientation;
 
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.sql.Timestamp;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -110,12 +97,14 @@ public class TelegramBot extends TelegramLongPollingBot {
             /update_budget - Обновление существующей записи о бюджете.
             /delete_budget - Удаление бюджета.
             /get_budget_info - Получить информацию о текущем бюджете.
+            /show_analytic - Получить аналитический отчет за период.
             /show_task_commands - Отобразить все команды для взаимодействия с задачами.
             /show_reminder_commands - Отобразить все команды для взаимодействия с напоминаниями.
             /show_finance_commands - Отобразить все команды для взаимодействия с финансами.
             /show_income_commands - Отобразить все команды для взаимодействия с доходами.
             /show_expense_commands - Отобразить все команды для взаимодействия с расходами.
             /show_budget_commands - Отобразить все команды для взаимодействия с бюджетом.
+            /show_analytic_commands - Отобразить все команды для аналитики.
             """;
 
     private static final String COMMAND_START = "/start";
@@ -138,6 +127,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private static final String COMMAND_SHOW_INCOME_COMMANDS = "/show_income_commands";
     private static final String COMMAND_SHOW_EXPENSE_COMMANDS = "/show_expense_commands";
     private static final String COMMAND_SHOW_BUDGET_COMMANDS = "/show_budget_commands";
+    private static final String COMMAND_SHOW_ANALYTIC_COMMANDS = "/show_analytic_commands";
 
     private static final String COMMAND_ADD_INCOME = "/add_income";
     private static final String COMMAND_ADD_EXPENSE = "/add_expense";
@@ -239,13 +229,14 @@ public class TelegramBot extends TelegramLongPollingBot {
         listofCommands.add(new BotCommand("/update_budget", "Обновление существующей записи о бюджете"));
         listofCommands.add(new BotCommand("/delete_budget", "Удаление записи о бюджете"));
         listofCommands.add(new BotCommand("/get_budget_info", "Получить информацию о текущем бюджете"));
+        listofCommands.add(new BotCommand("/show_analytic", "Получить аналитический отчет за период"));
         listofCommands.add(new BotCommand("/show_task_commands", "Отобразить все команды для взаимодействия с задачами"));
         listofCommands.add(new BotCommand("/show_reminder_commands", "Отобразить все команды для взаимодействия с напоминаниями"));
         listofCommands.add(new BotCommand("/show_finance_commands", "Отобразить все команды для взаимодействия с финансами"));
         listofCommands.add(new BotCommand("/show_income_commands", "Отобразить все команды для взаимодействия с доходами"));
         listofCommands.add(new BotCommand("/show_expense_commands", "Отобразить все команды для взаимодействия с расходами"));
         listofCommands.add(new BotCommand("/show_budget_commands", "Отобразить все команды для взаимодействия с бюджетом"));
-        listofCommands.add(new BotCommand("/analytics", "Получить аналитический отчет за период"));
+        listofCommands.add(new BotCommand("/show_analytic_commands", "Отобразить все команды для аналитики"));
 
         try {
             this.execute(new SetMyCommands(listofCommands, new BotCommandScopeDefault(), null));
@@ -322,6 +313,8 @@ public class TelegramBot extends TelegramLongPollingBot {
                 case "❌ Удалить бюджет" -> COMMAND_DELETE_BUDGET;
                 case "\uD83D\uDCCB Информация о бюджете" -> COMMAND_INFO_ABOUT_BUDGET;
                 case "❓ Помощь" -> COMMAND_HELP;
+                case "\uD83D\uDCCA Аналитика" -> COMMAND_SHOW_ANALYTIC_COMMANDS;
+                case "📊 Аналитика бюджета" -> COMMAND_SHOW_ANALYTIC;
                 default -> messageText.split(" ", 2)[0];
             };
 
@@ -486,6 +479,10 @@ public class TelegramBot extends TelegramLongPollingBot {
                         handleReportCreationCommand(chatId, parts, messageText);
                         break;
 
+                    case COMMAND_SHOW_ANALYTIC_COMMANDS:
+                        showBudgetAnalyticsKeyboard(chatId);
+                        break;
+
                     default:
                         sendUnknownCommandMessage(chatId);
                         break;
@@ -639,6 +636,30 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
+    private void showBudgetAnalyticsKeyboard(String chatId) {
+        ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
+        List<KeyboardRow> keyboard = new ArrayList<>();
+
+        keyboard.add(createKeyboardRow("📊 Аналитика бюджета"));
+        keyboard.add(createKeyboardRow("\uD83C\uDFE0 Вернуться в главное меню"));
+
+        keyboardMarkup.setKeyboard(keyboard);
+        keyboardMarkup.setResizeKeyboard(true);
+
+        SendMessage message = SendMessage.builder()
+                .chatId(chatId)
+                .text("Выберите действие:")
+                .replyMarkup(keyboardMarkup)
+                .build();
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Error sending budget analytics keyboard: {}", e.getMessage());
+        }
+    }
+
+
     private KeyboardRow createKeyboardRow(String... buttons) {
         KeyboardRow row = new KeyboardRow();
         for (String button : buttons) {
@@ -763,9 +784,9 @@ public class TelegramBot extends TelegramLongPollingBot {
     private void sendWelcomeMessage(String chatId) {
         String welcomeMessage = EmojiParser.parseToUnicode("Добро пожаловать! Я бот для управления задачами. :blush:\n" +
                 "Используйте команду /help, чтобы увидеть список доступных команд.");
-        sendMessage(chatId, welcomeMessage);
 
         createStartKeyboardForWelcome(chatId, welcomeMessage);
+
     }
 
     private void sendWelcomeBackMessage(String chatId) {
@@ -780,22 +801,20 @@ public class TelegramBot extends TelegramLongPollingBot {
         keyboardMarkup.setResizeKeyboard(true);
         List<KeyboardRow> keyboard = new ArrayList<>();
 
-        KeyboardRow taskCommandsRow = new KeyboardRow();
-        taskCommandsRow.add("\uD83D\uDCCB Задачи");
+        KeyboardRow firstRow = new KeyboardRow();
+        firstRow.add("\uD83D\uDCCB Задачи");
+        firstRow.add("\uD83D\uDD14 Напоминания");
 
-        KeyboardRow reminderCommandsRow = new KeyboardRow();
-        reminderCommandsRow.add("\uD83D\uDD14 Напоминания");
+        KeyboardRow secondRow = new KeyboardRow();
+        secondRow.add("\uD83D\uDCB0 Финансы");
+        secondRow.add("\uD83D\uDCCA Аналитика");
 
-        KeyboardRow financesCommandsRow = new KeyboardRow();
-        financesCommandsRow.add("\uD83D\uDCB0 Финансы");
+        KeyboardRow thirdRow = new KeyboardRow();
+        thirdRow.add("❓ Помощь");
 
-        KeyboardRow helpCommandsRow = new KeyboardRow();
-        helpCommandsRow.add("❓ Помощь");
-
-        keyboard.add(taskCommandsRow);
-        keyboard.add(reminderCommandsRow);
-        keyboard.add(financesCommandsRow);
-        keyboard.add(helpCommandsRow);
+        keyboard.add(firstRow);
+        keyboard.add(secondRow);
+        keyboard.add(thirdRow);
 
         keyboardMarkup.setKeyboard(keyboard);
 
@@ -812,27 +831,26 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
+
     private void createStartKeyboardForWelcome(String chatId, String welcomeMessage) {
         ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
         keyboardMarkup.setResizeKeyboard(true);
         List<KeyboardRow> keyboard = new ArrayList<>();
 
-        KeyboardRow taskCommandsRow = new KeyboardRow();
-        taskCommandsRow.add("\uD83D\uDCCB Задачи");
+        KeyboardRow firstRow = new KeyboardRow();
+        firstRow.add("\uD83D\uDCCB Задачи");
+        firstRow.add("\uD83D\uDD14 Напоминания");
 
-        KeyboardRow reminderCommandsRow = new KeyboardRow();
-        reminderCommandsRow.add("\uD83D\uDD14 Напоминания");
+        KeyboardRow secondRow = new KeyboardRow();
+        secondRow.add("\uD83D\uDCB0 Финансы");
+        secondRow.add("\uD83D\uDCCA Аналитика");
 
-        KeyboardRow financesCommandsRow = new KeyboardRow();
-        financesCommandsRow.add("\uD83D\uDCB0 Финансы");
+        KeyboardRow thirdRow = new KeyboardRow();
+        thirdRow.add("❓ Помощь");
 
-        KeyboardRow helpCommandsRow = new KeyboardRow();
-        helpCommandsRow.add("❓ Помощь");
-
-        keyboard.add(taskCommandsRow);
-        keyboard.add(reminderCommandsRow);
-        keyboard.add(financesCommandsRow);
-        keyboard.add(helpCommandsRow);
+        keyboard.add(firstRow);
+        keyboard.add(secondRow);
+        keyboard.add(thirdRow);
 
         keyboardMarkup.setKeyboard(keyboard);
 
@@ -854,22 +872,20 @@ public class TelegramBot extends TelegramLongPollingBot {
         keyboardMarkup.setResizeKeyboard(true);
         List<KeyboardRow> keyboard = new ArrayList<>();
 
-        KeyboardRow taskCommandsRow = new KeyboardRow();
-        taskCommandsRow.add("\uD83D\uDCCB Задачи");
+        KeyboardRow firstRow = new KeyboardRow();
+        firstRow.add("\uD83D\uDCCB Задачи");
+        firstRow.add("\uD83D\uDD14 Напоминания");
 
-        KeyboardRow reminderCommandsRow = new KeyboardRow();
-        reminderCommandsRow.add("\uD83D\uDD14 Напоминания");
+        KeyboardRow secondRow = new KeyboardRow();
+        secondRow.add("\uD83D\uDCB0 Финансы");
+        secondRow.add("\uD83D\uDCCA Аналитика");
 
-        KeyboardRow financesCommandsRow = new KeyboardRow();
-        financesCommandsRow.add("\uD83D\uDCB0 Финансы");
+        KeyboardRow thirdRow = new KeyboardRow();
+        thirdRow.add("❓ Помощь");
 
-        KeyboardRow helpCommandsRow = new KeyboardRow();
-        helpCommandsRow.add("❓ Помощь");
-
-        keyboard.add(taskCommandsRow);
-        keyboard.add(reminderCommandsRow);
-        keyboard.add(financesCommandsRow);
-        keyboard.add(helpCommandsRow);
+        keyboard.add(firstRow);
+        keyboard.add(secondRow);
+        keyboard.add(thirdRow);
 
         keyboardMarkup.setKeyboard(keyboard);
 
@@ -4472,7 +4488,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             return;
         }
 
-        if (parts.length == 1 || messageText.equals("\uD83D\uDCDD Создать отчет")) {
+        if (parts.length == 1 || messageText.equals("\uD83D\uDCCA Аналитика бюджета")) {
             startReportCreation(chatId);
         } else {
             sendMessage(chatId, "Неверный формат команды. Используйте /add_report без параметров.");
@@ -4679,9 +4695,10 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void sendPdfReport(String chatId, byte[] pdfBytes) throws TelegramApiException {
+        String uniqueFileName = "report_" + UUID.randomUUID() + ".pdf";
         SendDocument sendDocument = new SendDocument();
         sendDocument.setChatId(chatId);
-        sendDocument.setDocument(new InputFile(new ByteArrayInputStream(pdfBytes), "report.pdf"));
+        sendDocument.setDocument(new InputFile(new ByteArrayInputStream(pdfBytes), uniqueFileName));
         execute(sendDocument);
     }
 
@@ -4698,5 +4715,4 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
 }
-
 
