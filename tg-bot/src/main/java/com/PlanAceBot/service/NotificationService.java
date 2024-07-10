@@ -3,11 +3,14 @@ package com.PlanAceBot.service;
 import com.PlanAceBot.model.Budget;
 import com.PlanAceBot.model.Task;
 import com.PlanAceBot.model.User;
+import com.PlanAceBot.repository.AdsRepository;
 import com.PlanAceBot.repository.BudgetRepository;
 import com.PlanAceBot.repository.TaskRepository;
+import com.PlanAceBot.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -24,6 +27,12 @@ public class NotificationService {
 
     @Autowired
     private TelegramBot telegramBot;
+
+    @Autowired
+    private AdsRepository adsRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Scheduled(fixedRate = 1000)
     public void checkDeadlines() {
@@ -101,7 +110,6 @@ public class NotificationService {
         }
     }
 
-
     private void sendBudgetWarningNotification(Budget budget) {
         User user = budget.getUser();
         String chatId = String.valueOf(user.getChatId());
@@ -113,4 +121,21 @@ public class NotificationService {
 
         telegramBot.sendMessage(chatId, message);
     }
+
+    @Scheduled(fixedRate = 1000)
+    private void sendAds() {
+        var ads = adsRepository.findAll();
+        var users = userRepository.findAll();
+        var currentTime = LocalDateTime.now();
+
+        ads.parallelStream().forEach(ad -> {
+            if (ad.getSendTime().isBefore(currentTime) || ad.getSendTime().isEqual(currentTime)) {
+                users.parallelStream().forEach(user ->
+                        telegramBot.prepareAndSendMessage(user.getChatId(), ad.getAd())
+                );
+                adsRepository.deleteById(ad.getId());
+            }
+        });
+    }
+
 }
