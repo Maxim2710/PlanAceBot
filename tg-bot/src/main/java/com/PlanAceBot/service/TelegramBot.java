@@ -107,6 +107,8 @@ public class TelegramBot extends TelegramLongPollingBot {
             /show_analytic_commands - Отобразить все команды для аналитики.
             """;
 
+    static final String ERROR_TEXT = "Error occurred: ";
+
     private static final String COMMAND_START = "/start";
     private static final String COMMAND_CREATE = "/create_task";
     private static final String COMMAND_UPDATE = "/update_task";
@@ -4712,6 +4714,21 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     private String formatTimestamp(Timestamp timestamp) {
         return new SimpleDateFormat("yyyy-MM-dd").format(timestamp);
+    }
+
+    public void prepareAndSendMessage(long chatId, String textToSend){
+        SendMessage message = new SendMessage();
+        message.setChatId(String.valueOf(chatId));
+        message.setText(textToSend);
+        executeMessage(message);
+    }
+
+    private void executeMessage(SendMessage message){
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error(ERROR_TEXT + e.getMessage());
+        }
     }
 
 }
