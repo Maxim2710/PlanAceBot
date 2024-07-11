@@ -7,8 +7,9 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface PomodoroRepository extends JpaRepository<Pomodoro, Long> {
-    Pomodoro findByUser_ChatIdAndSessionActiveTrue(Long chatId);
 
     Pomodoro findFirstByUserAndSessionActiveTrue(User user);
+
+    Pomodoro findTopByUserOrderByStartTimeDesc(User user);
 }
 

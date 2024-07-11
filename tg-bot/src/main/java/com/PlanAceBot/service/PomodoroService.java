@@ -14,12 +14,11 @@ public class PomodoroService {
     @Autowired
     private PomodoroRepository pomodoroRepository;
 
+    @Autowired
+    private UserService userService;
+
     public void savePomodoroSession(Pomodoro pomodoro) {
         pomodoroRepository.save(pomodoro);
-    }
-
-    public Pomodoro getActivePomodoroSessionByChatId(String chatId) {
-        return pomodoroRepository.findByUser_ChatIdAndSessionActiveTrue(Long.parseLong(chatId));
     }
 
     public List<Pomodoro> getAllPomodoroSessions() {
@@ -34,5 +33,9 @@ public class PomodoroService {
         return pomodoroRepository.findFirstByUserAndSessionActiveTrue(curUser);
     }
 
+    public Pomodoro getPomodoroSessionByChatId(String chatId) {
+        User user = userService.getUserByChatId(chatId);
+        return pomodoroRepository.findTopByUserOrderByStartTimeDesc(user);
+    }
 
 }
