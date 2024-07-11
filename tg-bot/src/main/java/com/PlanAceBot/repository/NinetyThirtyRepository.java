@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface NinetyThirtyRepository extends JpaRepository<NinetyThirty, Long> {
-    NinetyThirty findByUserChatIdAndSessionActive(Long user_chatId, boolean sessionActive);
     NinetyThirty findByUserAndSessionActive(User user, boolean sessionActive);
+
+    NinetyThirty findTopByUserOrderByStartTimeDesc(User user);
 }

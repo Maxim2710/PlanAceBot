@@ -3,6 +3,7 @@ package com.PlanAceBot.service;
 import com.PlanAceBot.model.NinetyThirty;
 import com.PlanAceBot.model.User;
 import com.PlanAceBot.repository.NinetyThirtyRepository;
+import com.PlanAceBot.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -14,8 +15,12 @@ public class NinetyThirtyService {
     @Autowired
     private NinetyThirtyRepository ninetyThirtyRepository;
 
-    public NinetyThirty getActiveNinetyThirtySessionByChatId(String chatId) {
-        return ninetyThirtyRepository.findByUserChatIdAndSessionActive(Long.valueOf(chatId), true);
+    @Autowired
+    private UserService userService;
+
+    public NinetyThirty getNinetyThirtySessionByChatId(String chatId) {
+        User user = userService.getUserByChatId(chatId);
+        return ninetyThirtyRepository.findTopByUserOrderByStartTimeDesc(user);
     }
 
     public NinetyThirty getActiveNinetyThirtySessionByUserId(User user) {
