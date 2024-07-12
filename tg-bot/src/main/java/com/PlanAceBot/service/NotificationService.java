@@ -58,7 +58,7 @@ public class NotificationService {
                     sendDeadlineNotification(task, daysUntilDeadline);
                     task.setNotifiedThreeDays(true);
                     taskRepository.save(task);
-                } else if (daysUntilDeadline == 1 && daysFromCreationToDeadline >= 1) {
+                } else if (daysUntilDeadline == 1) {
                     sendDeadlineNotification(task, daysUntilDeadline);
                     task.setNotifiedOneDay(true);
                     taskRepository.save(task);
@@ -71,8 +71,8 @@ public class NotificationService {
         User user = task.getUser();
         String chatId = String.valueOf(user.getChatId());
         String message = String.format(
-                "Задача '%s' была создана с дедлайном менее чем через 1 день. Пожалуйста, проверьте её срочно.\n\n" +
-                        "Название: %s\nОписание: %s\nПриоритет: %d",
+                "\uD83D\uDCE2 Задача '%s' была создана с дедлайном менее чем через 1 день. Пожалуйста, проверьте её срочно. \uD83D\uDCE2\n\n" +
+                        "\uD83D\uDD16 Название: %s\n\uD83D\uDCDD Описание: %s\n\uD83D\uDEC8 Приоритет: %d",
                 task.getTitle(), task.getTitle(), task.getDescription(), task.getPriority()
         );
 
@@ -84,8 +84,8 @@ public class NotificationService {
     private void sendDeadlineNotification(Task task, long daysUntilDeadline) {
         User user = task.getUser();
         String chatId = String.valueOf(user.getChatId());
-        String message = String.format("У вас есть задача, дедлайн которой подходит к концу:\n\n" +
-                        "Название: %s\nОписание: %s\nПриоритет: %d\nОсталось %d дней до дедлайна.",
+        String message = String.format("\uD83D\uDCC6 У вас есть задача, дедлайн которой подходит к концу:\n\n" +
+                        "\uD83D\uDD16 Название: %s\n\uD83D\uDCDD Описание: %s\n\uD83D\uDEC8 Приоритет: %d\n⏳ Осталось %d дней до дедлайна.",
                 task.getTitle(), task.getDescription(), task.getPriority(), daysUntilDeadline);
 
         telegramBot.sendMessage(chatId, message);
@@ -118,8 +118,8 @@ public class NotificationService {
         User user = budget.getUser();
         String chatId = String.valueOf(user.getChatId());
         String message = String.format(
-                "Уведомление: Бюджет '%s' меньше предупреждающего порога!\n\n" +
-                        "Название: %s\nСумма: %s\nДата начала: %s\nДата окончания: %s\nКатегория: %s",
+                "\uD83D\uDCB0 Уведомление: Бюджет '%s' меньше предупреждающего порога! \uD83D\uDCB0\n\n" +
+                        "\uD83D\uDD16 Название: %s\n\uD83D\uDCCB Сумма: %s\n\uD83D\uDCC5 Дата начала: %s\n\uD83D\uDCC5 Дата окончания: %s\n\uD83D\uDCD2 Категория: %s",
                 budget.getName(), budget.getName(), budget.getAmount(), budget.getStartDate(), budget.getEndDate(), budget.getCategory()
         );
 
@@ -159,7 +159,7 @@ public class NotificationService {
                     pomodoroService.savePomodoroSession(pomodoro);
 
                     String chatId = String.valueOf(pomodoro.getUser().getChatId());
-                    telegramBot.sendPomodoroMessage(chatId, "Время рабочего интервала истекло. Отдохните 5 минут!", telegramBot.createPomodoroKeyboard());
+                    telegramBot.sendPomodoroMessage(chatId, "\uD83D\uDD50 Время рабочего интервала истекло. Отдохните 5 минут! \uD83D\uDD50", telegramBot.createPomodoroKeyboard());
                 } else if ("rest".equals(pomodoro.getIntervalType())) {
                     pomodoro.setSessionActive(true);
                     pomodoro.setIntervalType("work");
@@ -167,7 +167,7 @@ public class NotificationService {
                     pomodoroService.savePomodoroSession(pomodoro);
 
                     String chatId = String.valueOf(pomodoro.getUser().getChatId());
-                    telegramBot.sendPomodoroMessage(chatId, "Отдых завершен. Сфокусируйтесь на работе в течение 25 минут!", telegramBot.createPomodoroKeyboard());
+                    telegramBot.sendPomodoroMessage(chatId, "\uD83D\uDCAA Отдых завершен. Сфокусируйтесь на работе в течение 25 минут! \uD83D\uDCAA", telegramBot.createPomodoroKeyboard());
                 }
             }
         }
@@ -190,7 +190,7 @@ public class NotificationService {
                     ninetyThirtyService.saveNinetyThirtySession(session);
 
                     String chatId = String.valueOf(session.getUser().getChatId());
-                    telegramBot.sendNinetyThirtyMessage(chatId, "Время рабочего интервала истекло. Отдохните 30 минут!", telegramBot.createNinetyThirtyKeyboard());
+                    telegramBot.sendNinetyThirtyMessage(chatId, "\uD83D\uDD50 Время рабочего интервала истекло. Отдохните 30 минут! \uD83D\uDD50", telegramBot.createNinetyThirtyKeyboard());
                 } else if ("rest30".equals(session.getIntervalType())) {
                     session.setSessionActive(true);
                     session.setIntervalType("work90");
@@ -198,7 +198,7 @@ public class NotificationService {
                     ninetyThirtyService.saveNinetyThirtySession(session);
 
                     String chatId = String.valueOf(session.getUser().getChatId());
-                    telegramBot.sendNinetyThirtyMessage(chatId, "Отдых завершен. Сфокусируйтесь на работе в течение 90 минут!", telegramBot.createNinetyThirtyKeyboard());
+                    telegramBot.sendNinetyThirtyMessage(chatId, "\uD83D\uDCAA Отдых завершен. Сфокусируйтесь на работе в течение 90 минут! \uD83D\uDCAA", telegramBot.createNinetyThirtyKeyboard());
                 }
             }
         }
