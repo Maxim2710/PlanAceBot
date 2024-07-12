@@ -44,4 +44,8 @@ public class IncomeService {
     public List<Income> findIncomesByUserAndDateBetween(User user, Timestamp startDate, Timestamp endDate) {
         return incomeRepository.findByUserAndDateBetween(user, startDate, endDate);
     }
+
+    public List<Income> findIncomesByUserChatId(Long chatId) {
+        return incomeRepository.findByUserChatId(chatId);
+    }
 }

@@ -163,6 +163,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private static final String COMMAND_UPDATE_BUDGET = "/update_budget";
     private static final String COMMAND_DELETE_BUDGET = "/delete_budget";
     private static final String COMMAND_INFO_ABOUT_BUDGET = "/get_budget_info";
+    private static final String COMMAND_LIST_INCOMES = "/list_incomes";
 
     private static final String COMMAND_CALC = "/calc";
 
@@ -259,6 +260,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private static final String BUTTON_SHOW_NINETY_THIRTY_COMMANDS_TEXT = "\uD83C\uDFC5 Метод 90 на 30";
     private static final String BUTTON_START_NINETY_THIRTY_TEXT = "\uD83C\uDFC5 Начать сессию 90 на 30";
     private static final String BUTTON_SHOW_NINETY_THIRTY_COMMANDS_FOR_INTERACTION_TEXT = "🔧 Команды для работы с 90 на 30";
+    private static final String BUTTON_LIST_INCOMES_TEXT = "\uD83D\uDCB6 Список доходов";
 
     private final Map<String, TaskCreationState> taskCreationStates = new HashMap<>();
     private final Map<String, TaskUpdateState> taskUpdateStates = new HashMap<>();
@@ -442,6 +444,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                 case BUTTON_SHOW_NINETY_THIRTY_COMMANDS_TEXT -> COMMAND_SHOW_NINETY_THIRTY_COMMANDS;
                 case BUTTON_START_NINETY_THIRTY_TEXT -> COMMAND_START_NINETY_THIRTY;
                 case BUTTON_SHOW_NINETY_THIRTY_COMMANDS_FOR_INTERACTION_TEXT -> COMMAND_SHOW_NINETY_THIRTY_COMMANDS_FOR_INTERACTION;
+                case BUTTON_LIST_INCOMES_TEXT -> COMMAND_LIST_INCOMES;
                 default -> messageText.split(" ", 2)[0];
             };
 
@@ -652,6 +655,10 @@ public class TelegramBot extends TelegramLongPollingBot {
 
                     case COMMAND_SHOW_NINETY_THIRTY_COMMANDS_FOR_INTERACTION:
                         showNinetyThirtyCommandsKeyboard(chatId);
+                        break;
+
+                    case COMMAND_LIST_INCOMES:
+                        handleListIncomesCommand(chatId, parts, messageText);
                         break;
 
                     default:
@@ -947,7 +954,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         List<KeyboardRow> keyboard = new ArrayList<>();
 
         keyboard.add(createKeyboardRow(BUTTON_ADD_INCOME_TEXT, BUTTON_UPDATE_INCOME_TEXT, BUTTON_DELETE_INCOME_TEXT));
-        keyboard.add(createKeyboardRow(BUTTON_BACK_TEXT));
+        keyboard.add(createKeyboardRow(BUTTON_LIST_INCOMES_TEXT, BUTTON_BACK_TEXT));
 
         keyboardMarkup.setKeyboard(keyboard);
         keyboardMarkup.setResizeKeyboard(true);
@@ -2734,9 +2741,9 @@ public class TelegramBot extends TelegramLongPollingBot {
             messageBuilder.append(EmojiParser.parseToUnicode("\uD83D\uDD8A Название: ")).append(task.getTitle()).append("\n");
             messageBuilder.append(EmojiParser.parseToUnicode("\uD83D\uDCC4 Описание: ")).append(task.getDescription() != null ? task.getDescription() : "Без описания").append("\n");
             messageBuilder.append(EmojiParser.parseToUnicode("\uD83D\uDCC5 Создано: ")).append(task.getCreationTimestamp().toLocalDateTime().format(formatter)).append("\n");
-            messageBuilder.append(EmojiParser.parseToUnicode("\u2B50 Приоритет: ")).append(task.getPriority()).append("\n");
+            messageBuilder.append(EmojiParser.parseToUnicode("⭐ Приоритет: ")).append(task.getPriority()).append("\n");
             if (task.getDeadline() != null) {
-                messageBuilder.append(EmojiParser.parseToUnicode("\u23F0 Дедлайн: ")).append(task.getDeadline().format(formatter)).append("\n");
+                messageBuilder.append(EmojiParser.parseToUnicode("⏰ Дедлайн: ")).append(task.getDeadline().format(formatter)).append("\n");
             }
             messageBuilder.append("\n");
         }
@@ -5309,6 +5316,43 @@ public class TelegramBot extends TelegramLongPollingBot {
             execute(message);
         } catch (TelegramApiException e) {
             log.error(ERROR_TEXT + e.getMessage());
+        }
+    }
+
+    private void handleListIncomesCommand(String chatId, String[] parts, String messageText) {
+        if (parts.length > 1 && !messageText.equals(BUTTON_LIST_INCOMES_TEXT)) {
+            sendMessage(chatId, "❌ Неверный формат команды. Используйте команду /list_incomes только без параметров.");
+            return;
+        }
+
+        List<Income> incomes = incomeService.findIncomesByUserChatId(Long.parseLong(chatId));
+        if (incomes.isEmpty()) {
+            sendMessage(chatId, EmojiParser.parseToUnicode(":information_source: У вас нет доходов."));
+            return;
+        }
+
+        incomes.sort(Comparator.comparing(Income::getDate).reversed());
+
+        StringBuilder messageBuilder = new StringBuilder();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+        for (Income income : incomes) {
+            messageBuilder.append(EmojiParser.parseToUnicode("\uD83D\uDCB0 Название: ")).append(income.getTitle()).append("\n");
+            messageBuilder.append(EmojiParser.parseToUnicode("\uD83D\uDCB5 Сумма: ")).append(formatNumber(income.getAmount())).append(" руб.\n");
+            messageBuilder.append(EmojiParser.parseToUnicode("\uD83D\uDCC5 Дата: ")).append(income.getDate().toLocalDateTime().format(formatter)).append("\n");
+            messageBuilder.append(EmojiParser.parseToUnicode("\uD83D\uDCDD Описание: ")).append(income.getDescription() != null ? income.getDescription() : "Без описания").append("\n");
+            messageBuilder.append(EmojiParser.parseToUnicode("\uD83D\uDCC4 Категория: ")).append(income.getCategory()).append("\n");
+            messageBuilder.append("\n");
+        }
+
+        SendMessage message = new SendMessage();
+        message.setChatId(chatId);
+        message.setText(messageBuilder.toString());
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Error sending message: " + e.getMessage());
         }
     }
 
