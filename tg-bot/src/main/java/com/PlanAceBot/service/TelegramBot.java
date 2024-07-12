@@ -80,6 +80,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             /delete_task - Удаление задачи.
             /change_status_task - Смена существующей задачи.
             /help - Показать инструкцию по командам.
+            /payment_details - Отобразить текст о реквизитах оплаты.
             /list_tasks - Показать все задачи пользователя.
             /set_deadline_task - Установить дедлайн для задачи.
             /create_reminder - Создание нового напоминания.
@@ -327,6 +328,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         listofCommands.add(new BotCommand(COMMAND_DELETE_TASK, "Удаление задачи"));
         listofCommands.add(new BotCommand(COMMAND_CHANGE_STATUS_TASK, "Смена статуса задачи"));
         listofCommands.add(new BotCommand(COMMAND_HELP, "Показать инструкцию по командам"));
+        listofCommands.add(new BotCommand(COMMAND_PAYMENT_DETAILS, "Отобразить текст о реквизитах оплаты"));
         listofCommands.add(new BotCommand(COMMAND_LIST_TASKS, "Показать все задачи пользователя"));
         listofCommands.add(new BotCommand(COMMAND_SET_DEADLINE, "Установить дедлайн для задачи"));
         listofCommands.add(new BotCommand(COMMAND_CREATE_REMINDER, "Создание нового напоминания"));
