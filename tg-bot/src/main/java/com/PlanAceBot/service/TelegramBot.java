@@ -22,6 +22,7 @@ import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.methods.groupadministration.GetChatMember;
 import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.send.SendSticker;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageReplyMarkup;
 import org.telegram.telegrambots.meta.api.objects.*;
 import org.telegram.telegrambots.meta.api.objects.chatmember.ChatMember;
@@ -176,6 +177,8 @@ public class TelegramBot extends TelegramLongPollingBot {
     private static final String COMMAND_CONTINUE_NINETY_THIRTY = "/continue_ninety_thirty_now";
     private static final String COMMAND_BREAK_NINETY_THIRTY = "/break_ninety_thirty_now";
 
+    private static final String COMMAND_PAYMENT_DETAILS = "/payment_details";
+
     private static final String BUTTON_TITLE = "🏷️ Название";
     private static final String BUTTON_DESCRIPTION = "📝 Описание";
     private static final String BUTTON_PRIORITY = "⚠️ Приоритет";
@@ -261,6 +264,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private static final String BUTTON_SHOW_NINETY_THIRTY_COMMANDS_FOR_INTERACTION_TEXT = "🔧 Команды для работы с 90 на 30";
     private static final String BUTTON_LIST_INCOMES_TEXT = "\uD83D\uDCB6 Список доходов";
     private static final String BUTTON_LIST_EXPENSES_TEXT = "📉 Список расходов";
+    private static final String BUTTON_DONATE_TEXT = "💸 Пожертвование";
 
     private final Map<String, TaskCreationState> taskCreationStates = new HashMap<>();
     private final Map<String, TaskUpdateState> taskUpdateStates = new HashMap<>();
@@ -445,6 +449,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                 case BUTTON_SHOW_NINETY_THIRTY_COMMANDS_FOR_INTERACTION_TEXT -> COMMAND_SHOW_NINETY_THIRTY_COMMANDS_FOR_INTERACTION;
                 case BUTTON_LIST_INCOMES_TEXT -> COMMAND_LIST_INCOMES;
                 case BUTTON_LIST_EXPENSES_TEXT -> COMMAND_LIST_EXPENSES;
+                case BUTTON_DONATE_TEXT -> COMMAND_PAYMENT_DETAILS;
                 default -> messageText.split(" ", 2)[0];
             };
 
@@ -665,6 +670,10 @@ public class TelegramBot extends TelegramLongPollingBot {
                         handleListExpensesCommand(chatId, parts, messageText);
                         break;
 
+                    case COMMAND_PAYMENT_DETAILS:
+                        sendPaymentDetails(chatId);
+                        break;
+
                     default:
                         sendUnknownCommandMessage(chatId);
                         break;
@@ -672,6 +681,39 @@ public class TelegramBot extends TelegramLongPollingBot {
             }
         } else if (update.hasCallbackQuery()) {
             handleCallbackQuery(update);
+        }
+    }
+
+    private void sendPaymentDetails(String chatId) {
+        User user = userService.getUserByChatId(chatId);
+        String userId = user.getChatId().toString();
+
+        StringBuilder message = new StringBuilder();
+        message.append("💳 Способ оплаты: Оплатить картой (любой банк)\n");
+        message.append("🌟 Пожертвование на развитие проектов 🌟\n");
+        message.append("🆔 Ваш ID: ").append(userId).append("\n\n");
+        message.append("📋 Реквизиты для оплаты:\n\n");
+        message.append("💳 Данные для оплаты:\n");
+        message.append("   💳 Номер карты: 👇\n");
+        message.append("      <code>4100117685810867</code>\n\n");
+        message.append("📜 Пожалуйста, убедитесь в корректности введённых данных.\n");
+        message.append("__________________________\n\n");
+        message.append("Вы платите физическому лицу. 💼 Деньги поступят на счёт получателя.\n");
+        message.append("🚀 Ваш вклад в развитие проектов неоценим для нас! Спасибо!");
+
+        sendMessageWithHTML(chatId, message.toString(), true);
+    }
+
+    private void sendMessageWithHTML(String chatId, String text, boolean enableHtml) {
+        SendMessage message = new SendMessage();
+        message.setChatId(chatId);
+        message.setText(text);
+        message.enableHtml(enableHtml);
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
         }
     }
 
@@ -981,7 +1023,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         List<KeyboardRow> keyboard = new ArrayList<>();
 
         keyboard.add(createKeyboardRow(BUTTON_ADD_EXPENSE_TEXT, BUTTON_UPDATE_EXPENSE_TEXT, BUTTON_DELETE_EXPENSE_TEXT));
-        keyboard.add(createKeyboardRow(BUTTON_LIST_EXPENSES_TEXT, BUTTON_BACK_TEXT)); // Добавляем кнопку для списка расходов
+        keyboard.add(createKeyboardRow(BUTTON_LIST_EXPENSES_TEXT, BUTTON_BACK_TEXT));
 
         keyboardMarkup.setKeyboard(keyboard);
         keyboardMarkup.setResizeKeyboard(true);
@@ -1343,6 +1385,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         thirdRow.add(BUTTON_SHOW_TIME_MANAGEMENT_COMMANDS_TEXT);
 
         KeyboardRow fourthRow = new KeyboardRow();
+        fourthRow.add(BUTTON_DONATE_TEXT);
         fourthRow.add(BUTTON_HELP_TEXT);
 
         keyboard.add(firstRow);
@@ -1382,6 +1425,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         thirdRow.add(BUTTON_SHOW_TIME_MANAGEMENT_COMMANDS_TEXT);
 
         KeyboardRow fourthRow = new KeyboardRow();
+        fourthRow.add(BUTTON_DONATE_TEXT);
         fourthRow.add(BUTTON_HELP_TEXT);
 
         keyboard.add(firstRow);
@@ -1422,6 +1466,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         thirdRow.add(BUTTON_SHOW_TIME_MANAGEMENT_COMMANDS_TEXT);
 
         KeyboardRow fourthRow = new KeyboardRow();
+        fourthRow.add(BUTTON_DONATE_TEXT);
         fourthRow.add(BUTTON_HELP_TEXT);
 
         keyboard.add(firstRow);
@@ -1461,6 +1506,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         thirdRow.add(BUTTON_SHOW_TIME_MANAGEMENT_COMMANDS_TEXT);
 
         KeyboardRow fourthRow = new KeyboardRow();
+        fourthRow.add(BUTTON_DONATE_TEXT);
         fourthRow.add(BUTTON_HELP_TEXT);
 
         keyboard.add(firstRow);
