@@ -17,4 +17,5 @@ public interface IncomeRepository extends JpaRepository<Income, Long> {
 
     List<Income> findByUserAndDateBetween(User user, Timestamp date, Timestamp date2);
 
+    List<Income> findByUserChatId(Long chatId);
 }
