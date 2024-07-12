@@ -1,8 +1,10 @@
 package com.PlanAceBot.service;
 
 import com.PlanAceBot.model.*;
+import com.PlanAceBot.model.User;
 import com.PlanAceBot.state.*;
 import com.PlanAceBot.config.BotConfig;
+
 import com.itextpdf.kernel.font.PdfFont;
 import com.itextpdf.kernel.font.PdfFontFactory;
 import com.itextpdf.kernel.geom.PageSize;
@@ -21,10 +23,7 @@ import org.telegram.telegrambots.meta.api.methods.groupadministration.GetChatMem
 import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageReplyMarkup;
-import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
-import org.telegram.telegrambots.meta.api.objects.InputFile;
-import org.telegram.telegrambots.meta.api.objects.Message;
-import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.*;
 import org.telegram.telegrambots.meta.api.objects.chatmember.ChatMember;
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
 import org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScopeDefault;
@@ -35,7 +34,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.Keyboard
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.awt.*;
-import java.io.ByteArrayInputStream;
+import java.io.*;
 import java.sql.Timestamp;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
@@ -62,7 +61,6 @@ import org.jfree.chart.plot.PiePlot;
 import org.jfree.data.general.DefaultPieDataset;
 
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -164,6 +162,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private static final String COMMAND_DELETE_BUDGET = "/delete_budget";
     private static final String COMMAND_INFO_ABOUT_BUDGET = "/get_budget_info";
     private static final String COMMAND_LIST_INCOMES = "/list_incomes";
+    private static final String COMMAND_LIST_EXPENSES = "/list_expenses";
 
     private static final String COMMAND_CALC = "/calc";
 
@@ -261,6 +260,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private static final String BUTTON_START_NINETY_THIRTY_TEXT = "\uD83C\uDFC5 Начать сессию 90 на 30";
     private static final String BUTTON_SHOW_NINETY_THIRTY_COMMANDS_FOR_INTERACTION_TEXT = "🔧 Команды для работы с 90 на 30";
     private static final String BUTTON_LIST_INCOMES_TEXT = "\uD83D\uDCB6 Список доходов";
+    private static final String BUTTON_LIST_EXPENSES_TEXT = "📉 Список расходов";
 
     private final Map<String, TaskCreationState> taskCreationStates = new HashMap<>();
     private final Map<String, TaskUpdateState> taskUpdateStates = new HashMap<>();
@@ -285,7 +285,6 @@ public class TelegramBot extends TelegramLongPollingBot {
     private final Map<String, Boolean> calcStates = new HashMap<>();
 
     private final Map<String, ReportCreationState> reportCreationStates = new HashMap<>();
-
 
     @Autowired
     private UserService userService;
@@ -445,6 +444,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                 case BUTTON_START_NINETY_THIRTY_TEXT -> COMMAND_START_NINETY_THIRTY;
                 case BUTTON_SHOW_NINETY_THIRTY_COMMANDS_FOR_INTERACTION_TEXT -> COMMAND_SHOW_NINETY_THIRTY_COMMANDS_FOR_INTERACTION;
                 case BUTTON_LIST_INCOMES_TEXT -> COMMAND_LIST_INCOMES;
+                case BUTTON_LIST_EXPENSES_TEXT -> COMMAND_LIST_EXPENSES;
                 default -> messageText.split(" ", 2)[0];
             };
 
@@ -659,6 +659,10 @@ public class TelegramBot extends TelegramLongPollingBot {
 
                     case COMMAND_LIST_INCOMES:
                         handleListIncomesCommand(chatId, parts, messageText);
+                        break;
+
+                    case COMMAND_LIST_EXPENSES:
+                        handleListExpensesCommand(chatId, parts, messageText);
                         break;
 
                     default:
@@ -977,7 +981,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         List<KeyboardRow> keyboard = new ArrayList<>();
 
         keyboard.add(createKeyboardRow(BUTTON_ADD_EXPENSE_TEXT, BUTTON_UPDATE_EXPENSE_TEXT, BUTTON_DELETE_EXPENSE_TEXT));
-        keyboard.add(createKeyboardRow(BUTTON_BACK_TEXT));
+        keyboard.add(createKeyboardRow(BUTTON_LIST_EXPENSES_TEXT, BUTTON_BACK_TEXT)); // Добавляем кнопку для списка расходов
 
         keyboardMarkup.setKeyboard(keyboard);
         keyboardMarkup.setResizeKeyboard(true);
@@ -5342,6 +5346,43 @@ public class TelegramBot extends TelegramLongPollingBot {
             messageBuilder.append(EmojiParser.parseToUnicode("\uD83D\uDCC5 Дата: ")).append(income.getDate().toLocalDateTime().format(formatter)).append("\n");
             messageBuilder.append(EmojiParser.parseToUnicode("\uD83D\uDCDD Описание: ")).append(income.getDescription() != null ? income.getDescription() : "Без описания").append("\n");
             messageBuilder.append(EmojiParser.parseToUnicode("\uD83D\uDCC4 Категория: ")).append(income.getCategory()).append("\n");
+            messageBuilder.append("\n");
+        }
+
+        SendMessage message = new SendMessage();
+        message.setChatId(chatId);
+        message.setText(messageBuilder.toString());
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Error sending message: " + e.getMessage());
+        }
+    }
+
+    private void handleListExpensesCommand(String chatId, String[] parts, String messageText) {
+        if (parts.length > 1 && !messageText.equals(BUTTON_LIST_EXPENSES_TEXT)) {
+            sendMessage(chatId, "❌ Неверный формат команды. Используйте команду /list_expenses только без параметров.");
+            return;
+        }
+
+        List<Expense> expenses = expenseService.findExpensesByUserChatId(Long.parseLong(chatId));
+        if (expenses.isEmpty()) {
+            sendMessage(chatId, EmojiParser.parseToUnicode(":information_source: У вас нет расходов."));
+            return;
+        }
+
+        expenses.sort(Comparator.comparing(Expense::getDate).reversed());
+
+        StringBuilder messageBuilder = new StringBuilder();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+        for (Expense expense : expenses) {
+            messageBuilder.append(EmojiParser.parseToUnicode("\uD83D\uDCB8 Название: ")).append(expense.getTitle()).append("\n");
+            messageBuilder.append(EmojiParser.parseToUnicode("\uD83D\uDCB5 Сумма: ")).append(formatNumber(expense.getAmount())).append(" руб.\n");
+            messageBuilder.append(EmojiParser.parseToUnicode("\uD83D\uDCC5 Дата: ")).append(expense.getDate().toLocalDateTime().format(formatter)).append("\n");
+            messageBuilder.append(EmojiParser.parseToUnicode("\uD83D\uDCDD Описание: ")).append(expense.getDescription() != null ? expense.getDescription() : "Без описания").append("\n");
+            messageBuilder.append(EmojiParser.parseToUnicode("\uD83D\uDCC4 Категория: ")).append(expense.getCategory()).append("\n");
             messageBuilder.append("\n");
         }
 

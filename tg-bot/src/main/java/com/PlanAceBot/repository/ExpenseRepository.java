@@ -16,4 +16,6 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
     int countByUser(User user);
 
     List<Expense> findByUserAndDateBetween(User user, Timestamp date, Timestamp date2);
+
+    List<Expense> findByUserChatId(Long chatId);
 }

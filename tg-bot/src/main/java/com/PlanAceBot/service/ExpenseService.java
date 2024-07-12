@@ -47,4 +47,8 @@ public class ExpenseService {
         return expenseRepository.findByUserAndDateBetween(user, startDate, endDate);
     }
 
+    public List<Expense> findExpensesByUserChatId(Long chatId) {
+        return expenseRepository.findByUserChatId(chatId);
+    }
+
 }
