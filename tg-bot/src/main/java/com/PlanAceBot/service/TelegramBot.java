@@ -176,45 +176,44 @@ public class TelegramBot extends TelegramLongPollingBot {
     private static final String COMMAND_CONTINUE_NINETY_THIRTY = "/continue_ninety_thirty_now";
     private static final String COMMAND_BREAK_NINETY_THIRTY = "/break_ninety_thirty_now";
 
-    private static final String BUTTON_TITLE = "Название";
-    private static final String BUTTON_DESCRIPTION = "Описание";
-    private static final String BUTTON_PRIORITY = "Приоритет";
-    private static final String BUTTON_CANCEL = "Отмена";
-    private static final String BUTTON_CONFIRM = "Да";
-    private static final String BUTTON_CANCEL_UPDATE = "Нет";
-    private static final String BUTTON_SUBSCRIBE = "Подписаться";
-    private static final String BUTTON_CHECK_SUBSCRIPTION = "Проверить подписку";
-    private static final String BUTTON_REMIND_AT = "Время напоминания";
-    private static final String BUTTON_MESSAGE = "Сообщение";
+    private static final String BUTTON_TITLE = "🏷️ Название";
+    private static final String BUTTON_DESCRIPTION = "📝 Описание";
+    private static final String BUTTON_PRIORITY = "⚠️ Приоритет";
+    private static final String BUTTON_CANCEL = "🚫 Отмена";
+    private static final String BUTTON_CONFIRM = "✅ Да";
+    private static final String BUTTON_CANCEL_UPDATE = "❌ Нет";
+    private static final String BUTTON_SUBSCRIBE = "🔔 Подписаться";
+    private static final String BUTTON_CHECK_SUBSCRIPTION = "🕵️ Проверить подписку";
+    private static final String BUTTON_REMIND_AT = "⏰ Время напоминания";
+    private static final String BUTTON_MESSAGE = "✉️ Сообщение";
     private static final String CHANNEL_NAME = "development_max";
     private static final String CHANNEL_USERNAME = "@development_max";
-    private static final String BUTTON_COMPLETE = "Завершена";
-    private static final String BUTTON_CANCEL_CHANGE = "Отмена изменений";
-    private static final String BUTTON_CONFIRM_BUDGET_INCOME = "Да, добавить к бюджету";
-    private static final String BUTTON_CONFIRM_BUDGET_EXPENSE = "Да, изменить бюджет";
+    private static final String BUTTON_COMPLETE = "✅ Завершена";
+    private static final String BUTTON_CANCEL_CHANGE = "❌ Отмена изменений";
+    private static final String BUTTON_CONFIRM_BUDGET_INCOME = "✅ Да, добавить к бюджету";
+    private static final String BUTTON_CONFIRM_BUDGET_EXPENSE = "✅ Да, изменить бюджет";
     private static final String BUTTON_CHANGE_5MIN = "🕒 Отложить на 5 минут";
     private static final String BUTTON_CHANGE_1HOUR = "⏰ Отложить на 1 час";
     private static final String BUTTON_CHANGE_1DAY = "📅 Отложить на 1 день";
     private static final String BUTTON_CHANGE_ON_YOUR_TIME = "⏱️ Задать время";
     private static final String BUTTON_OK_AND_DELETE = "✅ Ок!";
-    private static final String BUTTON_SALARY = "Заработная плата";
-    private static final String BUTTON_PENSION = "Пенсия";
-    private static final String BUTTON_SCHOLARSHIP = "Стипендия";
-    private static final String BUTTON_STIPEND = "Пособие";
-    private static final String BUTTON_INCOME_FROM_THE_SALE_OF_GOODS = "Доход от продажи товаров";
-    private static final String BUTTON_EAT = "Еда";
-    private static final String BUTTON_TRANSPORT = "Транспорт";
-    private static final String BUTTON_ENTERTAINMENTS = "Развлечения";
-    private static final String BUTTON_UTILITIES = "Коммунальные услуги";
-    private static final String BUTTON_MEDICINE = "Медицина";
-    private static final String BUTTON_OTHER = "Другое";
-    private static final String BUTTON_SUM = "Сумма";
-    private static final String BUTTON_DATE = "Дата";
-    private static final String BUTTON_CATEGORY = "Категория";
-    private static final String BUTTON_START_DATE = "Дата начала";
-    private static final String BUTTON_END_DATE = "Дата окончания";
-    private static final String BUTTON_WARNING = "Предупреждение";
-
+    private static final String BUTTON_SALARY = "💵 Заработная плата";
+    private static final String BUTTON_PENSION = "💰 Пенсия";
+    private static final String BUTTON_SCHOLARSHIP = "🎓 Стипендия";
+    private static final String BUTTON_STIPEND = "📜 Пособие";
+    private static final String BUTTON_INCOME_FROM_THE_SALE_OF_GOODS = "💸 Доход от продажи товаров";
+    private static final String BUTTON_EAT = "🍽️ Еда";
+    private static final String BUTTON_TRANSPORT = "🚗 Транспорт";
+    private static final String BUTTON_ENTERTAINMENTS = "🎉 Развлечения";
+    private static final String BUTTON_UTILITIES = "🏠 Коммунальные услуги";
+    private static final String BUTTON_MEDICINE = "⚕️ Медицина";
+    private static final String BUTTON_OTHER = "🔧 Другое";
+    private static final String BUTTON_SUM = "💲 Сумма";
+    private static final String BUTTON_DATE = "📅 Дата";
+    private static final String BUTTON_CATEGORY = "📂 Категория";
+    private static final String BUTTON_START_DATE = "🏁 Дата начала";
+    private static final String BUTTON_END_DATE = "🏁 Дата окончания";
+    private static final String BUTTON_WARNING = "⚠️ Предупреждение";
 
     private static final String BUTTON_SHOW_TASK_TEXT = "\uD83D\uDCCB Задачи";
     private static final String BUTTON_SHOW_REMINDER_TEXT = "\uD83D\uDD14 Напоминания";
@@ -339,6 +338,8 @@ public class TelegramBot extends TelegramLongPollingBot {
         listofCommands.add(new BotCommand(COMMAND_UPDATE_BUDGET, "Обновление существующей записи о бюджете"));
         listofCommands.add(new BotCommand(COMMAND_DELETE_BUDGET, "Удаление записи о бюджете"));
         listofCommands.add(new BotCommand(COMMAND_INFO_ABOUT_BUDGET, "Получить информацию о текущем бюджете"));
+        listofCommands.add(new BotCommand(COMMAND_START_POMODORO, "Начать сессию помодоро"));
+        listofCommands.add(new BotCommand(COMMAND_START_NINETY_THIRTY, "Начать сессию 90/30"));
         listofCommands.add(new BotCommand(COMMAND_SHOW_ANALYTIC, "Получить аналитический отчет за период"));
         listofCommands.add(new BotCommand(COMMAND_SHOW_TASK_COMMANDS, "Отобразить все команды для взаимодействия с задачами"));
         listofCommands.add(new BotCommand(COMMAND_SHOW_REMINDER_COMMANDS, "Отобразить все команды для взаимодействия с напоминаниями"));
@@ -667,17 +668,17 @@ public class TelegramBot extends TelegramLongPollingBot {
         if (parts.length == 1 || messageText.equals(BUTTON_START_POMODORO_TEXT)) {
             startPomodoroSession(chatId);
         } else {
-            sendMessage(chatId, "Неверный формат команды. Используйте /start_pomodoro без параметров.");
+            sendMessage(chatId, "❌ Неверный формат команды. Используйте /start_pomodoro без параметров.");
         }
     }
-
 
     public void startPomodoroSession(String chatId) {
         User user = userService.getUserByChatId(chatId);
 
         Pomodoro activePomodoro = pomodoroService.getActivePomodoroSessionByUserId(user);
         if (activePomodoro != null) {
-            sendMessage(chatId, "У вас уже есть активная помодоро-сессия. Завершите её перед началом новой.");
+            sendMessage(chatId, "⚠️ У вас уже есть активная помодоро-сессия.\n" +
+                    "Завершите её перед началом новой.");
             return;
         }
 
@@ -694,7 +695,11 @@ public class TelegramBot extends TelegramLongPollingBot {
         pomodoro.setSessionActive(true);
         pomodoroService.savePomodoroSession(pomodoro);
 
-        sendPomodoroMessage(chatId, "Помодоро сессия начата. Сфокусируйтесь на 25 минут!", createPomodoroKeyboard());
+        StringBuilder message = new StringBuilder();
+        message.append("🍅 Помодоро сессия начата.\n");
+        message.append("Сфокусируйтесь на 25 минут!");
+
+        sendPomodoroMessage(chatId, message.toString(), createPomodoroKeyboard());
     }
 
     public void extendWorkInterval(String chatId) {
@@ -706,9 +711,13 @@ public class TelegramBot extends TelegramLongPollingBot {
             pomodoro.setEndTime(newEndTime);
             pomodoroService.savePomodoroSession(pomodoro);
 
-            sendPomodoroMessage(chatId, "Интервал продлен на 5 минут!", createPomodoroKeyboard());
+            StringBuilder message = new StringBuilder();
+            message.append("⏲️ Интервал продлен на 5 минут!\n");
+            message.append("Продолжайте сосредотачиваться!");
+
+            sendPomodoroMessage(chatId, message.toString(), createPomodoroKeyboard());
         } else {
-            sendMessage(chatId, "Помодоро-сессия не найдена.");
+            sendMessage(chatId, "❌ Помодоро-сессия не найдена.");
         }
     }
 
@@ -717,14 +726,18 @@ public class TelegramBot extends TelegramLongPollingBot {
         if (pomodoro != null) {
             pomodoro.setSessionActive(false);
             pomodoroService.savePomodoroSession(pomodoro);
-
             pomodoroService.deletePomodoroSession(pomodoro);
 
-            createMainMenuKeyboard(chatId, "Помодоро сессия завершена. Отличная работа!");
+            StringBuilder message = new StringBuilder();
+            message.append("🍅 Помодоро сессия завершена!\n");
+            message.append("Отличная работа! Возможно, пора сделать перерыв?");
+
+            createMainMenuKeyboard(chatId, message.toString());
         } else {
-            sendMessage(chatId, "Помодоро-сессия не найдена.");
+            sendMessage(chatId, "❌ Помодоро-сессия не найдена.");
         }
     }
+
 
     public void sendPomodoroMessage(String chatId, String text, ReplyKeyboardMarkup keyboardMarkup) {
         SendMessage message = new SendMessage();
@@ -762,7 +775,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         if (parts.length == 1 || messageText.equals(BUTTON_START_NINETY_THIRTY_TEXT)) {
             startNinetyThirtySession(chatId);
         } else {
-            sendMessage(chatId, "Неверный формат команды. Используйте /start_ninety_thirty без параметров.");
+            sendMessage(chatId, "❌ Неверный формат команды. Используйте /start_ninety_thirty без параметров.");
         }
     }
 
@@ -771,7 +784,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         NinetyThirty activeSession = ninetyThirtyService.getActiveNinetyThirtySessionByUserId(user);
         if (activeSession != null) {
-            sendMessage(chatId, "У вас уже есть активная сессия. Завершите её перед началом новой.");
+            sendMessage(chatId, "У вас уже есть активная сессия. Завершите её перед началом новой. 😊");
             return;
         }
 
@@ -788,7 +801,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         session.setSessionActive(true);
         ninetyThirtyService.saveNinetyThirtySession(session);
 
-        sendNinetyThirtyMessage(chatId, "Сессия 90 на 30 начата. Сфокусируйтесь на 90 минут!", createNinetyThirtyKeyboard());
+        sendNinetyThirtyMessage(chatId, "Сессия 90 на 30 начата. Сфокусируйтесь на 90 минут! 💪", createNinetyThirtyKeyboard());
     }
 
     public void extendNinetyThirtyWorkInterval(String chatId) {
@@ -801,12 +814,12 @@ public class TelegramBot extends TelegramLongPollingBot {
                 session.setEndTime(newEndTime);
                 ninetyThirtyService.saveNinetyThirtySession(session);
 
-                sendNinetyThirtyMessage(chatId, "Интервал продлен на 10 минут!", createNinetyThirtyKeyboard());
+                sendNinetyThirtyMessage(chatId, "Интервал продлен на 10 минут! ⏳", createNinetyThirtyKeyboard());
             } else {
-                sendMessage(chatId, "Текущая сессия не является рабочей сессией 90 на 30.");
+                sendMessage(chatId, "Текущая сессия не является рабочей сессией 90 на 30. 😕");
             }
         } else {
-            sendMessage(chatId, "Сессия 90 на 30 не найдена.");
+            sendMessage(chatId, "Сессия 90 на 30 не найдена. 🕵️‍♂️");
         }
     }
 
@@ -818,9 +831,9 @@ public class TelegramBot extends TelegramLongPollingBot {
 
             ninetyThirtyService.deleteNinetyThirtySession(session);
 
-            createMainMenuKeyboard(chatId, "Сессия 90 на 30 завершена. Отличная работа!");
+            createMainMenuKeyboard(chatId, "Сессия 90 на 30 завершена. Отличная работа! 🎉");
         } else {
-            sendMessage(chatId, "Сессия 90 на 30 не найдена.");
+            sendMessage(chatId, "Сессия 90 на 30 не найдена. 🕵️‍♂️");
         }
     }
 
@@ -870,14 +883,14 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         SendMessage message = SendMessage.builder()
                 .chatId(chatId)
-                .text("Выберите команду:")
+                .text("Выберите команду: 📋")
                 .replyMarkup(keyboardMarkup)
                 .build();
 
         try {
             execute(message);
         } catch (TelegramApiException e) {
-            log.error("Error sending commands keyboard: {}", e.getMessage());
+            log.error("Ошибка при отправке клавиатуры с командами: {}", e.getMessage());
         }
     }
 
@@ -894,14 +907,14 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         SendMessage message = SendMessage.builder()
                 .chatId(chatId)
-                .text("Выберите команду для напоминаний:")
+                .text("Выберите команду для управления напоминаниями: ⏰")
                 .replyMarkup(keyboardMarkup)
                 .build();
 
         try {
             execute(message);
         } catch (TelegramApiException e) {
-            log.error("Error sending reminder commands keyboard: {}", e.getMessage());
+            log.error("Ошибка при отправке клавиатуры с командами для напоминаний: {}", e.getMessage());
         }
     }
 
@@ -918,14 +931,14 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         SendMessage message = SendMessage.builder()
                 .chatId(chatId)
-                .text("Выберите раздел финансов:")
+                .text("Выберите раздел финансов: 💰")
                 .replyMarkup(keyboardMarkup)
                 .build();
 
         try {
             execute(message);
         } catch (TelegramApiException e) {
-            log.error("Error sending finance commands keyboard: {}", e.getMessage());
+            log.error("Ошибка при отправке клавиатуры с командами для финансов: {}", e.getMessage());
         }
     }
 
@@ -941,14 +954,14 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         SendMessage message = SendMessage.builder()
                 .chatId(chatId)
-                .text("Выберите действие с доходом:")
+                .text("Выберите действие с доходом: 💸")
                 .replyMarkup(keyboardMarkup)
                 .build();
 
         try {
             execute(message);
         } catch (TelegramApiException e) {
-            log.error("Error sending income commands keyboard: {}", e.getMessage());
+            log.error("Ошибка при отправке клавиатуры с командами для доходов: {}", e.getMessage());
         }
     }
 
@@ -964,14 +977,14 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         SendMessage message = SendMessage.builder()
                 .chatId(chatId)
-                .text("Выберите действие с расходом:")
+                .text("Выберите действие с расходом: 💸")
                 .replyMarkup(keyboardMarkup)
                 .build();
 
         try {
             execute(message);
         } catch (TelegramApiException e) {
-            log.error("Error sending expense commands keyboard: {}", e.getMessage());
+            log.error("Ошибка при отправке клавиатуры с командами для расходов: {}", e.getMessage());
         }
     }
 
@@ -988,14 +1001,14 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         SendMessage message = SendMessage.builder()
                 .chatId(chatId)
-                .text("Выберите действие с бюджетом:")
+                .text("Выберите действие с бюджетом: 💰")
                 .replyMarkup(keyboardMarkup)
                 .build();
 
         try {
             execute(message);
         } catch (TelegramApiException e) {
-            log.error("Error sending budget commands keyboard: {}", e.getMessage());
+            log.error("Ошибка при отправке клавиатуры с командами для бюджета: {}", e.getMessage());
         }
     }
 
@@ -1011,14 +1024,14 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         SendMessage message = SendMessage.builder()
                 .chatId(chatId)
-                .text("Выберите действие:")
+                .text("Выберите действие для аналитики бюджета: 📊")
                 .replyMarkup(keyboardMarkup)
                 .build();
 
         try {
             execute(message);
         } catch (TelegramApiException e) {
-            log.error("Error sending budget analytics keyboard: {}", e.getMessage());
+            log.error("Ошибка при отправке клавиатуры с аналитикой бюджета: {}", e.getMessage());
         }
     }
 
@@ -1044,17 +1057,16 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         SendMessage message = SendMessage.builder()
                 .chatId(chatId)
-                .text("Выберите действие:")
+                .text("Выберите действие для управления временем: ⏳")
                 .replyMarkup(keyboardMarkup)
                 .build();
 
         try {
             execute(message);
         } catch (TelegramApiException e) {
-            log.error("Error sending pomodoro menu keyboard: {}", e.getMessage());
+            log.error("Ошибка при отправке клавиатуры меню управления временем: {}", e.getMessage());
         }
     }
-
 
     private void showPomodoroManagementKeyboard(String chatId) {
         ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
@@ -1078,14 +1090,14 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         SendMessage message = SendMessage.builder()
                 .chatId(chatId)
-                .text("Выберите действие:")
+                .text("Выберите действие для управления помодоро: \uD83D\uDD52")
                 .replyMarkup(keyboardMarkup)
                 .build();
 
         try {
             execute(message);
         } catch (TelegramApiException e) {
-            log.error("Error sending pomodoro management keyboard: {}", e.getMessage());
+            log.error("Ошибка при отправке клавиатуры управления помодоро: {}", e.getMessage());
         }
     }
 
@@ -1101,14 +1113,14 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         SendMessage message = SendMessage.builder()
                 .chatId(chatId)
-                .text("Выберите действие с помодоро:")
+                .text("Выберите действие с помодоро: 🍅")
                 .replyMarkup(keyboardMarkup)
                 .build();
 
         try {
             execute(message);
         } catch (TelegramApiException e) {
-            log.error("Error sending pomodoro commands keyboard: {}", e.getMessage());
+            log.error("Ошибка при отправке клавиатуры команд помодоро: {}", e.getMessage());
         }
     }
 
@@ -1134,14 +1146,14 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         SendMessage message = SendMessage.builder()
                 .chatId(chatId)
-                .text("Выберите действие:")
+                .text("Выберите действие: ⏳")
                 .replyMarkup(keyboardMarkup)
                 .build();
 
         try {
             execute(message);
         } catch (TelegramApiException e) {
-            log.error("Error sending ninety-thirty management keyboard: {}", e.getMessage());
+            log.error("Ошибка при отправке клавиатуры управления 90 на 30: {}", e.getMessage());
         }
     }
 
@@ -1158,7 +1170,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         SendMessage message = SendMessage.builder()
                 .chatId(chatId)
-                .text("Выберите действие для сессии 90 на 30:")
+                .text("Выберите действие для сессии 90 на 30: ⏳")
                 .replyMarkup(keyboardMarkup)
                 .build();
 
@@ -1179,10 +1191,10 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     private void handleCalculateCommand(String chatId, String[] parts, String messageText) {
         if (parts.length == 1 || messageText.equals(BUTTON_CALC_TEXT)) {
-            sendMessage(chatId, "Пожалуйста, введите математическое выражение для вычисления:");
+            sendMessage(chatId, "Пожалуйста, введите математическое выражение для вычисления: 🧮");
             calcStates.put(chatId, true);
         } else {
-            sendMessage(chatId, "Неверный формат команды. Используйте /calc без параметров.");
+            sendMessage(chatId, "❌ Неверный формат команды. Используйте /calc без параметров.");
         }
     }
 
@@ -1192,19 +1204,19 @@ public class TelegramBot extends TelegramLongPollingBot {
             double result = e.evaluate();
 
             if (result == Math.floor(result)) {
-                sendMessage(chatId, "Результат: " + (int) result);
+                sendMessage(chatId, "Результат: " + (int) result + " 🎲");
             } else {
-                sendMessage(chatId, "Результат: " + result);
+                sendMessage(chatId, "Результат: " + result + " 🎲");
             }
 
         } catch (Exception ex) {
-            sendMessage(chatId, "Ошибка в выражении. Пожалуйста, проверьте правильность ввода.");
+            sendMessage(chatId, "Ошибка в выражении. Пожалуйста, проверьте правильность ввода. ❌");
         }
     }
 
     private void sendHelpMessage(String chatId, String[] parts, String messageText) {
         if (parts.length > 1 && !(messageText.equals(BUTTON_HELP_TEXT))) {
-            sendMessage(chatId, "Неверный формат команды. Используйте команду /help только без параметров.");
+            sendMessage(chatId, "❌ Неверный формат команды. Используйте команду /help только без параметров.");
             return;
         }
 
@@ -1213,7 +1225,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void sendSubscribeMessage(String chatId) {
-        String subscribeMessage = "Подпишитесь на наш канал и затем нажмите кнопку \"Проверить подписку\", чтобы продолжить использование бота.";
+        String subscribeMessage = "Подпишитесь на наш канал и затем нажмите кнопку \"Проверить подписку\", чтобы продолжить использование бота. 📢";
         InlineKeyboardMarkup markup = createSubscribeMarkup();
         SendMessage message = createMessage(chatId, subscribeMessage, markup);
 
@@ -1286,7 +1298,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         } else if (!isNewUser && flag) {
             sendWelcomeBackMessage(chatId);
         } else {
-            createStartKeyboardForBack(chatId, "Вы вернулись в главное меню");
+            createStartKeyboardForBack(chatId, "Вы вернулись в главное меню 😊");
         }
     }
 
@@ -1464,18 +1476,19 @@ public class TelegramBot extends TelegramLongPollingBot {
         if (parts.length == 1 || messageText.equals(BUTTON_CREATE_TASK_TEXT)) {
             startTaskCreation(chatId);
         } else {
-            sendMessage(chatId, "Неверный формат команды. Используйте /create_task без параметров.");
+            sendMessage(chatId, "❌ Неверный формат команды. Используйте /create_task без параметров.");
         }
     }
 
+
     private void startTaskCreation(String chatId) {
         if (getUserTaskCount(chatId) > 20) {
-            sendMessage(chatId, "Вы достигли максимального количества задач (20). Удалите существующие задачи перед созданием новых.");
+            sendMessage(chatId, "Вы достигли максимального количества задач (20) 😕. Удалите существующие задачи перед созданием новых.");
             return;
         }
 
         taskCreationStates.put(chatId, new TaskCreationState());
-        sendMessage(chatId, "Введите название задачи:");
+        sendMessage(chatId, "Введите название задачи: ✍️");
     }
 
     private void processTaskCreation(String chatId, String messageText) {
@@ -1484,16 +1497,16 @@ public class TelegramBot extends TelegramLongPollingBot {
         if (currentState.getState() == TaskState.ENTER_TITLE) {
             currentState.setTitle(messageText);
             currentState.setState(TaskState.ENTER_DESCRIPTION);
-            sendMessage(chatId, "Введите описание задачи для '" + messageText + "':");
+            sendMessage(chatId, "Введите описание задачи для '" + messageText + "': ✏️");
         } else if (currentState.getState() == TaskState.ENTER_DESCRIPTION) {
             currentState.setDescription(messageText);
             currentState.setState(TaskState.ENTER_PRIORITY);
-            sendMessage(chatId, "Введите приоритет задачи (1-5):");
+            sendMessage(chatId, "Введите приоритет задачи (1-5): 🌟");
         } else if (currentState.getState() == TaskState.ENTER_PRIORITY) {
             try {
                 int priority = Integer.parseInt(messageText);
                 if (priority < 1 || priority > 5) {
-                    sendMessage(chatId, "Приоритет должен быть в диапазоне от 1 до 5. Пожалуйста, введите заново:");
+                    sendMessage(chatId, "Приоритет должен быть в диапазоне от 1 до 5. Пожалуйста, введите заново: ❗");
                     return;
                 }
                 currentState.setPriority(priority);
@@ -1501,22 +1514,22 @@ public class TelegramBot extends TelegramLongPollingBot {
                 createTask(currentState.getTitle(), currentState.getDescription(), currentState.getPriority(), chatId);
                 taskCreationStates.remove(chatId);
 
-                sendMessage(chatId, "Задача '" + currentState.getTitle() + "' с приоритетом " + priority + " создана.");
+                sendMessage(chatId, "Задача '" + currentState.getTitle() + "' с приоритетом " + priority + " создана! 🎉");
             } catch (NumberFormatException e) {
-                sendMessage(chatId, "Пожалуйста, введите числовое значение для приоритета (1-5):");
+                sendMessage(chatId, "Пожалуйста, введите числовое значение для приоритета (1-5): ❓");
             }
         }
     }
 
     private void createTask(String title, String description, int priority, String chatId) {
         if (getUserTaskCount(chatId) > 20) {
-            sendMessage(chatId, "Вы достигли максимального количества задач (20). Удалите существующие задачи перед созданием новых.");
+            sendMessage(chatId, "Вы достигли максимального количества задач (20) 😕. Удалите существующие задачи перед созданием новых.");
             return;
         }
 
         User user = userService.findByChatId(Long.parseLong(chatId));
         if (user == null) {
-            sendMessage(chatId, "Пользователь не зарегистрирован. Используйте /start для регистрации.");
+            sendMessage(chatId, "Пользователь не зарегистрирован. Используйте /start для регистрации. 🚫");
             return;
         }
 
@@ -1542,25 +1555,25 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void sendUnknownCommandMessage(String chatId) {
-        sendMessage(chatId, "Неизвестная команда. Используйте /help, чтобы увидеть доступные команды.");
+        sendMessage(chatId, "Неизвестная команда. Используйте /help, чтобы увидеть доступные команды. ❓");
     }
 
     private void handleUpdateCommand(String[] parts, String chatId, String messageText) {
         if (parts.length > 1 && !(messageText.equals(BUTTON_UPDATE_TASK_TEXT))) {
-            sendMessage(chatId, "Неверный формат команды. Используйте команду /update_task только без параметров.");
+            sendMessage(chatId, "❌ Неверный формат команды. Используйте команду /update_task только без параметров.");
             return;
         }
 
         List<Task> tasks = taskService.findTasksByUserId(Long.parseLong(chatId));
 
         if (tasks.isEmpty()) {
-            sendMessage(chatId, "У вас пока нет задач для обновления.");
+            sendMessage(chatId, "У вас пока нет задач для обновления. 😕");
             return;
         }
 
         InlineKeyboardMarkup markup = createTasksMarkup(tasks);
 
-        SendMessage message = createMessage(chatId, "Выберите задачу для обновления:", markup);
+        SendMessage message = createMessage(chatId, "Выберите задачу для обновления: 📝", markup);
 
         try {
             execute(message);
@@ -1591,7 +1604,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         TaskUpdateState currentState = taskUpdateStates.get(chatId);
 
         if (currentState == null) {
-            sendMessage(chatId, "Ошибка обновления задачи.");
+            sendMessage(chatId, "Ошибка обновления задачи. ❌");
             return;
         }
 
@@ -1599,7 +1612,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         Task task = taskService.findById(taskId);
         if (task == null || !task.getUser().getChatId().equals(Long.parseLong(chatId))) {
-            sendMessage(chatId, "Задача с указанным номером не найдена или не принадлежит вам.");
+            sendMessage(chatId, "Задача с указанным номером не найдена или не принадлежит вам. 🚫");
             return;
         }
 
@@ -1610,14 +1623,14 @@ public class TelegramBot extends TelegramLongPollingBot {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
         String selectionMessage = "Выберите, что вы хотите обновить для задачи:\n";
-        selectionMessage += "Текущее название: " + currentTitle + "\n";
-        selectionMessage += "Текущее описание: " + currentDescription + "\n";
-        selectionMessage += "Текущий приоритет: " + currentPriority + "\n";
-        selectionMessage += "Дата создания: " + creationTimestamp.format(formatter) + "\n";
+        selectionMessage += "📝 Текущее название: " + currentTitle + "\n";
+        selectionMessage += "📋 Текущее описание: " + currentDescription + "\n";
+        selectionMessage += "⭐ Текущий приоритет: " + currentPriority + "\n";
+        selectionMessage += "🕒 Дата создания: " + creationTimestamp.format(formatter) + "\n";
 
         LocalDateTime deadline = task.getDeadline();
         if (deadline != null) {
-            selectionMessage += "Дедлайн: " + deadline.format(formatter) + "\n";
+            selectionMessage += "⏰ Дедлайн: " + deadline.format(formatter) + "\n";
         }
 
         InlineKeyboardMarkup markup = createUpdateMarkup();
@@ -1627,7 +1640,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         try {
             execute(message);
         } catch (TelegramApiException e) {
-            log.error("Error sending field selection message: {}", e.getMessage());
+            log.error("Ошибка отправки сообщения выбора поля: {}", e.getMessage());
         }
     }
 
@@ -1671,7 +1684,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         TaskUpdateState currentState = taskUpdateStates.get(chatId);
 
         if (currentState == null) {
-            sendMessage(chatId, "Ошибка при обновлении задачи.");
+            sendMessage(chatId, "Ошибка при обновлении задачи. ❌");
             return;
         }
 
@@ -1680,7 +1693,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         Task task = taskService.findById(taskId);
         if (task == null || !task.getUser().getChatId().equals(Long.parseLong(chatId))) {
-            sendMessage(chatId, "Задача с указанным номером не найдена или не принадлежит вам.");
+            sendMessage(chatId, "Задача с указанным номером не найдена или не принадлежит вам. 🚫");
             taskUpdateStates.remove(chatId);
             return;
         }
@@ -1689,12 +1702,12 @@ public class TelegramBot extends TelegramLongPollingBot {
             try {
                 int priority = Integer.parseInt(messageText);
                 if (priority < 1 || priority > 5) {
-                    sendMessage(chatId, "Приоритет должен быть в диапазоне от 1 до 5. Пожалуйста, введите заново:");
+                    sendMessage(chatId, "Приоритет должен быть в диапазоне от 1 до 5. Пожалуйста, введите заново: ❗");
                     return;
                 }
                 task.setPriority(priority);
             } catch (NumberFormatException e) {
-                sendMessage(chatId, "Пожалуйста, введите числовое значение для приоритета (1-5):");
+                sendMessage(chatId, "Пожалуйста, введите числовое значение для приоритета (1-5): ❓");
                 return;
             }
         } else {
@@ -1718,7 +1731,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                 task.setPriority(Integer.parseInt(newValue));
                 break;
             default:
-                sendMessage(task.getUser().getChatId().toString(), "Ошибка при обновлении задачи.");
+                sendMessage(task.getUser().getChatId().toString(), "Ошибка при обновлении задачи. ❌");
                 taskUpdateStates.remove(task.getUser().getChatId().toString());
                 return;
         }
@@ -1730,15 +1743,15 @@ public class TelegramBot extends TelegramLongPollingBot {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
         StringBuilder confirmationMessage = new StringBuilder("Изменения сохранены:\n");
-        confirmationMessage.append("Название: ").append(task.getTitle()).append("\n");
-        confirmationMessage.append("Описание: ").append(task.getDescription()).append("\n");
-        confirmationMessage.append("Приоритет: ").append(task.getPriority()).append("\n");
+        confirmationMessage.append("📝 Название: ").append(task.getTitle()).append("\n");
+        confirmationMessage.append("📋 Описание: ").append(task.getDescription()).append("\n");
+        confirmationMessage.append("⭐ Приоритет: ").append(task.getPriority()).append("\n");
 
-        confirmationMessage.append("\nДата создания: ").append(task.getCreationTimestamp().toLocalDateTime().format(formatter));
+        confirmationMessage.append("\n🕒 Дата создания: ").append(task.getCreationTimestamp().toLocalDateTime().format(formatter));
 
         LocalDateTime deadline = task.getDeadline();
         if (deadline != null) {
-            confirmationMessage.append("\nДедлайн: ").append(deadline.format(formatter));
+            confirmationMessage.append("\n⏰ Дедлайн: ").append(deadline.format(formatter));
         }
 
         confirmationMessage.append("\n\nПодтвердить изменения?");
@@ -1750,7 +1763,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         try {
             execute(message);
         } catch (TelegramApiException e) {
-            log.error("Error sending confirmation message: {}", e.getMessage());
+            log.error("Ошибка отправки сообщения подтверждения: {}", e.getMessage());
         }
     }
 
@@ -1778,20 +1791,20 @@ public class TelegramBot extends TelegramLongPollingBot {
     private void cancelUpdate(String chatId, TaskUpdateState currentState) {
         taskService.save(currentState.getOriginalTask());
         taskUpdateStates.remove(chatId);
-        sendMessage(chatId, "Изменения отменены.");
+        sendMessage(chatId, "Изменения отменены. 🔄");
     }
 
     private void sendNewValueRequest(String chatId, String field) {
         String messageText;
         switch (field) {
             case "title":
-                messageText = "Введите новое название задачи:";
+                messageText = "Введите новое название задачи: ✏️";
                 break;
             case "description":
-                messageText = "Введите новое описание задачи:";
+                messageText = "Введите новое описание задачи: 📝";
                 break;
             case "priority":
-                messageText = "Введите новый приоритет задачи (1-5):";
+                messageText = "Введите новый приоритет задачи (1-5): ⭐";
                 break;
             default:
                 log.error("Unsupported field type: {}", field);
@@ -1832,20 +1845,20 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     private void handleDeleteCommand(String[] parts, String chatId, String messageText) {
         if (parts.length > 1 && !(messageText.equals(BUTTON_DELETE_TASK_TEXT))) {
-            sendMessage(chatId, "Неверный формат команды. Используйте /delete_task без параметров.");
+            sendMessage(chatId, "❌ Неверный формат команды. Используйте /delete_task без параметров.");
             return;
         }
 
         List<Task> tasks = taskService.findTasksByUserId(Long.parseLong(chatId));
 
         if (tasks.isEmpty()) {
-            sendMessage(chatId, "У вас нет задач для удаления.");
+            sendMessage(chatId, "У вас нет задач для удаления. 🚫");
             return;
         }
 
         InlineKeyboardMarkup markup = createDeleteTaskMarkup(tasks);
 
-        SendMessage message = createMessage(chatId, "Выберите задачу для удаления:", markup);
+        SendMessage message = createMessage(chatId, "\uD83D\uDDD1️ Выберите задачу для удаления:", markup);
 
         try {
             execute(message);
@@ -1875,21 +1888,21 @@ public class TelegramBot extends TelegramLongPollingBot {
     private void sendDeleteConfirmationMessage(String chatId, int taskIdToDelete) {
         Task task = taskService.findById(taskIdToDelete);
         if (task == null) {
-            sendMessage(chatId, "Задача не найдена.");
+            sendMessage(chatId, "Задача не найдена. ❌");
             return;
         }
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
         StringBuilder confirmationMessage = new StringBuilder("Вы уверены, что хотите удалить следующую задачу?\n\n");
-        confirmationMessage.append("Название: ").append(task.getTitle()).append("\n");
-        confirmationMessage.append("Описание: ").append(task.getDescription()).append("\n");
-        confirmationMessage.append("Приоритет: ").append(task.getPriority()).append("\n");
-        confirmationMessage.append("Дата создания: ").append(task.getCreationTimestamp().toLocalDateTime().format(formatter)).append("\n");
+        confirmationMessage.append("📝 Название: ").append(task.getTitle()).append("\n");
+        confirmationMessage.append("📋 Описание: ").append(task.getDescription()).append("\n");
+        confirmationMessage.append("⭐ Приоритет: ").append(task.getPriority()).append("\n");
+        confirmationMessage.append("🕒 Дата создания: ").append(task.getCreationTimestamp().toLocalDateTime().format(formatter)).append("\n");
 
         LocalDateTime deadline = task.getDeadline();
         if (deadline != null) {
-            confirmationMessage.append("Дедлайн: ").append(deadline.format(formatter)).append("\n");
+            confirmationMessage.append("⏰ Дедлайн: ").append(deadline.format(formatter)).append("\n");
         }
 
         InlineKeyboardMarkup markup = createDeleteConfirmationMarkup();
@@ -1899,7 +1912,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         try {
             execute(message);
         } catch (TelegramApiException e) {
-            log.error("Error sending delete confirmation message: {}", e.getMessage());
+            log.error("Ошибка отправки сообщения подтверждения удаления: {}", e.getMessage());
         }
     }
 
@@ -1922,12 +1935,12 @@ public class TelegramBot extends TelegramLongPollingBot {
             taskService.delete(taskId);
         }
         taskDeletionStates.remove(chatId);
-        sendMessage(chatId, "Задача удалена.");
+        sendMessage(chatId, "Задача удалена. 🗑️");
     }
 
     private void cancelDelete(String chatId) {
         taskDeletionStates.remove(chatId);
-        sendMessage(chatId, "Удаление отменено.");
+        sendMessage(chatId, "Удаление отменено. 🚫");
     }
 
     private void handleCallbackQuery(Update update) {
@@ -1941,7 +1954,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             if (isUserSubscribed(chatId)) {
                 registerUserAndSendWelcomeMessage(chatId, (Message) callbackQuery.getMessage(),true);
             } else {
-                sendMessage(chatId, "Вы еще не подписались на канал. Пожалуйста, подпишитесь и нажмите \"Проверить подписку\".");
+                sendMessage(chatId, "Вы еще не подписались на канал. Пожалуйста, подпишитесь и нажмите \"Проверить подписку\". 📢");
             }
         } else if (data.equals("Заработная плата") || data.equals("Пенсия") ||
                 data.equals("Стипендия") || data.equals("Пособие") ||
@@ -1966,14 +1979,14 @@ public class TelegramBot extends TelegramLongPollingBot {
                 SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm");
                 String formattedReminderTime = formatter.format(currentState.getReminderTime());
 
-                sendMessage(chatId, "Напоминание установлено на " + formattedReminderTime + ".");
+                sendMessage(chatId, "Напоминание установлено на " + formattedReminderTime + ". ⏰");
             }
         } else if (data.startsWith("deleteOk_")) {
             int reminderId = Integer.parseInt(data.split("_")[1]);
             deleteReminder(chatId, reminderId);
         } else if ("confirm_no".equals(data)) {
             reminderCreationStates.remove(chatId);
-            sendMessage(chatId, "Создание напоминания отменено.");
+            sendMessage(chatId, "Создание напоминания отменено. ❌");
         } else if (data.startsWith("update_task_")) {
             handleUpdateTask(data, chatId);
         } else if (data.startsWith("delete_task_")) {
@@ -2012,14 +2025,14 @@ public class TelegramBot extends TelegramLongPollingBot {
                     boolean budgetUpdated = adjustBudgetForIncome(chatId, amountDifference);
 
                     if (budgetUpdated) {
-                        sendMessage(chatId, "Изменения сохранены и бюджет обновлен.");
+                        sendMessage(chatId, "Изменения сохранены и бюджет обновлен. 💼");
                     } else {
-                        sendMessage(chatId, "Изменения сохранены. Для внесения изменений в бюджет необходимо создать его.");
+                        sendMessage(chatId, "Изменения сохранены. Для внесения изменений в бюджет необходимо создать его. 📉");
                     }
 
                     incomeUpdateStates.remove(chatId);
                 } else {
-                    sendMessage(chatId, "Ошибка при обновлении дохода.");
+                    sendMessage(chatId, "Ошибка при обновлении дохода. \uD83D\uDEAB");
                 }
             }
         } else if (data.startsWith("update_budget_")) {
@@ -2031,18 +2044,26 @@ public class TelegramBot extends TelegramLongPollingBot {
         } else if ("DEDUCT_FROM_BUDGET_NO".equals(data)) {
             finalizeExpenseCreation(chatId);
         } else if ("confirm_update_expense_change_budget".equals(data)) {
-            Expense expense = expenseService.findById(expState.getExpenseId());
-            double originalAmount = expState.getOriginalAmount();
-            double newAmount = expState.getNewAmount();
-            double amountDifference = newAmount - originalAmount;
-            if (adjustBudgetForExpense(chatId, amountDifference)) {
-                expense.setAmount(newAmount);
-                expenseService.save(expense);
-                sendMessage(chatId, "Изменения и корректировка бюджета успешно сохранены.");
+            ExpenseUpdateState currentState = expenseUpdateStates.get(chatId);
+            if (currentState != null) {
+                Expense updatedExpense = expenseService.findById(currentState.getExpenseId());
+                if (updatedExpense != null) {
+                    double oldAmount = currentState.getOriginalAmount();
+                    double newAmount = updatedExpense.getAmount();
+                    double amountDifference = newAmount - oldAmount;
 
-                expenseUpdateStates.remove(chatId);
-            } else {
-                sendMessage(chatId, "Ошибка при корректировке бюджета.");
+                    boolean budgetUpdated = adjustBudgetForExpense(chatId, amountDifference);
+
+                    if (budgetUpdated) {
+                        sendMessage(chatId, "Изменения и корректировка бюджета успешно сохранены. 💼");
+                    } else {
+                        sendMessage(chatId, "Изменения сохранены. Для корректировки бюджета необходимо создать его. 📉");
+                    }
+
+                    expenseUpdateStates.remove(chatId);
+                } else {
+                    sendMessage(chatId, "Ошибка при обновлении расхода. \uD83D\uDEAB");
+                }
             }
         } else {
             handleOtherStates(data, chatId);
@@ -2070,7 +2091,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                 askForCustomTime(chatId, reminderId);
                 break;
             default:
-                sendMessage(chatId, "Неверная команда.");
+                sendMessage(chatId, "❗ Неверная команда. Пожалуйста, попробуйте снова.");
                 break;
         }
     }
@@ -2081,13 +2102,14 @@ public class TelegramBot extends TelegramLongPollingBot {
             Long incomeId = Long.parseLong(incomeIdString);
             Income income = incomeService.findById(incomeId);
             if (income == null || !income.getUser().getChatId().equals(Long.parseLong(chatId))) {
-                sendMessage(chatId, "Доход с указанным номером не найден или не принадлежит вам.");
+                sendMessage(chatId, "🚫 Доход с указанным номером не найден или не принадлежит вам.");
                 return;
             }
             incomeUpdateStates.put(chatId, new IncomeUpdateState(incomeId, "", income));
             sendFieldSelectionMessageForIncome(chatId);
+            sendMessage(chatId, "📊 Пожалуйста, выберите поле для обновления дохода.");
         } catch (NumberFormatException e) {
-            sendMessage(chatId, "Ошибка при выборе дохода для обновления.");
+            sendMessage(chatId, "❌ Ошибка при выборе дохода для обновления. Попробуйте снова.");
         }
     }
 
@@ -2097,13 +2119,13 @@ public class TelegramBot extends TelegramLongPollingBot {
             Long expenseId = Long.parseLong(expenseIdString);
             Expense expense = expenseService.findById(expenseId);
             if (expense == null || !expense.getUser().getChatId().equals(Long.parseLong(chatId))) {
-                sendMessage(chatId, "Расход с указанным номером не найден или не принадлежит вам.");
+                sendMessage(chatId, "💸 Расход с указанным номером не найден или не принадлежит вам.");
                 return;
             }
             expenseUpdateStates.put(chatId, new ExpenseUpdateState(expenseId, expense,""));
             sendFieldSelectionMessageForExpense(chatId);
         } catch (NumberFormatException e) {
-            sendMessage(chatId, "Ошибка при выборе расхода для обновления.");
+            sendMessage(chatId, "❌ Ошибка при выборе расхода для обновления. Попробуйте снова.");
         }
     }
 
@@ -2116,14 +2138,14 @@ public class TelegramBot extends TelegramLongPollingBot {
             Budget budget = budgetService.findById(budgetId);
 
             if (budget == null || !budget.getUser().getChatId().equals(Long.parseLong(chatId))) {
-                sendMessage(chatId, "Бюджет с указанным номером не найден или не принадлежит вам.");
+                sendMessage(chatId, "💼 Бюджет с указанным номером не найден или не принадлежит вам.");
                 return;
             }
 
             budgetUpdateStates.put(chatId, new BudgetUpdateState(budgetId, "", budget));
             sendFieldSelectionMessageForBudget(chatId);
         } catch (NumberFormatException e) {
-            sendMessage(chatId, "Ошибка при выборе бюджета для обновления.");
+            sendMessage(chatId, "❌ Ошибка при выборе бюджета для обновления. Попробуйте снова.");
         }
     }
 
@@ -2134,21 +2156,21 @@ public class TelegramBot extends TelegramLongPollingBot {
             Optional<Reminder> optionalReminder = reminderService.findReminderById(reminderId);
 
             if (optionalReminder.isEmpty()) {
-                sendMessage(chatId, "Напоминание с указанным номером не найдено.");
+                sendMessage(chatId, "🕒 Напоминание с указанным номером не найдено.");
                 return;
             }
 
             Reminder reminder = optionalReminder.get();
 
             if (!reminder.getUser().getChatId().equals(Long.parseLong(chatId))) {
-                sendMessage(chatId, "Напоминание не принадлежит вам.");
+                sendMessage(chatId, "🚫 Напоминание не принадлежит вам.");
                 return;
             }
 
             reminderUpdateStates.put(chatId, new ReminderUpdateState((long) reminderId, "", reminder));
             sendFieldSelectionMessageForReminder(chatId);
         } catch (NumberFormatException e) {
-            sendMessage(chatId, "Ошибка при выборе напоминания для обновления.");
+            sendMessage(chatId, "❌ Ошибка при выборе напоминания для обновления. Попробуйте снова.");
         }
     }
 
@@ -2158,13 +2180,13 @@ public class TelegramBot extends TelegramLongPollingBot {
             int taskId = Integer.parseInt(taskIdString);
             Task task = taskService.findById(taskId);
             if (task == null || !task.getUser().getChatId().equals(Long.parseLong(chatId))) {
-                sendMessage(chatId, "Задача с указанным номером не найдена или не принадлежит вам.");
+                sendMessage(chatId, "❌ Задача с указанным номером не найдена или не принадлежит вам.");
                 return;
             }
             taskDeadlineStates.put(chatId, taskId);
-            sendMessage(chatId, "Введите дедлайн для задачи в формате ГГГГ-ММ-ДД ЧЧ:ММ.");
+            sendMessage(chatId, "📅 Введите дедлайн для задачи в формате ГГГГ-ММ-ДД ЧЧ:ММ.");
         } catch (NumberFormatException e) {
-            sendMessage(chatId, "Ошибка при выборе задачи.");
+            sendMessage(chatId, "❌ Ошибка при выборе задачи. Попробуйте снова.");
         }
     }
 
@@ -2174,13 +2196,13 @@ public class TelegramBot extends TelegramLongPollingBot {
             int taskId = Integer.parseInt(taskIdString);
             Task task = taskService.findById(taskId);
             if (task == null || !task.getUser().getChatId().equals(Long.parseLong(chatId))) {
-                sendMessage(chatId, "Задача с указанным номером не найдена или не принадлежит вам.");
+                sendMessage(chatId, "❌ Задача с указанным номером не найдена или не принадлежит вам.");
                 return;
             }
             taskUpdateStates.put(chatId, new TaskUpdateState(taskId, "", task));
             sendFieldSelectionMessage(chatId);
         } catch (NumberFormatException e) {
-            sendMessage(chatId, "Ошибка при выборе задачи для обновления.");
+            sendMessage(chatId, "❌ Ошибка при выборе задачи для обновления. Попробуйте снова.");
         }
     }
 
@@ -2190,13 +2212,13 @@ public class TelegramBot extends TelegramLongPollingBot {
             int taskId = Integer.parseInt(taskIdString);
             Task task = taskService.findById(taskId);
             if (task == null || !task.getUser().getChatId().equals(Long.parseLong(chatId))) {
-                sendMessage(chatId, "Задача с указанным номером не найдена или не принадлежит вам.");
+                sendMessage(chatId, "❌ Задача с указанным номером не найдена или не принадлежит вам.");
                 return;
             }
             taskDeletionStates.put(chatId, Collections.singletonList(taskId));
             sendDeleteConfirmationMessage(chatId, taskId);
         } catch (NumberFormatException e) {
-            sendMessage(chatId, "Ошибка при удалении задачи.");
+            sendMessage(chatId, "❌ Ошибка при удалении задачи. Попробуйте снова.");
         }
     }
 
@@ -2206,12 +2228,12 @@ public class TelegramBot extends TelegramLongPollingBot {
             int taskId = Integer.parseInt(taskIdString);
             Task task = taskService.findById(taskId);
             if (task == null || !task.getUser().getChatId().equals(Long.parseLong(chatId))) {
-                sendMessage(chatId, "Задача с указанным номером не найдена или не принадлежит вам.");
+                sendMessage(chatId, "❌ Задача с указанным номером не найдена или не принадлежит вам.");
                 return;
             }
             sendStatusChangeMessage(chatId, taskId);
         } catch (NumberFormatException e) {
-            sendMessage(chatId, "Ошибка при выборе задачи для изменения статуса.");
+            sendMessage(chatId, "❌ Ошибка при выборе задачи для изменения статуса. Попробуйте снова.");
         }
     }
 
@@ -2220,7 +2242,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             boolean isCompleted = true;
             changeTaskStatus(chatId, data, isCompleted);
         } else if (data.startsWith("status_cancel_change_")) {
-            sendMessage(chatId, "Изменение статуса задачи отменено.");
+            sendMessage(chatId, "❌ Изменение статуса задачи отменено.");
         }
     }
 
@@ -2230,14 +2252,14 @@ public class TelegramBot extends TelegramLongPollingBot {
             Long reminderId = Long.parseLong(reminderIdString);
             Optional<Reminder> optionalReminder = reminderService.findReminderById(Math.toIntExact(reminderId));
             if (optionalReminder.isEmpty() || !optionalReminder.get().getUser().getChatId().equals(Long.parseLong(chatId))) {
-                sendMessage(chatId, "Напоминание с указанным номером не найдено или не принадлежит вам.");
+                sendMessage(chatId, "❌ Напоминание с указанным номером не найдено или не принадлежит вам.");
                 return;
             }
 
             reminderDeletionStates.put(chatId, Collections.singletonList(reminderId));
             sendDeleteReminderConfirmationMessage(chatId, reminderId);
         } catch (NumberFormatException e) {
-            sendMessage(chatId, "Ошибка при удалении напоминания.");
+            sendMessage(chatId, "❌ Ошибка при удалении напоминания. Попробуйте снова.");
         }
     }
 
@@ -2247,13 +2269,13 @@ public class TelegramBot extends TelegramLongPollingBot {
             int incomeId = Integer.parseInt(incomeIdString);
             Income income = incomeService.findById((long) incomeId);
             if (income == null || !income.getUser().getChatId().equals(Long.parseLong(chatId))) {
-                sendMessage(chatId, "Запись о доходе с указанным номером не найдена или не принадлежит вам.");
+                sendMessage(chatId, "❌ Запись о доходе с указанным номером не найдена или не принадлежит вам.");
                 return;
             }
             incomeDeletionStates.put(chatId, Collections.singletonList(incomeId));
             sendDeleteIncomeConfirmationMessage(chatId, incomeId);
         } catch (NumberFormatException e) {
-            sendMessage(chatId, "Ошибка при удалении записи о доходе.");
+            sendMessage(chatId, "❌ Ошибка при удалении записи о доходе. Попробуйте снова.");
         }
     }
 
@@ -2263,13 +2285,13 @@ public class TelegramBot extends TelegramLongPollingBot {
             long expenseId = Long.parseLong(expenseIdString);
             Expense expense = expenseService.findById(expenseId);
             if (expense == null || !expense.getUser().getChatId().equals(Long.parseLong(chatId))) {
-                sendMessage(chatId, "Запись о расходе с указанным номером не найдена или не принадлежит вам.");
+                sendMessage(chatId, "❌ Запись о расходе с указанным номером не найдена или не принадлежит вам.");
                 return;
             }
             expenseDeletionStates.put(chatId, Collections.singletonList(Math.toIntExact(expenseId)));
             sendDeleteExpenseConfirmationMessage(chatId, Math.toIntExact(expenseId));
         } catch (NumberFormatException e) {
-            sendMessage(chatId, "Ошибка при удалении записи о расходе.");
+            sendMessage(chatId, "❌ Ошибка при удалении записи о расходе. Попробуйте снова.");
         }
     }
 
@@ -2279,13 +2301,13 @@ public class TelegramBot extends TelegramLongPollingBot {
             long budgetId = Long.parseLong(budgetIdString);
             Budget budget = budgetService.findById(budgetId);
             if (budget == null || !budget.getUser().getChatId().equals(Long.parseLong(chatId))) {
-                sendMessage(chatId, "Бюджет с указанным номером не найден или не принадлежит вам.");
+                sendMessage(chatId, "❌ Бюджет с указанным номером не найден или не принадлежит вам.");
                 return;
             }
             budgetDeletionStates.put(chatId, budgetId);
             sendDeleteBudgetConfirmationMessage(chatId, budgetId);
         } catch (NumberFormatException e) {
-            sendMessage(chatId, "Ошибка при удалении записи о бюджете.");
+            sendMessage(chatId, "❌ Ошибка при удалении записи о бюджете. Попробуйте снова.");
         }
     }
 
@@ -2306,7 +2328,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                 (taskIds == null || taskIds.isEmpty()) && (remindersId == null || remindersId.isEmpty()) &&
                 incomeState == null && expenseUpdateState == null && (incomeIds == null || incomeIds.isEmpty()) &&
                 (expenseIds == null || expenseIds.isEmpty()) && budgetState == null && budgetId == null) {
-            sendMessage(chatId, "Ошибка при обработке запроса.");
+            sendMessage(chatId, "❌ Ошибка при обработке запроса.");
             return;
         }
 
@@ -2343,7 +2365,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
             case "confirm_update":
                 taskUpdateStates.remove(chatId);
-                sendMessage(chatId, "Изменения подтверждены.");
+                sendMessage(chatId, "✅ Изменения подтверждены.");
                 break;
 
             case "cancel_update", "update_cancel":
@@ -2353,7 +2375,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
             case "confirm_update_reminder":
                 reminderUpdateStates.remove(chatId);
-                sendMessage(chatId, "Изменения подтверждены.");
+                sendMessage(chatId, "✅ Изменения подтверждены.");
                 break;
 
             case "cancel_update_reminder", "update_cancel_reminder":
@@ -2366,7 +2388,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                     confirmDelete(chatId, taskIds);
                     taskDeletionStates.remove(chatId);
                 } else {
-                    sendMessage(chatId, "Ошибка при подтверждении удаления задачи.");
+                    sendMessage(chatId, "❌ Ошибка при подтверждении удаления задачи.");
                 }
                 break;
 
@@ -2379,7 +2401,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                     confirmDeleteReminder(chatId, remindersId);
                     reminderDeletionStates.remove(chatId);
                 } else {
-                    sendMessage(chatId, "Ошибка при подтверждении удаления напоминания.");
+                    sendMessage(chatId, "❌ Ошибка при подтверждении удаления напоминания.");
                 }
                 break;
 
@@ -2419,7 +2441,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
             case "update_cancel_income":
                 incomeUpdateStates.remove(chatId);
-                sendMessage(chatId, "Обновление дохода отменено.");
+                sendMessage(chatId, "❌ Обновление дохода отменено.");
                 break;
 
             case "cancel_update_income":
@@ -2429,7 +2451,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
             case "confirm_update_income", "confirm_update_income_add_to_budget":
                 incomeUpdateStates.remove(chatId);
-                sendMessage(chatId, "Изменения подтверждены.");
+                sendMessage(chatId, "✅ Изменения подтверждены.");
                 break;
 
             case "update_title_expense":
@@ -2464,12 +2486,12 @@ public class TelegramBot extends TelegramLongPollingBot {
 
             case "update_cancel_expense":
                 expenseUpdateStates.remove(chatId);
-                sendMessage(chatId, "Обновление расхода отменено.");
+                sendMessage(chatId, "❌ Обновление расхода отменено.");
                 break;
 
             case "confirm_update_expense":
                 expenseUpdateStates.remove(chatId);
-                sendMessage(chatId, "Изменения подтверждены.");
+                sendMessage(chatId, "✅ Изменения подтверждены.");
                 break;
 
             case "cancel_update_expense":
@@ -2482,7 +2504,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                     confirmDeleteIncome(chatId, incomeIds);
                     incomeDeletionStates.remove(chatId);
                 } else {
-                    sendMessage(chatId, "Ошибка при подтверждении удаления записи о доходе.");
+                    sendMessage(chatId, "❌ Ошибка при подтверждении удаления записи о доходе.");
                 }
                 break;
 
@@ -2495,7 +2517,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                     confirmDeleteExpense(chatId, expenseIds);
                     expenseDeletionStates.remove(chatId);
                 } else {
-                    sendMessage(chatId, "Ошибка при подтверждении удаления записи о доходе.");
+                    sendMessage(chatId, "❌ Ошибка при подтверждении удаления записи о доходе.");
                 }
                 break;
 
@@ -2541,12 +2563,12 @@ public class TelegramBot extends TelegramLongPollingBot {
 
             case "update_cancel_budget":
                 budgetUpdateStates.remove(chatId);
-                sendMessage(chatId, "Обновление бюджета отменено.");
+                sendMessage(chatId, "❌ Обновление бюджета отменено.");
                 break;
 
             case "confirm_update_budget":
                 budgetUpdateStates.remove(chatId);
-                sendMessage(chatId, "Изменения подтверждены.");
+                sendMessage(chatId, "✅ Изменения подтверждены.");
                 break;
 
             case "cancel_update_budget":
@@ -2564,27 +2586,27 @@ public class TelegramBot extends TelegramLongPollingBot {
                 break;
 
             default:
-                sendMessage(chatId, "Неверный выбор.");
+                sendMessage(chatId, "❓ Неверный выбор.");
                 break;
         }
     }
 
     private void handleChangeStatusCommand(String[] parts, String chatId, String messageText) {
         if (parts.length > 1 && !(messageText.equals(BUTTON_CHANGE_STATUS_TASK_TEXT))) {
-            sendMessage(chatId, "Неверный формат команды. Используйте команду /change_status только без параметров.");
+            sendMessage(chatId, "❌ Неверный формат команды. Используйте команду /change_status только без параметров.");
             return;
         }
 
         List<Task> tasks = taskService.findTasksByUserId(Long.parseLong(chatId));
 
         if (tasks.isEmpty()) {
-            sendMessage(chatId, "У вас пока нет задач для изменения статуса.");
+            sendMessage(chatId, "У вас пока нет задач для изменения статуса. 😔");
             return;
         }
 
         InlineKeyboardMarkup markup = createTasksStatusMarkup(tasks);
 
-        SendMessage message = createMessage(chatId, "Выберите задачу для изменения статуса:", markup);
+        SendMessage message = createMessage(chatId, "Выберите задачу для изменения статуса: 📝", markup);
 
         try {
             execute(message);
@@ -2617,16 +2639,16 @@ public class TelegramBot extends TelegramLongPollingBot {
             int taskId = Integer.parseInt(taskIdString);
             Task task = taskService.findById(taskId);
             if (task == null || !task.getUser().getChatId().equals(Long.parseLong(chatId))) {
-                sendMessage(chatId, "Задача с указанным номером не найдена или не принадлежит вам.");
+                sendMessage(chatId, "❌ Задача с указанным номером не найдена или не принадлежит вам.");
                 return;
             }
 
             task.setCompleted(isCompleted);
             taskService.save(task);
 
-            sendMessage(chatId, "Статус задачи '" + task.getTitle() + "' изменен на " + (isCompleted ? "Завершена" : "Не завершена") + ".");
+            sendMessage(chatId, "✅ Статус задачи '" + task.getTitle() + "' изменен на " + (isCompleted ? "Завершена" : "Не завершена") + ".");
         } catch (NumberFormatException e) {
-            sendMessage(chatId, "Ошибка при изменении статуса задачи.");
+            sendMessage(chatId, "❌ Ошибка при изменении статуса задачи.");
         }
     }
 
@@ -2637,10 +2659,11 @@ public class TelegramBot extends TelegramLongPollingBot {
             return;
         }
 
-        StringBuilder statusMessage = new StringBuilder("Выберите новый статус для задачи:\n\n");
-        statusMessage.append("Название: ").append(task.getTitle()).append("\n");
-        statusMessage.append("Текущий статус: ").append(task.isCompleted() ? "Завершена" : "Не завершена").append("\n\n");
-        statusMessage.append("Примечание: после смены статуса задачи на 'Завершена', задача будет удалена.\n");
+        StringBuilder statusMessage = new StringBuilder();
+        statusMessage.append("Выберите новый статус для задачи:\n\n");
+        statusMessage.append("📝 Название: ").append(task.getTitle()).append("\n");
+        statusMessage.append("\uD83D\uDCCA Текущий статус: ").append(task.isCompleted() ? "✅ Завершена" : "⭕ Не завершена").append("\n\n");
+        statusMessage.append("🔔 Примечание: после смены статуса задачи на 'Завершена', задача будет удалена.\n");
 
         InlineKeyboardMarkup markup = createStatusChangeMarkup(taskId);
 
@@ -2692,7 +2715,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     private void handleListTasksCommand(String chatId, String[] parts, String messageText) {
         if (parts.length > 1 && !messageText.equals(BUTTON_LIST_TASKS_TEXT)) {
-            sendMessage(chatId, "Неверный формат команды. Используйте команду /list_tasks только без параметров.");
+            sendMessage(chatId, "❌ Неверный формат команды. Используйте команду /list_tasks только без параметров.");
             return;
         }
 
@@ -2731,19 +2754,19 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     private void handleSetDeadlineCommand(String chatId, String[] parts, String messageText) {
         if (parts.length > 1 && !(messageText.equals(BUTTON_SET_DEADLINE_TEXT))) {
-            sendMessage(chatId, "Неверный формат команды. Используйте команду /set_deadline только без параметров.");
+            sendMessage(chatId, "❌ Неверный формат команды. Используйте команду /set_deadline только без параметров.");
             return;
         }
 
         List<Task> tasks = taskService.findTasksByUserId(Long.parseLong(chatId));
 
         if (tasks.isEmpty()) {
-            sendMessage(chatId, "У вас нет задач для установки дедлайна.");
+            sendMessage(chatId, "У вас пока нет задач для установки дедлайна. " + EmojiParser.parseToUnicode(":pensive:"));
             return;
         }
 
         InlineKeyboardMarkup markup = createDeadlineTaskMarkup(tasks);
-        SendMessage message = createMessage(chatId, "Выберите задачу для установки дедлайна:", markup);
+        SendMessage message = createMessage(chatId, EmojiParser.parseToUnicode(":alarm_clock: Выберите задачу для установки дедлайна:"), markup);
 
         try {
             execute(message);
@@ -2779,42 +2802,42 @@ public class TelegramBot extends TelegramLongPollingBot {
         try {
             deadline = LocalDateTime.parse(deadlineInput, formatter);
         } catch (DateTimeParseException e) {
-            sendMessage(chatId, "Неверный формат даты. Пожалуйста, введите дедлайн в формате ГГГГ-ММ-ДД ЧЧ:ММ.");
+            sendMessage(chatId, "Неверный формат даты. Пожалуйста, введите дедлайн в формате ГГГГ-ММ-ДД ЧЧ:ММ. 📅");
             return;
         }
 
         LocalDateTime now = LocalDateTime.now();
         if (deadline.isBefore(now) || deadline.isEqual(now)) {
-            sendMessage(chatId, "Дата дедлайна должна быть в будущем. Пожалуйста, введите корректную дату.");
+            sendMessage(chatId, "Дата дедлайна должна быть в будущем. Пожалуйста, введите корректную дату. ⏰");
             return;
         }
 
         task.setDeadline(deadline);
         taskService.save(task);
         taskDeadlineStates.remove(chatId);
-        sendMessage(chatId, "Дедлайн установлен для задачи: " + task.getTitle());
+        sendMessage(chatId, "Дедлайн установлен для задачи: " + task.getTitle() + " 🚀");
     }
 
     private void handleReminderCreationCommand(String chatId, String[] parts, String messageText) {
         if (parts.length > 1 && !(messageText.equals(BUTTON_CREATE_REMINDER_TEXT))) {
-            sendMessage(chatId, "Неверный формат команды. Используйте команду /create_reminder только без параметров.");
+            sendMessage(chatId, "❌ Неверный формат команды. Используйте команду /create_reminder только без параметров.");
             return;
         }
 
         User user = userService.findByChatId(Long.parseLong(chatId));
         if (user == null) {
-            sendMessage(chatId, "Пользователь не зарегистрирован. Используйте /start для регистрации.");
+            sendMessage(chatId, "🚫 Пользователь не зарегистрирован. Используйте /start для регистрации.");
             return;
         }
 
         int existingRemindersCount = reminderService.countByUser(user);
         if (existingRemindersCount > 20) {
-            sendMessage(chatId, "Вы уже создали максимальное количество напоминаний (20 штук).");
+            sendMessage(chatId, "⚠️ Вы уже создали максимальное количество напоминаний (20 штук).");
             return;
         }
 
         reminderCreationStates.put(chatId, new ReminderCreationState());
-        sendMessage(chatId, "Введите текст напоминания:");
+        sendMessage(chatId, "✨ Введите текст напоминания:");
     }
 
     private void processReminderCreation(String chatId, String messageText) {
@@ -2824,14 +2847,14 @@ public class TelegramBot extends TelegramLongPollingBot {
         if (currentState.getState() == ReminderState.ENTER_MESSAGE) {
             currentState.setMessage(messageText);
             currentState.setState(ReminderState.ENTER_REMINDER_TIME);
-            sendMessage(chatId, "Введите время напоминания в формате yyyy-MM-dd HH:mm");
+            sendMessage(chatId, "\uD83D\uDCDD Введите время напоминания в формате yyyy-MM-dd HH:mm");
         } else if (currentState.getState() == ReminderState.ENTER_REMINDER_TIME) {
             try {
                 LocalDateTime localDateTime = LocalDateTime.parse(messageText, formatter);
 
                 LocalDateTime currentDateTime = LocalDateTime.now();
                 if (localDateTime.isBefore(currentDateTime)) {
-                    sendMessage(chatId, "Время напоминания не может быть в прошлом или текущее. Пожалуйста, введите корректное время.");
+                    sendMessage(chatId, "⏰ Время напоминания не может быть в прошлом или текущее. Пожалуйста, введите корректное время:");
                     return;
                 }
 
@@ -2839,13 +2862,13 @@ public class TelegramBot extends TelegramLongPollingBot {
                 currentState.setReminderTime(reminderTime);
                 currentState.setState(ReminderState.CONFIRMATION);
 
-                String confirmationMessage = "Вы ввели следующие данные:\n" +
+                String confirmationMessage = "📅 Вы ввели следующие данные:\n" +
                         "Сообщение: " + currentState.getMessage() + "\n" +
                         "Время напоминания: " + localDateTime.format(formatter) + "\n\n" +
-                        "Все верно?";
+                        "✅ Все верно?";
                 sendConfirmationMessage(chatId, confirmationMessage);
             } catch (DateTimeParseException e) {
-                sendMessage(chatId, "Неверный формат времени. Пожалуйста, введите время в формате yyyy-MM-dd HH:mm:");
+                sendMessage(chatId, "❌ Неверный формат времени. Пожалуйста, введите время в формате yyyy-MM-dd HH:mm:");
             }
         }
     }
@@ -2889,7 +2912,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private void createReminder(String message, Timestamp reminderTime, String chatId) {
         User user = userService.findByChatId(Long.parseLong(chatId));
         if (user == null) {
-            sendMessage(chatId, "Пользователь не зарегистрирован. Используйте /start для регистрации.");
+            sendMessage(chatId, "🚫 Пользователь не зарегистрирован. Используйте /start для регистрации.");
             return;
         }
 
@@ -2915,7 +2938,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     private void sendReminderNotification(Reminder reminder) {
         String chatId = reminder.getUser().getChatId().toString();
-        String messageText = "Напоминание: " + reminder.getMessage();
+        String messageText = "🔔 Напоминание: " + reminder.getMessage();
 
         InlineKeyboardMarkup markup = createReschedulingMarkup(Math.toIntExact(reminder.getId()));
 
@@ -2961,18 +2984,18 @@ public class TelegramBot extends TelegramLongPollingBot {
                 reminder.setReminderTime(newTime);
                 reminder.setSent(false);
                 reminderService.save(reminder);
-                sendMessage(chatId, "Напоминание отложено на " + duration.toMinutes() + " минут.");
+                sendMessage(chatId, "🕒 Напоминание успешно отложено на " + duration.toMinutes() + " минут.");
             } else {
-                sendMessage(chatId, "Ошибка при отложении напоминания.");
+                sendMessage(chatId, "❌ Ошибка при отложении напоминания.");
             }
         } else {
-            sendMessage(chatId, "Напоминание не найдено.");
+            sendMessage(chatId, "❓ Напоминание не найдено.");
         }
     }
 
     public void askForCustomTime(String chatId, int reminderId) {
         reminderCustomTimeStates.put(chatId, reminderId);
-        sendMessage(chatId, "Введите новое время напоминания в формате yyyy-MM-dd HH:mm:");
+        sendMessage(chatId, "🕒 Введите новое время напоминания в формате yyyy-MM-dd HH:mm:");
     }
 
     public void processCustomTimeInput(String chatId, String messageText) {
@@ -2984,7 +3007,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
                 LocalDateTime currentDateTime = LocalDateTime.now();
                 if (localDateTime.isBefore(currentDateTime)) {
-                    sendMessage(chatId, "Время напоминания не может быть в прошлом или текущее. Пожалуйста, введите корректное время.");
+                    sendMessage(chatId, "⏰ Время напоминания не может быть в прошлом или текущее. Пожалуйста, введите корректное время.");
                     return;
                 }
 
@@ -2995,40 +3018,40 @@ public class TelegramBot extends TelegramLongPollingBot {
                     reminder.setReminderTime(newTime);
                     reminder.setSent(false);
                     reminderService.save(reminder);
-                    sendMessage(chatId, "Напоминание отложено на " + localDateTime.format(formatter) + ".");
+                    sendMessage(chatId, "🕒 Напоминание успешно отложено на " + localDateTime.format(formatter) + ".");
                     reminderCustomTimeStates.remove(chatId);
                 } else {
-                    sendMessage(chatId, "Ошибка при отложении напоминания.");
+                    sendMessage(chatId, "❌ Ошибка при отложении напоминания.");
                 }
             } catch (DateTimeParseException e) {
-                sendMessage(chatId, "Неверный формат времени. Пожалуйста, введите время в формате yyyy-MM-dd HH:mm:");
+                sendMessage(chatId, "❌ Неверный формат времени. Пожалуйста, введите время в формате yyyy-MM-dd HH:mm:");
             }
         } else {
-            sendMessage(chatId, "Ошибка при отложении напоминания.");
+            sendMessage(chatId, "❌ Ошибка при отложении напоминания.");
         }
     }
 
     private void deleteReminder(String chatId, int reminderId) {
         reminderService.deleteById(reminderId);
-        sendMessage(chatId, "Напоминание выполнено и удалено.");
+        sendMessage(chatId, "✅ Напоминание выполнено и успешно удалено.");
     }
 
     private void handleUpdateReminderCommand(String[] parts, String chatId, String messageText) {
-        if (parts.length > 1 && !(messageText.equals("\uD83D\uDD8A Обновить напоминание"))) {
-            sendMessage(chatId, "Неверный формат команды. Используйте команду /update_reminder только без параметров.");
+        if (parts.length > 1 && !(messageText.equals(BUTTON_UPDATE_REMINDER_TEXT))) {
+            sendMessage(chatId, "❌ Неверный формат команды. Используйте команду /update_reminder только без параметров.");
             return;
         }
 
         List<Reminder> reminders = reminderService.findRemindersByUserId(Long.parseLong(chatId));
 
         if (reminders.isEmpty()) {
-            sendMessage(chatId, "У вас пока нет напоминаний для обновления.");
+            sendMessage(chatId, "😔 У вас пока нет напоминаний для обновления.");
             return;
         }
 
         InlineKeyboardMarkup markup = createRemindersMarkup(reminders);
 
-        SendMessage message = createMessage(chatId, "Выберите напоминание для обновления:", markup);
+        SendMessage message = createMessage(chatId, "📝 Выберите напоминание для обновления:", markup);
 
         try {
             execute(message);
@@ -3042,7 +3065,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         for (Reminder reminder : reminders) {
             InlineKeyboardButton button = new InlineKeyboardButton();
-            button.setText("Напоминание #" + reminder.getId());
+            button.setText("📌 Напоминание #" + reminder.getId());
             button.setCallbackData("update_reminder_" + reminder.getId());
             List<InlineKeyboardButton> row = Collections.singletonList(button);
             keyboard.add(row);
@@ -3058,7 +3081,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         ReminderUpdateState currentState = reminderUpdateStates.get(chatId);
 
         if (currentState == null) {
-            sendMessage(chatId, "Ошибка обновления напоминания.");
+            sendMessage(chatId, "❌ Ошибка обновления напоминания.");
             return;
         }
 
@@ -3066,14 +3089,14 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         Optional<Reminder> optionalReminder = reminderService.findReminderById(reminderId);
         if (optionalReminder.isEmpty()) {
-            sendMessage(chatId, "Напоминание с указанным номером не найдено или не принадлежит вам.");
+            sendMessage(chatId, "❓ Напоминание с указанным номером не найдено или не принадлежит вам.");
             return;
         }
 
         Reminder reminder = optionalReminder.get();
 
         if (!reminder.getUser().getChatId().equals(Long.parseLong(chatId))) {
-            sendMessage(chatId, "Напоминание не принадлежит вам.");
+            sendMessage(chatId, "❌ Напоминание не принадлежит вам.");
             return;
         }
 
@@ -3081,9 +3104,9 @@ public class TelegramBot extends TelegramLongPollingBot {
         LocalDateTime remindAt = reminder.getReminderTime().toLocalDateTime();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
-        String selectionMessage = "Выберите, что вы хотите обновить для напоминания:\n";
-        selectionMessage += "Текущее сообщение: " + currentMessage + "\n";
-        selectionMessage += "Дата напоминания: " + remindAt.format(formatter) + "\n";
+        String selectionMessage = "📝️ Выберите, что вы хотите обновить для напоминания:\n";
+        selectionMessage += "📌 Текущее сообщение: " + currentMessage + "\n";
+        selectionMessage += "🕒 Дата напоминания: " + remindAt.format(formatter) + "\n";
 
         InlineKeyboardMarkup markup = createReminderUpdateMarkup();
 
@@ -3118,7 +3141,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         ReminderUpdateState currentState = reminderUpdateStates.get(chatId);
 
         if (currentState == null) {
-            sendMessage(chatId, "Ошибка при обновлении напоминания.");
+            sendMessage(chatId, "❌ Ошибка при обновлении напоминания.");
             return;
         }
 
@@ -3126,14 +3149,14 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         Optional<Reminder> optionalReminder = reminderService.findReminderById(reminderId);
         if (optionalReminder.isEmpty()) {
-            sendMessage(chatId, "Напоминание с указанным номером не найдено или не принадлежит вам.");
+            sendMessage(chatId, "❓ Напоминание с указанным номером не найдено или не принадлежит вам.");
             reminderUpdateStates.remove(chatId);
             return;
         }
 
         Reminder reminder = optionalReminder.get();
         if (!reminder.getUser().getChatId().equals(Long.parseLong(chatId))) {
-            sendMessage(chatId, "Напоминание не принадлежит вам.");
+            sendMessage(chatId, "❌ Напоминание не принадлежит вам.");
             return;
         }
 
@@ -3148,12 +3171,12 @@ public class TelegramBot extends TelegramLongPollingBot {
                     LocalDateTime remindAt = LocalDateTime.parse(messageText, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
                     reminder.setReminderTime(Timestamp.valueOf(remindAt));
                 } catch (DateTimeParseException e) {
-                    sendMessage(chatId, "Неверный формат даты и времени. Используйте формат yyyy-MM-dd HH:mm");
+                    sendMessage(chatId, "❌ Неверный формат даты и времени. Используйте формат yyyy-MM-dd HH:mm");
                     return;
                 }
                 break;
             default:
-                sendMessage(chatId, "Неизвестное поле для обновления: " + fieldToUpdate);
+                sendMessage(chatId, "❌ Неизвестное поле для обновления: " + fieldToUpdate);
                 return;
         }
 
@@ -3165,15 +3188,15 @@ public class TelegramBot extends TelegramLongPollingBot {
     private void sendConfirmationMessageForReminder(String chatId, Reminder reminder) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
-        StringBuilder confirmationMessage = new StringBuilder("Изменения сохранены:\n");
-        confirmationMessage.append("Сообщение: ").append(reminder.getMessage()).append("\n");
+        StringBuilder confirmationMessage = new StringBuilder("✨ Изменения сохранены:\n");
+        confirmationMessage.append("📝 Сообщение: ").append(reminder.getMessage()).append("\n");
 
         LocalDateTime remindAt = reminder.getReminderTime().toLocalDateTime();
         if (remindAt != null) {
-            confirmationMessage.append("Напомнить в: ").append(remindAt.format(formatter)).append("\n");
+            confirmationMessage.append("⏰ Напомнить в: ").append(remindAt.format(formatter)).append("\n");
         }
 
-        confirmationMessage.append("\n\nПодтвердить изменения?");
+        confirmationMessage.append("\n\n❓ Подтвердить изменения?");
 
         InlineKeyboardMarkup markup = createReminderConfirmationMarkup();
 
@@ -3203,17 +3226,17 @@ public class TelegramBot extends TelegramLongPollingBot {
     private void cancelReminderUpdate(String chatId, ReminderUpdateState currentState) {
         reminderService.save(currentState.getOriginalReminder());
         reminderUpdateStates.remove(chatId);
-        sendMessage(chatId, "Изменения в напоминании отменены.");
+        sendMessage(chatId, "❌ Изменения в напоминании отменены.");
     }
 
     private void sendNewValueRequestForReminder(String chatId, String field) {
         String messageText;
         switch (field) {
             case "message":
-                messageText = "Введите новое сообщение для напоминания:";
+                messageText = "📝 Введите новое сообщение для напоминания:";
                 break;
             case "remindAt":
-                messageText = "Введите новую дату и время напоминания в формате yyyy-MM-dd HH:mm";
+                messageText = "⏰ Введите новую дату и время напоминания в формате yyyy-MM-dd HH:mm";
                 break;
             default:
                 log.error("Unsupported field type for reminder: {}", field);
@@ -3224,21 +3247,21 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void handleDeleteReminderCommand(String[] parts, String chatId, String messageText) {
-        if (parts.length > 1 && !(messageText.equals("\uD83D\uDDD1 Удалить напоминание"))) {
-            sendMessage(chatId, "Неверный формат команды. Используйте /delete_reminder без параметров.");
+        if (parts.length > 1 && !(messageText.equals(BUTTON_DELETE_REMINDER_TEXT))) {
+            sendMessage(chatId, "❌ Неверный формат команды. Используйте /delete_reminder без параметров.");
             return;
         }
 
         List<Reminder> reminders = reminderService.findRemindersByUserId(Long.parseLong(chatId));
 
         if (reminders.isEmpty()) {
-            sendMessage(chatId, "У вас нет напоминаний для удаления.");
+            sendMessage(chatId, "ℹ️ У вас нет напоминаний для удаления.");
             return;
         }
 
         InlineKeyboardMarkup markup = createDeleteReminderMarkup(reminders);
 
-        SendMessage message = createMessage(chatId, "Выберите напоминание для удаления:", markup);
+        SendMessage message = createMessage(chatId, "🗑️ Выберите напоминание для удаления:", markup);
 
         try {
             execute(message);
@@ -3252,7 +3275,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         for (Reminder reminder : reminders) {
             InlineKeyboardButton button = new InlineKeyboardButton();
-            button.setText("Напоминание #" + reminder.getId());
+            button.setText("🗑️ Напоминание #" + reminder.getId());
             button.setCallbackData("delete_reminder_" + reminder.getId());
             List<InlineKeyboardButton> row = new ArrayList<>();
             row.add(button);
@@ -3267,17 +3290,17 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     private void sendDeleteReminderConfirmationMessage(String chatId, Long reminderIdToDelete) {
         Optional<Reminder> optionalReminder = reminderService.findReminderById(reminderIdToDelete.intValue());
-        if (!optionalReminder.isPresent()) {
-            sendMessage(chatId, "Напоминание не найдено.");
+        if (optionalReminder.isEmpty()) {
+            sendMessage(chatId, "❌ Напоминание не найдено.");
             return;
         }
 
         Reminder reminder = optionalReminder.get();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
-        StringBuilder confirmationMessage = new StringBuilder("Вы уверены, что хотите удалить следующее напоминание?\n\n");
-        confirmationMessage.append("Сообщение: ").append(reminder.getMessage()).append("\n");
-        confirmationMessage.append("Время напоминания: ").append(reminder.getReminderTime().toLocalDateTime().format(formatter)).append("\n");
+        StringBuilder confirmationMessage = new StringBuilder("❗ Вы уверены, что хотите удалить следующее напоминание?\n\n");
+        confirmationMessage.append("📌 Сообщение: ").append(reminder.getMessage()).append("\n");
+        confirmationMessage.append("⏰ Время напоминания: ").append(reminder.getReminderTime().toLocalDateTime().format(formatter)).append("\n");
 
         InlineKeyboardMarkup markup = createDeleteReminderConfirmationMarkup();
 
@@ -3309,17 +3332,17 @@ public class TelegramBot extends TelegramLongPollingBot {
             reminderService.deleteReminderById(reminderId);
         }
         reminderDeletionStates.remove(chatId);
-        sendMessage(chatId, "Напоминание удалено.");
+        sendMessage(chatId, "✅️ Напоминание удалено.");
     }
 
     private void cancelDeleteReminder(String chatId) {
         reminderDeletionStates.remove(chatId);
-        sendMessage(chatId, "Удаление напоминания отменено.");
+        sendMessage(chatId, "❌ Удаление напоминания отменено.");
     }
 
     private void handleListRemindersCommand(String chatId, String[] parts, String messageText) {
         if (parts.length > 1 && !(messageText.equals(BUTTON_LIST_REMINDERS_TEXT))) {
-            sendMessage(chatId, "Неверный формат команды. Используйте /list_reminders без параметров.");
+            sendMessage(chatId, "❌ Неверный формат команды. Используйте /list_reminders без параметров.");
             return;
         }
 
@@ -3354,25 +3377,24 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     private void handleIncomeCreationCommand(String chatId, String[] parts, String messageText) {
         if (parts.length > 1 && !messageText.equals(BUTTON_ADD_INCOME_TEXT)) {
-            sendMessage(chatId, "Неверный формат команды. Используйте /add_income без параметров.");
+            sendMessage(chatId, "❌ Неверный формат команды. Используйте /add_income без параметров.");
             return;
         }
 
         User user = userService.findByChatId(Long.parseLong(chatId));
         if (user == null) {
-            sendMessage(chatId, "Пользователь не зарегистрирован. Используйте /start для регистрации.");
+            sendMessage(chatId, "👤 Пользователь не зарегистрирован. Используйте /start для регистрации.");
             return;
         }
 
         int existingIncomeCount = incomeService.countByUser(user);
         if (existingIncomeCount > 25) {
-            sendMessage(chatId, "Вы уже создали максимальное количество записей о доходах (25 штук).");
+            sendMessage(chatId, "📊 Вы уже создали максимальное количество записей о доходах (25 штук).");
             return;
         }
 
         startIncomeCreation(chatId);
     }
-
 
     private void startIncomeCreation(String chatId) {
         IncomeCreationState currentState = incomeCreationStates.get(chatId);
@@ -3385,7 +3407,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         SendMessage message = new SendMessage();
         message.setChatId(chatId);
-        message.setText("Выберите тип дохода или введите своё значение:");
+        message.setText("💵 Выберите тип дохода или введите своё значение:");
         message.setReplyMarkup(getIncomeSuggestionsInlineKeyboard());
 
         sendMessageForIncome(message);
@@ -3401,44 +3423,44 @@ public class TelegramBot extends TelegramLongPollingBot {
 
                 currentState.setTitle(messageText);
                 currentState.setState(IncomeState.ENTER_AMOUNT);
-                sendMessage(chatId, "Введите сумму дохода для '" + messageText + "' (в рублях):");
+                sendMessage(chatId, "💰 Введите сумму дохода для '" + messageText + "' (в рублях):");
 
             } else if ("Другое".equals(messageText)) {
                 currentState.setTitle("Другое");
                 currentState.setState(IncomeState.ENTER_CUSTOM_TITLE);
-                sendMessage(chatId, "Введите тип дохода:");
+                sendMessage(chatId, "📝 Введите тип дохода:");
 
             } else {
-                sendMessage(chatId, "Пожалуйста, выберите тип дохода из предложенных кнопок.");
+                sendMessage(chatId, "⚠️ Пожалуйста, выберите тип дохода из предложенных кнопок.");
             }
 
         } else if (currentState.getState() == IncomeState.ENTER_CUSTOM_TITLE) {
             currentState.setTitle(messageText);
             currentState.setState(IncomeState.ENTER_AMOUNT);
-            sendMessage(chatId, "Введите сумму дохода для '" + messageText + "' (в рублях):");
+            sendMessage(chatId, "💰 Введите сумму дохода для '" + messageText + "' (в рублях):");
 
         } else if (currentState.getState() == IncomeState.ENTER_AMOUNT) {
             try {
                 double amount = Double.parseDouble(messageText);
                 currentState.setAmount(amount);
                 currentState.setState(IncomeState.ENTER_DATE);
-                sendMessage(chatId, "Введите дату дохода (в формате ГГГГ-ММ-ДД):");
+                sendMessage(chatId, "📅 Введите дату дохода (в формате ГГГГ-ММ-ДД):");
             } catch (NumberFormatException e) {
-                sendMessage(chatId, "Пожалуйста, введите корректное числовое значение для суммы дохода:");
+                sendMessage(chatId, "❌ Пожалуйста, введите корректное числовое значение для суммы дохода:");
             }
         } else if (currentState.getState() == IncomeState.ENTER_DATE) {
             try {
                 Timestamp date = Timestamp.valueOf(messageText + " 00:00:00");
                 currentState.setDate(date);
                 currentState.setState(IncomeState.ENTER_DESCRIPTION);
-                sendMessage(chatId, "Введите описание дохода:");
+                sendMessage(chatId, "📝 Введите описание дохода:");
             } catch (IllegalArgumentException e) {
-                sendMessage(chatId, "Пожалуйста, введите корректную дату в формате ГГГГ-ММ-ДД:");
+                sendMessage(chatId, "❌ Пожалуйста, введите корректную дату в формате ГГГГ-ММ-ДД:");
             }
         } else if (currentState.getState() == IncomeState.ENTER_DESCRIPTION) {
             currentState.setDescription(messageText);
             currentState.setState(IncomeState.ENTER_CATEGORY);
-            sendMessage(chatId, "Введите категорию дохода:");
+            sendMessage(chatId, "📂 Введите категорию дохода:");
         } else if (currentState.getState() == IncomeState.ENTER_CATEGORY) {
             currentState.setCategory(messageText);
 
@@ -3457,7 +3479,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             formattedAmount = String.format("%.2f", currentState.getAmount());
         }
 
-        message.setText("Добавить сумму " + formattedAmount + " руб. к текущему бюджету?");
+        message.setText("💸 Добавить сумму " + formattedAmount + " руб. к текущему бюджету?");
 
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> buttons = new ArrayList<>();
@@ -3482,7 +3504,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         User user = userService.findByChatId(Long.parseLong(chatId));
         if (user == null) {
-            sendMessage(chatId, "Пользователь не зарегистрирован. Используйте /start для регистрации.");
+            sendMessage(chatId, "❌ Пользователь не зарегистрирован. Используйте /start для регистрации. 📝");
             return;
         }
 
@@ -3490,6 +3512,8 @@ public class TelegramBot extends TelegramLongPollingBot {
         if (existingBudget != null) {
             existingBudget.setAmount(existingBudget.getAmount() + currentState.getAmount());
             budgetService.save(existingBudget);
+        } else {
+            sendMessage(chatId, "⚠️ Бюджет еще не создан. Создайте бюджет, чтобы добавить доход. 📉");
         }
 
         finalizeIncomeCreation(chatId);
@@ -3510,13 +3534,13 @@ public class TelegramBot extends TelegramLongPollingBot {
             formattedAmount = String.format("%.2f", currentState.getAmount());
         }
 
-        sendMessage(chatId, "Доход '" + currentState.getTitle() + "' с суммой " + formattedAmount + " руб. создан.");
+        sendMessage(chatId, "🎉 Доход '" + currentState.getTitle() + "' с суммой " + formattedAmount + " руб. успешно создан! 💸");
     }
 
     private void createIncome(String title, double amount, Timestamp date, String description, String category, String chatId) {
         User user = userService.findByChatId(Long.parseLong(chatId));
         if (user == null) {
-            sendMessage(chatId, "Пользователь не зарегистрирован. Используйте /start для регистрации.");
+            sendMessage(chatId, "🚫 Пользователь не зарегистрирован. Используйте /start для регистрации.");
             return;
         }
 
@@ -3588,19 +3612,19 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     private void handleExpenseCreationCommand(String chatId, String[] parts, String messageText) {
         if (parts.length > 1 && !messageText.equals(BUTTON_ADD_EXPENSE_TEXT)) {
-            sendMessage(chatId, "Неверный формат команды. Используйте /add_expense без параметров.");
+            sendMessage(chatId, "❌ Неверный формат команды. Используйте /add_expense без параметров.");
             return;
         }
 
         User user = userService.findByChatId(Long.parseLong(chatId));
         if (user == null) {
-            sendMessage(chatId, "Пользователь не зарегистрирован. Используйте /start для регистрации.");
+            sendMessage(chatId, "🚫 Пользователь не зарегистрирован. Используйте /start для регистрации.");
             return;
         }
 
         int existingExpenseCount = expenseService.countByUser(user);
         if (existingExpenseCount > 25) {
-            sendMessage(chatId, "Вы уже создали максимальное количество записей о расходах (25 штук).");
+            sendMessage(chatId, "⚠️ Вы уже создали максимальное количество записей о расходах (25 штук).");
             return;
         }
 
@@ -3618,7 +3642,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         SendMessage message = new SendMessage();
         message.setChatId(chatId);
-        message.setText("Выберите тип расхода или введите своё значение:");
+        message.setText("💸 Выберите тип расхода или введите своё значение:");
         message.setReplyMarkup(getExpenseSuggestionsInlineKeyboard());
 
         sendMessageForExpense(message);
@@ -3634,44 +3658,44 @@ public class TelegramBot extends TelegramLongPollingBot {
 
                 currentState.setTitle(messageText);
                 currentState.setState(ExpenseState.ENTER_AMOUNT);
-                sendMessage(chatId, "Введите сумму расхода для '" + messageText + "' (в рублях):");
+                sendMessage(chatId, "💰 Введите сумму расхода для '" + messageText + "' (в рублях):");
 
             } else if ("Другое".equals(messageText)) {
                 currentState.setTitle("Другое");
                 currentState.setState(ExpenseState.ENTER_CUSTOM_TITLE);
-                sendMessage(chatId, "Введите тип расхода:");
+                sendMessage(chatId, "✏️ Введите тип расхода:");
 
             } else {
-                sendMessage(chatId, "Пожалуйста, выберите тип расхода из предложенных кнопок.");
+                sendMessage(chatId, "🚫 Пожалуйста, выберите тип расхода из предложенных кнопок.");
             }
 
         } else if (currentState.getState() == ExpenseState.ENTER_CUSTOM_TITLE) {
             currentState.setTitle(messageText);
             currentState.setState(ExpenseState.ENTER_AMOUNT);
-            sendMessage(chatId, "Введите сумму расхода для '" + messageText + "' (в рублях):");
+            sendMessage(chatId, "💵 Введите сумму расхода для '" + messageText + "' (в рублях):");
 
         } else if (currentState.getState() == ExpenseState.ENTER_AMOUNT) {
             try {
                 double amount = Double.parseDouble(messageText);
                 currentState.setAmount(amount);
                 currentState.setState(ExpenseState.ENTER_DATE);
-                sendMessage(chatId, "Введите дату расхода (в формате ГГГГ-ММ-ДД):");
+                sendMessage(chatId, "📅 Введите дату расхода (в формате ГГГГ-ММ-ДД):");
             } catch (NumberFormatException e) {
-                sendMessage(chatId, "Пожалуйста, введите корректное числовое значение для суммы расхода:");
+                sendMessage(chatId, "⚠️ Пожалуйста, введите корректное числовое значение для суммы расхода:");
             }
         } else if (currentState.getState() == ExpenseState.ENTER_DATE) {
             try {
                 Timestamp date = Timestamp.valueOf(messageText + " 00:00:00");
                 currentState.setDate(date);
                 currentState.setState(ExpenseState.ENTER_DESCRIPTION);
-                sendMessage(chatId, "Введите описание расхода:");
+                sendMessage(chatId, "📝 Введите описание расхода:");
             } catch (IllegalArgumentException e) {
-                sendMessage(chatId, "Пожалуйста, введите корректную дату в формате ГГГГ-ММ-ДД:");
+                sendMessage(chatId, "⚠️ Пожалуйста, введите корректную дату в формате ГГГГ-ММ-ДД:");
             }
         } else if (currentState.getState() == ExpenseState.ENTER_DESCRIPTION) {
             currentState.setDescription(messageText);
             currentState.setState(ExpenseState.ENTER_CATEGORY);
-            sendMessage(chatId, "Введите категорию расхода:");
+            sendMessage(chatId, "📂 Введите категорию расхода:");
         } else if (currentState.getState() == ExpenseState.ENTER_CATEGORY) {
             currentState.setCategory(messageText);
 
@@ -3690,7 +3714,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             formattedAmount = String.format("%.2f", currentState.getAmount());
         }
 
-        message.setText("Вычесть сумму " + formattedAmount + " руб. из текущего бюджета?");
+        message.setText("📉 Вычесть сумму " + formattedAmount + " руб. из текущего бюджета?");
 
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> buttons = new ArrayList<>();
@@ -3713,7 +3737,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private void deductExpenseFromBudget(String chatId, ExpenseCreationState currentState) {
         User user = userService.findByChatId(Long.parseLong(chatId));
         if (user == null) {
-            sendMessage(chatId, "Пользователь не зарегистрирован. Используйте /start для регистрации.");
+            sendMessage(chatId, "Пользователь не зарегистрирован. Используйте /start для регистрации. 📝");
             return;
         }
 
@@ -3721,6 +3745,8 @@ public class TelegramBot extends TelegramLongPollingBot {
         if (existingBudget != null) {
             existingBudget.setAmount(existingBudget.getAmount() - currentState.getAmount());
             budgetService.save(existingBudget);
+        } else {
+            sendMessage(chatId, "Бюджет еще не создан. Создайте бюджет, чтобы вычитать расходы. 📉");
         }
 
         finalizeExpenseCreation(chatId);
@@ -3741,13 +3767,13 @@ public class TelegramBot extends TelegramLongPollingBot {
             formattedAmount = String.format("%.2f", currentState.getAmount());
         }
 
-        sendMessage(chatId, "Расход '" + currentState.getTitle() + "' на сумму " + formattedAmount + " руб. создан.");
+        sendMessage(chatId, "Расход '" + currentState.getTitle() + "' на сумму " + formattedAmount + " руб. создан. 💸");
     }
 
     private void createExpense(String title, double amount, Timestamp date, String description, String category, String chatId) {
         User user = userService.findByChatId(Long.parseLong(chatId));
         if (user == null) {
-            sendMessage(chatId, "Пользователь не зарегистрирован. Используйте /start для регистрации.");
+            sendMessage(chatId, "❌ Пользователь не зарегистрирован. Используйте /start для регистрации.");
             return;
         }
 
@@ -3819,20 +3845,20 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     private void handleUpdateIncomeCommand(String[] parts, String chatId, String messageText) {
         if (parts.length > 1 && !messageText.equals(BUTTON_UPDATE_INCOME_TEXT)) {
-            sendMessage(chatId, "Неверный формат команды. Используйте команду /update_income только без параметров.");
+            sendMessage(chatId, "❌ Неверный формат команды. Используйте команду /update_income только без параметров.");
             return;
         }
 
         List<Income> incomes = incomeService.findIncomesByUserId(Long.parseLong(chatId));
 
         if (incomes.isEmpty()) {
-            sendMessage(chatId, "У вас пока нет доходов для обновления.");
+            sendMessage(chatId, "У вас пока нет доходов для обновления. 😕");
             return;
         }
 
         InlineKeyboardMarkup markup = createIncomesMarkup(incomes);
 
-        SendMessage message = createMessage(chatId, "Выберите доход для обновления:", markup);
+        SendMessage message = createMessage(chatId, "✨ Выберите доход для обновления:", markup);
 
         try {
             execute(message);
@@ -3846,7 +3872,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         for (Income income : incomes) {
             InlineKeyboardButton button = new InlineKeyboardButton();
-            button.setText("Запись о доходах №" + income.getId() + ": " + income.getTitle());
+            button.setText("💰 Запись о доходах №" + income.getId() + ": " + income.getTitle() + " 💼");
             button.setCallbackData("update_income_" + income.getId());
             List<InlineKeyboardButton> row = new ArrayList<>();
             row.add(button);
@@ -3863,7 +3889,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         IncomeUpdateState currentState = incomeUpdateStates.get(chatId);
 
         if (currentState == null) {
-            sendMessage(chatId, "Ошибка обновления дохода.");
+            sendMessage(chatId, "❌ Ошибка обновления дохода.");
             return;
         }
 
@@ -3871,7 +3897,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         Income income = incomeService.findById(incomeId);
         if (income == null || !income.getUser().getChatId().equals(Long.parseLong(chatId))) {
-            sendMessage(chatId, "Доход с указанным номером не найден или не принадлежит вам.");
+            sendMessage(chatId, "❌ Доход с указанным номером не найден или не принадлежит вам.");
             return;
         }
 
@@ -3887,11 +3913,11 @@ public class TelegramBot extends TelegramLongPollingBot {
         String formattedDate = currentDate.toLocalDateTime().format(formatter);
 
         String selectionMessage = "Выберите, что вы хотите обновить для дохода:\n";
-        selectionMessage += "Текущее название: " + currentTitle + "\n";
-        selectionMessage += "Текущая сумма: " + formatNumber(currentAmount) + " руб.\n";
-        selectionMessage += "Дата дохода: " + formattedDate + "\n";
-        selectionMessage += "Описание: " + currentDescription + "\n";
-        selectionMessage += "Категория: " + currentCategory + "\n";
+        selectionMessage += "🎯 Текущее название: " + currentTitle + "\n";
+        selectionMessage += "💲 Текущая сумма: " + formatNumber(currentAmount) + " руб.\n";
+        selectionMessage += "📅 Дата дохода: " + formattedDate + "\n";
+        selectionMessage += "📝 Описание: " + currentDescription + "\n";
+        selectionMessage += "🏷️ Категория: " + currentCategory + "\n";
 
         InlineKeyboardMarkup markup = createUpdateMarkupForIncome();
 
@@ -3932,7 +3958,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         IncomeUpdateState currentState = incomeUpdateStates.get(chatId);
 
         if (currentState == null) {
-            sendMessage(chatId, "Ошибка при обновлении дохода.");
+            sendMessage(chatId, "❌ Ошибка при обновлении дохода.");
             return;
         }
 
@@ -3941,7 +3967,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         Income income = incomeService.findById(incomeId);
         if (income == null || !income.getUser().getChatId().equals(Long.parseLong(chatId))) {
-            sendMessage(chatId, "Доход с указанным номером не найден или не принадлежит вам.");
+            sendMessage(chatId, "❌ Доход с указанным номером не найден или не принадлежит вам.");
             incomeUpdateStates.remove(chatId);
             return;
         }
@@ -3966,7 +3992,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                     income.setCategory(messageText);
                     break;
                 default:
-                    sendMessage(chatId, "Ошибка при обновлении дохода.");
+                    sendMessage(chatId, "❌ Ошибка при обновлении дохода.");
                     incomeUpdateStates.remove(chatId);
                     return;
             }
@@ -3975,26 +4001,26 @@ public class TelegramBot extends TelegramLongPollingBot {
 
             sendIncomeUpdateConfirmationMessage(chatId, income, fieldToUpdate);
         } catch (IllegalArgumentException e) {
-            sendMessage(chatId, "Ошибка при обработке введенного значения. Попробуйте снова.");
+            sendMessage(chatId, "❌ Ошибка при обработке введенного значения. Попробуйте снова.");
         }
     }
 
     private void sendIncomeUpdateConfirmationMessage(String chatId, Income income, String updatedField) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
-        StringBuilder confirmationMessage = new StringBuilder("Изменения сохранены:\n");
-        confirmationMessage.append("Название: ").append(income.getTitle()).append("\n");
-        confirmationMessage.append("Описание: ").append(income.getDescription()).append("\n");
-        confirmationMessage.append("Сумма: ").append(formatNumber(income.getAmount())).append(" руб.\n");
-        confirmationMessage.append("Категория: ").append(income.getCategory()).append("\n");
-        confirmationMessage.append("\nДата создания: ").append(income.getDate().toLocalDateTime().format(formatter));
+        StringBuilder confirmationMessage = new StringBuilder("🎉 Изменения сохранены:\n");
+        confirmationMessage.append("📝 Название: ").append(income.getTitle()).append("\n");
+        confirmationMessage.append("📝 Описание: ").append(income.getDescription()).append("\n");
+        confirmationMessage.append("💲 Сумма: ").append(formatNumber(income.getAmount())).append(" руб.\n");
+        confirmationMessage.append("🏷️ Категория: ").append(income.getCategory()).append("\n");
+        confirmationMessage.append("\n📅 Дата создания: ").append(income.getDate().toLocalDateTime().format(formatter));
 
         InlineKeyboardMarkup markup;
         if ("amount".equals(updatedField)) {
-            confirmationMessage.append("\n\nПодтвердить изменения и как вы хотите внести изменения в бюджет?");
+            confirmationMessage.append("\n\n📊 Подтвердить изменения и как вы хотите внести изменения в бюджет?");
             markup = createIncomeAmountConfirmationMarkup();
         } else {
-            confirmationMessage.append("\n\nПодтвердить изменения?");
+            confirmationMessage.append("\n\n📋 Подтвердить изменения?");
             markup = createIncomeConfirmationMarkup();
         }
 
@@ -4064,7 +4090,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private void cancelIncomeUpdate(String chatId, IncomeUpdateState currentState) {
         incomeService.save(currentState.getOriginalIncome());
         incomeUpdateStates.remove(chatId);
-        sendMessage(chatId, "Изменения отменены.");
+        sendMessage(chatId, "❌ Изменения отменены.");
     }
 
     private void sendNewValueRequestForIncome(String chatId, String field) {
@@ -4076,25 +4102,25 @@ public class TelegramBot extends TelegramLongPollingBot {
             case "category" -> "категория";
             default -> "";
         };
-        sendMessage(chatId, "Введите новое значение для поля " + fieldDisplayName + ":");
+        sendMessage(chatId, "💬 Введите новое значение для поля " + fieldDisplayName + ":");
     }
 
     public void handleUpdateExpenseCommand(String[] parts, String chatId, String messageText) {
         if (parts.length > 1 && !messageText.equals(BUTTON_UPDATE_EXPENSE_TEXT)) {
-            sendMessage(chatId, "Неверный формат команды. Используйте команду /update_expense только без параметров.");
+            sendMessage(chatId, "❌ Неверный формат команды. Используйте команду /update_expense только без параметров.");
             return;
         }
 
         List<Expense> expenses = expenseService.findExpensesByUserId(Long.parseLong(chatId));
 
         if (expenses.isEmpty()) {
-            sendMessage(chatId, "У вас пока нет расходов для обновления.");
+            sendMessage(chatId, "📉 У вас пока нет расходов для обновления.");
             return;
         }
 
         InlineKeyboardMarkup markup = createExpensesMarkup(expenses);
 
-        SendMessage message = createMessage(chatId, "Выберите расход для обновления:", markup);
+        SendMessage message = createMessage(chatId, "💸 Выберите расход для обновления:", markup);
 
         try {
             execute(message);
@@ -4108,7 +4134,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         for (Expense expense : expenses) {
             InlineKeyboardButton button = new InlineKeyboardButton();
-            button.setText("Запись о расходах №" + expense.getId() + ": " + expense.getTitle());
+            button.setText("💸 Запись о расходах №" + expense.getId() + ": " + expense.getTitle() + " 💼");
             button.setCallbackData("update_expense_" + expense.getId());
 
             List<InlineKeyboardButton> row = new ArrayList<>();
@@ -4127,7 +4153,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         ExpenseUpdateState currentState = expenseUpdateStates.get(chatId);
 
         if (currentState == null) {
-            sendMessage(chatId, "Ошибка обновления расхода.");
+            sendMessage(chatId, "❌ Ошибка обновления расхода.");
             return;
         }
 
@@ -4135,7 +4161,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         Expense expense = expenseService.findById(expenseId);
         if (expense == null || !expense.getUser().getChatId().equals(Long.parseLong(chatId))) {
-            sendMessage(chatId, "Расход с указанным номером не найден или не принадлежит вам.");
+            sendMessage(chatId, "❌ Расход с указанным номером не найден или не принадлежит вам.");
             return;
         }
 
@@ -4150,12 +4176,12 @@ public class TelegramBot extends TelegramLongPollingBot {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         String formattedDate = currentDate.toLocalDateTime().format(formatter);
 
-        String selectionMessage = "Выберите, что вы хотите обновить для расхода:\n";
-        selectionMessage += "Текущее название: " + currentTitle + "\n";
-        selectionMessage += "Текущая сумма: " + formatNumber(currentAmount) + " руб.\n";
-        selectionMessage += "Дата расхода: " + formattedDate + "\n";
-        selectionMessage += "Описание: " + currentDescription + "\n";
-        selectionMessage += "Категория: " + currentCategory + "\n";
+        String selectionMessage = "📉 Выберите, что вы хотите обновить для расхода:\n";
+        selectionMessage += "📝 Текущее название: " + currentTitle + "\n";
+        selectionMessage += "💲 Текущая сумма: " + formatNumber(currentAmount) + " руб.\n";
+        selectionMessage += "📅 Дата расхода: " + formattedDate + "\n";
+        selectionMessage += "📝 Описание: " + currentDescription + "\n";
+        selectionMessage += "🏷️ Категория: " + currentCategory + "\n";
 
         InlineKeyboardMarkup markup = createUpdateMarkupForExpense();
 
@@ -4167,7 +4193,6 @@ public class TelegramBot extends TelegramLongPollingBot {
             log.error("Error sending field selection message for expense: {}", e.getMessage());
         }
     }
-
 
     public InlineKeyboardMarkup createUpdateMarkupForExpense() {
         List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
@@ -4197,7 +4222,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         ExpenseUpdateState currentState = expenseUpdateStates.get(chatId);
 
         if (currentState == null) {
-            sendMessage(chatId, "Ошибка при обновлении расхода.");
+            sendMessage(chatId, "❌ Ошибка при обновлении расхода.");
             return;
         }
 
@@ -4206,7 +4231,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         Expense expense = expenseService.findById(expenseId);
         if (expense == null || !expense.getUser().getChatId().equals(Long.parseLong(chatId))) {
-            sendMessage(chatId, "Расход с указанным номером не найден или не принадлежит вам.");
+            sendMessage(chatId, "❌ Расход с указанным номером не найден или не принадлежит вам.");
             expenseUpdateStates.remove(chatId);
             return;
         }
@@ -4219,6 +4244,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                 case "amount":
                     double newAmount = Double.parseDouble(messageText);
                     currentState.setNewAmount(newAmount);
+                    expense.setAmount(newAmount);
                     break;
                 case "date":
                     Timestamp date = Timestamp.valueOf(messageText + " 00:00:00");
@@ -4231,31 +4257,28 @@ public class TelegramBot extends TelegramLongPollingBot {
                     expense.setCategory(messageText);
                     break;
                 default:
-                    sendMessage(chatId, "Ошибка при обновлении расхода.");
+                    sendMessage(chatId, "❌ Ошибка при обновлении расхода.");
                     expenseUpdateStates.remove(chatId);
                     return;
             }
 
-            if (!"amount".equals(fieldToUpdate)) {
-                expenseService.save(expense);
-            }
+            expenseService.save(expense);
 
             sendExpenseUpdateConfirmationMessage(chatId, expense, fieldToUpdate);
         } catch (IllegalArgumentException e) {
-            sendMessage(chatId, "Ошибка при обработке введенного значения. Попробуйте снова.");
+            sendMessage(chatId, "❌ Ошибка при обработке введенного значения. Попробуйте снова.");
         }
     }
-
 
     private void sendExpenseUpdateConfirmationMessage(String chatId, Expense expense, String updatedField) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
-        StringBuilder confirmationMessage = new StringBuilder("Изменения сохранены:\n");
-        confirmationMessage.append("Название: ").append(expense.getTitle()).append("\n");
-        confirmationMessage.append("Описание: ").append(expense.getDescription()).append("\n");
-        confirmationMessage.append("Сумма: ").append(formatNumber(expense.getAmount())).append(" руб.\n");
-        confirmationMessage.append("Категория: ").append(expense.getCategory()).append("\n");
-        confirmationMessage.append("\nДата создания: ").append(expense.getDate().toLocalDateTime().format(formatter));
+        StringBuilder confirmationMessage = new StringBuilder("✅ Изменения сохранены:\n");
+        confirmationMessage.append("📝 Название: ").append(expense.getTitle()).append("\n");
+        confirmationMessage.append("📝 Описание: ").append(expense.getDescription()).append("\n");
+        confirmationMessage.append("💲 Сумма: ").append(formatNumber(expense.getAmount())).append(" руб.\n");
+        confirmationMessage.append("🏷️ Категория: ").append(expense.getCategory()).append("\n");
+        confirmationMessage.append("\n📅 Дата создания: ").append(expense.getDate().toLocalDateTime().format(formatter));
 
         InlineKeyboardMarkup markup;
         if ("amount".equals(updatedField)) {
@@ -4310,7 +4333,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private void cancelExpenseUpdate(String chatId, ExpenseUpdateState currentState) {
         expenseService.save(currentState.getOriginalExpense());
         expenseUpdateStates.remove(chatId);
-        sendMessage(chatId, "Изменения отменены.");
+        sendMessage(chatId, "❌ Изменения отменены.");
     }
 
     private void sendNewValueRequestForExpense(String chatId, String field) {
@@ -4322,25 +4345,25 @@ public class TelegramBot extends TelegramLongPollingBot {
             case "category" -> "категория";
             default -> "";
         };
-        sendMessage(chatId, "Введите новое значение для поля " + fieldDisplayName + ":");
+        sendMessage(chatId, "🔧 Введите новое значение для поля " + fieldDisplayName + ":");
     }
 
     private void handleDeleteIncomeCommand(String[] parts, String chatId, String messageText) {
         if (parts.length > 1 && !(messageText.equals(BUTTON_DELETE_INCOME_TEXT))) {
-            sendMessage(chatId, "Неверный формат команды. Используйте /delete_income без параметров.");
+            sendMessage(chatId, "❌ Неверный формат команды. Используйте /delete_income без параметров.");
             return;
         }
 
         List<Income> incomes = incomeService.findIncomesByUserId(Long.parseLong(chatId));
 
         if (incomes.isEmpty()) {
-            sendMessage(chatId, "У вас нет доходов для удаления.");
+            sendMessage(chatId, "ℹ️ У вас нет доходов для удаления.");
             return;
         }
 
         InlineKeyboardMarkup markup = createDeleteIncomeMarkup(incomes);
 
-        SendMessage message = createMessage(chatId, "Выберите доход для удаления:", markup);
+        SendMessage message = createMessage(chatId, "🗑️ Выберите доход для удаления:", markup);
 
         try {
             execute(message);
@@ -4354,7 +4377,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         for (Income income : incomes) {
             InlineKeyboardButton button = new InlineKeyboardButton();
-            button.setText("Запись о доходах №" + income.getId() + ": " + income.getTitle());
+            button.setText("💵 Запись о доходах №" + income.getId() + ": " + income.getTitle());
             button.setCallbackData("delete_income_" + income.getId());
             List<InlineKeyboardButton> row = new ArrayList<>();
             row.add(button);
@@ -4370,20 +4393,20 @@ public class TelegramBot extends TelegramLongPollingBot {
     private void sendDeleteIncomeConfirmationMessage(String chatId, int incomeIdToDelete) {
         Income income = incomeService.findById((long) incomeIdToDelete);
         if (income == null) {
-            sendMessage(chatId, "Запись о доходе не найдена.");
+            sendMessage(chatId, "⚠️ Запись о доходе не найдена.");
             return;
         }
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
-        StringBuilder confirmationMessage = new StringBuilder("Вы уверены, что хотите удалить следующую запись о доходе?\n\n");
-        confirmationMessage.append("Название: ").append(income.getTitle()).append("\n");
-        confirmationMessage.append("Сумма: ").append(formatNumber(income.getAmount())).append(" руб.\n");
-        confirmationMessage.append("Категория: ").append(income.getCategory()).append("\n");
-        confirmationMessage.append("Дата: ").append(income.getDate().toLocalDateTime().format(formatter)).append("\n");
+        StringBuilder confirmationMessage = new StringBuilder("❓ Вы уверены, что хотите удалить следующую запись о доходе?\n\n");
+        confirmationMessage.append("📝 Название: ").append(income.getTitle()).append("\n");
+        confirmationMessage.append("💲 Сумма: ").append(formatNumber(income.getAmount())).append(" руб.\n");
+        confirmationMessage.append("🏷️ Категория: ").append(income.getCategory()).append("\n");
+        confirmationMessage.append("📅 Дата: ").append(income.getDate().toLocalDateTime().format(formatter)).append("\n");
 
         if (income.getDescription() != null && !income.getDescription().isEmpty()) {
-            confirmationMessage.append("Описание: ").append(income.getDescription()).append("\n");
+            confirmationMessage.append("📝 Описание: ").append(income.getDescription()).append("\n");
         }
 
         InlineKeyboardMarkup markup = createDeleteIncomeConfirmationMarkup();
@@ -4416,30 +4439,30 @@ public class TelegramBot extends TelegramLongPollingBot {
             incomeService.delete(incomeId);
         }
         incomeDeletionStates.remove(chatId);
-        sendMessage(chatId, "Запись о доходе удалена.");
+        sendMessage(chatId, "🗑️ Запись о доходе удалена.");
     }
 
     private void cancelDeleteIncome(String chatId) {
         incomeDeletionStates.remove(chatId);
-        sendMessage(chatId, "Удаление отменено.");
+        sendMessage(chatId, "❌ Удаление отменено.");
     }
 
     private void handleDeleteExpenseCommand(String[] parts, String chatId, String messageText) {
         if (parts.length > 1 && !(messageText.equals(BUTTON_DELETE_EXPENSE_TEXT))) {
-            sendMessage(chatId, "Неверный формат команды. Используйте /delete_expense без параметров.");
+            sendMessage(chatId, "❌ Неверный формат команды. Используйте /delete_expense без параметров.");
             return;
         }
 
         List<Expense> expenses = expenseService.findExpensesByUserId(Long.parseLong(chatId));
 
         if (expenses.isEmpty()) {
-            sendMessage(chatId, "У вас нет расходов для удаления.");
+            sendMessage(chatId, "📉 У вас нет расходов для удаления.");
             return;
         }
 
         InlineKeyboardMarkup markup = createDeleteExpenseMarkup(expenses);
 
-        SendMessage message = createMessage(chatId, "Выберите расход для удаления:", markup);
+        SendMessage message = createMessage(chatId, "🗑️ Выберите расход для удаления:", markup);
 
         try {
             execute(message);
@@ -4453,7 +4476,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         for (Expense expense : expenses) {
             InlineKeyboardButton button = new InlineKeyboardButton();
-            button.setText("Запись о расходах №" + expense.getId() + ": " + expense.getTitle());
+            button.setText("💸 Запись о расходах №" + expense.getId() + ": " + expense.getTitle());
             button.setCallbackData("delete_expense_" + expense.getId());
             List<InlineKeyboardButton> row = new ArrayList<>();
             row.add(button);
@@ -4469,20 +4492,20 @@ public class TelegramBot extends TelegramLongPollingBot {
     private void sendDeleteExpenseConfirmationMessage(String chatId, int expenseIdToDelete) {
         Expense expense = expenseService.findById((long) expenseIdToDelete);
         if (expense == null) {
-            sendMessage(chatId, "Запись о расходе не найдена.");
+            sendMessage(chatId, "❌ Запись о расходе не найдена.");
             return;
         }
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
-        StringBuilder confirmationMessage = new StringBuilder("Вы уверены, что хотите удалить следующую запись о расходе?\n\n");
-        confirmationMessage.append("Название: ").append(expense.getTitle()).append("\n");
-        confirmationMessage.append("Сумма: ").append(formatNumber(expense.getAmount())).append(" руб.\n");
-        confirmationMessage.append("Категория: ").append(expense.getCategory()).append("\n");
-        confirmationMessage.append("Дата: ").append(expense.getDate().toLocalDateTime().format(formatter)).append("\n");
+        StringBuilder confirmationMessage = new StringBuilder("⚠️ Вы уверены, что хотите удалить следующую запись о расходе?\n\n");
+        confirmationMessage.append("📌 Название: ").append(expense.getTitle()).append("\n");
+        confirmationMessage.append("💰 Сумма: ").append(formatNumber(expense.getAmount())).append(" руб.\n");
+        confirmationMessage.append("🏷️ Категория: ").append(expense.getCategory()).append("\n");
+        confirmationMessage.append("📅 Дата: ").append(expense.getDate().toLocalDateTime().format(formatter)).append("\n");
 
         if (expense.getDescription() != null && !expense.getDescription().isEmpty()) {
-            confirmationMessage.append("Описание: ").append(expense.getDescription()).append("\n");
+            confirmationMessage.append("📝 Описание: ").append(expense.getDescription()).append("\n");
         }
 
         InlineKeyboardMarkup markup = createDeleteExpenseConfirmationMarkup();
@@ -4515,31 +4538,31 @@ public class TelegramBot extends TelegramLongPollingBot {
             expenseService.delete(Long.valueOf(expenseId));
         }
         expenseDeletionStates.remove(chatId);
-        sendMessage(chatId, "Запись о расходе удалена.");
+        sendMessage(chatId, "🗑️ Запись о расходе удалена.");
     }
 
     private void cancelDeleteExpense(String chatId) {
         expenseDeletionStates.remove(chatId);
-        sendMessage(chatId, "Удаление отменено.");
+        sendMessage(chatId, "❌ Удаление отменено.");
     }
 
     private void handleBudgetCreationCommand(String chatId, String[] parts, String messageText) {
         User user = userService.findByChatId(Long.parseLong(chatId));
         if (user == null) {
-            sendMessage(chatId, "Пользователь не зарегистрирован. Используйте /start для регистрации.");
+            sendMessage(chatId, "❗️ Пользователь не зарегистрирован. Используйте /start для регистрации.");
             return;
         }
 
         Budget existingBudget = budgetService.findByUserChatId(user.getChatId());
         if (existingBudget != null) {
-            sendMessage(chatId, "У вас уже есть бюджет. Вы не можете создать новый. Для создания нового бюджета удалите существующий.");
+            sendMessage(chatId, "📊 У вас уже есть бюджет. Вы не можете создать новый. Для создания нового бюджета удалите существующий.");
             return;
         }
 
         if (parts.length == 1 || messageText.equals(BUTTON_CREATE_BUDGET_TEXT)) {
             startBudgetCreation(chatId);
         } else {
-            sendMessage(chatId, "Неверный формат команды. Используйте /add_budget без параметров.");
+            sendMessage(chatId, "❌ Неверный формат команды. Используйте /add_budget без параметров.");
         }
     }
 
@@ -4554,7 +4577,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         SendMessage message = new SendMessage();
         message.setChatId(chatId);
-        message.setText("Введите название бюджета:");
+        message.setText("🌟 Введите название бюджета:");
         sendMessageForBudget(message);
     }
 
@@ -4564,49 +4587,49 @@ public class TelegramBot extends TelegramLongPollingBot {
         if (currentState.getState() == BudgetState.ENTER_NAME) {
             currentState.setName(messageText);
             currentState.setState(BudgetState.ENTER_AMOUNT);
-            sendMessage(chatId, "Введите сумму бюджета (в рублях):");
+            sendMessage(chatId, "📝 Введите сумму бюджета (в рублях):");
 
         } else if (currentState.getState() == BudgetState.ENTER_AMOUNT) {
             try {
                 double amount = Double.parseDouble(messageText);
                 currentState.setAmount(amount);
                 currentState.setState(BudgetState.ENTER_WARNING_THRESHOLD);
-                sendMessage(chatId, "Введите сумму, при которой хотите получать предупреждение о малом бюджете (в рублях):");
+                sendMessage(chatId, "💡 Введите сумму, при которой хотите получать предупреждение о малом бюджете (в рублях):");
 
             } catch (NumberFormatException e) {
-                sendMessage(chatId, "Пожалуйста, введите корректное числовое значение для суммы бюджета:");
+                sendMessage(chatId, "❌ Пожалуйста, введите корректное числовое значение для суммы бюджета:");
             }
         } else if (currentState.getState() == BudgetState.ENTER_WARNING_THRESHOLD) {
             try {
                 double warningThreshold = Double.parseDouble(messageText);
                 currentState.setWarningThreshold(warningThreshold);
                 currentState.setState(BudgetState.ENTER_START_DATE);
-                sendMessage(chatId, "Введите дату начала бюджета (в формате ГГГГ-ММ-ДД):");
+                sendMessage(chatId, "📅 Введите дату начала бюджета (в формате ГГГГ-ММ-ДД):");
 
             } catch (NumberFormatException e) {
-                sendMessage(chatId, "Пожалуйста, введите корректное числовое значение для порога предупреждения:");
+                sendMessage(chatId, "❌ Пожалуйста, введите корректное числовое значение для порога предупреждения:");
             }
         } else if (currentState.getState() == BudgetState.ENTER_START_DATE) {
             try {
                 Timestamp startDate = Timestamp.valueOf(messageText + " 00:00:00");
                 currentState.setStartDate(startDate);
                 currentState.setState(BudgetState.ENTER_END_DATE);
-                sendMessage(chatId, "Введите дату окончания бюджета (в формате ГГГГ-ММ-ДД):");
+                sendMessage(chatId, "📅 Введите дату окончания бюджета (в формате ГГГГ-ММ-ДД):");
             } catch (IllegalArgumentException e) {
-                sendMessage(chatId, "Пожалуйста, введите корректную дату в формате ГГГГ-ММ-ДД:");
+                sendMessage(chatId, "❌ Пожалуйста, введите корректную дату в формате ГГГГ-ММ-ДД:");
             }
         } else if (currentState.getState() == BudgetState.ENTER_END_DATE) {
             try {
                 Timestamp endDate = Timestamp.valueOf(messageText + " 00:00:00");
                 if (currentState.getStartDate().after(endDate)) {
-                    sendMessage(chatId, "Дата окончания не может предшествовать дате начала. Пожалуйста, введите корректную дату окончания бюджета (в формате ГГГГ-ММ-ДД):");
+                    sendMessage(chatId, "❌ Дата окончания не может предшествовать дате начала. Пожалуйста, введите корректную дату окончания бюджета (в формате ГГГГ-ММ-ДД):");
                 } else {
                     currentState.setEndDate(endDate);
                     currentState.setState(BudgetState.ENTER_CATEGORY);
-                    sendMessage(chatId, "Введите категорию бюджета:");
+                    sendMessage(chatId, "📊 Введите категорию бюджета:");
                 }
             } catch (IllegalArgumentException e) {
-                sendMessage(chatId, "Пожалуйста, введите корректную дату в формате ГГГГ-ММ-ДД:");
+                sendMessage(chatId, "❌ Пожалуйста, введите корректную дату в формате ГГГГ-ММ-ДД:");
             }
         } else if (currentState.getState() == BudgetState.ENTER_CATEGORY) {
             currentState.setCategory(messageText);
@@ -4622,14 +4645,14 @@ public class TelegramBot extends TelegramLongPollingBot {
                     currentState.getEndDate(), currentState.getCategory(), currentState.getWarningThreshold(), chatId);
             budgetCreationStates.remove(chatId);
 
-            sendMessage(chatId, "Бюджет '" + currentState.getName() + "' с суммой " + formattedAmount + " руб. создан.");
+            sendMessage(chatId, "🎉 Бюджет '" + currentState.getName() + "' с суммой " + formattedAmount + " руб. создан.");
         }
     }
 
     private void createBudget(String name, double amount, Timestamp startDate, Timestamp endDate, String category, double warningThreshold, String chatId) {
         User user = userService.findByChatId(Long.parseLong(chatId));
         if (user == null) {
-            sendMessage(chatId, "Пользователь не зарегистрирован. Используйте /start для регистрации.");
+            sendMessage(chatId, "❌ Пользователь не зарегистрирован. Используйте /start для регистрации.");
             return;
         }
 
@@ -4656,20 +4679,20 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     public void handleUpdateBudgetCommand(String[] parts, String chatId, String messageText) {
         if (parts.length > 1 && !messageText.equals(BUTTON_UPDATE_BUDGET_TEXT)) {
-            sendMessage(chatId, "Неверный формат команды. Используйте команду /update_budget только без параметров.");
+            sendMessage(chatId, "❌ Неверный формат команды. Используйте команду /update_budget только без параметров.");
             return;
         }
 
         List<Budget> budgets = budgetService.findBudgetsByUserId(Long.parseLong(chatId));
 
         if (budgets.isEmpty()) {
-            sendMessage(chatId, "У вас пока нет бюджетов для обновления.");
+            sendMessage(chatId, "У вас пока нет бюджета для обновления. 😕");
             return;
         }
 
         InlineKeyboardMarkup markup = createBudgetsMarkup(budgets);
 
-        SendMessage message = createMessage(chatId, "Выберите бюджет для обновления:", markup);
+        SendMessage message = createMessage(chatId, "Выберите бюджет для обновления: 📊", markup);
 
         try {
             execute(message);
@@ -4683,7 +4706,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         for (Budget budget : budgets) {
             InlineKeyboardButton button = new InlineKeyboardButton();
-            button.setText("Запись о бюджете №" + budget.getId() + ": " + budget.getName());
+            button.setText("📊 Запись о бюджете №" + budget.getId() + ": " + budget.getName());
             button.setCallbackData("update_budget_" + budget.getId());
 
             List<InlineKeyboardButton> row = new ArrayList<>();
@@ -4702,7 +4725,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         BudgetUpdateState currentState = budgetUpdateStates.get(chatId);
 
         if (currentState == null) {
-            sendMessage(chatId, "Ошибка обновления бюджета.");
+            sendMessage(chatId, "❌ Ошибка обновления бюджета. Пожалуйста, попробуйте снова.");
             return;
         }
 
@@ -4710,7 +4733,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         Budget budget = budgetService.findById(budgetId);
         if (budget == null || !budget.getUser().getChatId().equals(Long.parseLong(chatId))) {
-            sendMessage(chatId, "Бюджет с указанным номером не найден или не принадлежит вам.");
+            sendMessage(chatId, "❗ Бюджет с указанным номером не найден или не принадлежит вам.");
             return;
         }
 
@@ -4727,13 +4750,13 @@ public class TelegramBot extends TelegramLongPollingBot {
         String currentCategory = budget.getCategory();
         Double currentWarningThreshold = budget.getWarningThreshold();
 
-        String selectionMessage = "Выберите, что вы хотите обновить для бюджета:\n";
-        selectionMessage += "Текущее название: " + currentName + "\n";
-        selectionMessage += "Текущая сумма: " + formatNumber(currentAmount) + " руб.\n";
-        selectionMessage += "Дата начала: " + formattedStartDate + "\n";
-        selectionMessage += "Дата окончания: " + formattedEndDate + "\n";
-        selectionMessage += "Категория: " + currentCategory + "\n";
-        selectionMessage += "Текущий порог предупреждения: " + formatNumber(currentWarningThreshold) + " руб.\n";
+        String selectionMessage = "🔍 Выберите, что вы хотите обновить для бюджета:\n\n";
+        selectionMessage += "📛 Текущее название: " + currentName + "\n";
+        selectionMessage += "💰 Текущая сумма: " + formatNumber(currentAmount) + " руб.\n";
+        selectionMessage += "📅 Дата начала: " + formattedStartDate + "\n";
+        selectionMessage += "📅 Дата окончания: " + formattedEndDate + "\n";
+        selectionMessage += "📂 Категория: " + currentCategory + "\n";
+        selectionMessage += "⚠️ Текущий порог предупреждения: " + formatNumber(currentWarningThreshold) + " руб.\n";
 
         InlineKeyboardMarkup markup = createUpdateMarkupForBudget();
 
@@ -4745,6 +4768,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             log.error("Error sending field selection message for budget: {}", e.getMessage());
         }
     }
+
     public InlineKeyboardMarkup createUpdateMarkupForBudget() {
         List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
 
@@ -4777,7 +4801,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         BudgetUpdateState currentState = budgetUpdateStates.get(chatId);
 
         if (currentState == null) {
-            sendMessage(chatId, "Ошибка при обновлении бюджета.");
+            sendMessage(chatId, "❌ Ошибка при обновлении бюджета.");
             return;
         }
 
@@ -4786,7 +4810,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         Budget budget = budgetService.findById(budgetId);
         if (budget == null || !budget.getUser().getChatId().equals(Long.parseLong(chatId))) {
-            sendMessage(chatId, "Бюджет с указанным номером не найден или не принадлежит вам.");
+            sendMessage(chatId, "❗ Бюджет с указанным номером не найден или не принадлежит вам.");
             budgetUpdateStates.remove(chatId);
             return;
         }
@@ -4816,7 +4840,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                     budget.setWarningThreshold(warningThreshold);
                     break;
                 default:
-                    sendMessage(chatId, "Ошибка при обновлении бюджета.");
+                    sendMessage(chatId, "❌ Ошибка при обновлении бюджета.");
                     budgetUpdateStates.remove(chatId);
                     return;
             }
@@ -4825,22 +4849,22 @@ public class TelegramBot extends TelegramLongPollingBot {
 
             sendBudgetUpdateConfirmationMessage(chatId, budget);
         } catch (NumberFormatException e) {
-            sendMessage(chatId, "Ошибка при обработке введенного значения. Попробуйте снова.");
+            sendMessage(chatId, "⚠️ Ошибка при обработке введенного значения. Пожалуйста, введите корректное числовое значение.");
         } catch (IllegalArgumentException e) {
-            sendMessage(chatId, "Ошибка при обработке введенного значения. Попробуйте снова.");
+            sendMessage(chatId, "⚠️ Ошибка при обработке введенного значения. Пожалуйста, введите корректное значение в правильном формате.");
         }
     }
 
     public void sendBudgetUpdateConfirmationMessage(String chatId, Budget budget) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
-        StringBuilder confirmationMessage = new StringBuilder("Изменения сохранены:\n");
-        confirmationMessage.append("Название: ").append(budget.getName()).append("\n");
-        confirmationMessage.append("Сумма: ").append(formatNumber(budget.getAmount())).append(" руб.\n");
-        confirmationMessage.append("Дата начала: ").append(budget.getStartDate().toLocalDateTime().format(formatter)).append("\n");
-        confirmationMessage.append("Дата окончания: ").append(budget.getEndDate().toLocalDateTime().format(formatter)).append("\n");
-        confirmationMessage.append("Категория: ").append(budget.getCategory()).append("\n");
-        confirmationMessage.append("Текущий порог предупреждения: ").append(budget.getWarningThreshold()).append(" руб.\n");
+        StringBuilder confirmationMessage = new StringBuilder("✅ Изменения сохранены:\n\n");
+        confirmationMessage.append("\uD83D\uDCDB Название: ").append(budget.getName()).append("\n");
+        confirmationMessage.append("💰 Сумма: ").append(formatNumber(budget.getAmount())).append(" руб.\n");
+        confirmationMessage.append("📅 Дата начала: ").append(budget.getStartDate().toLocalDateTime().format(formatter)).append("\n");
+        confirmationMessage.append("📅 Дата окончания: ").append(budget.getEndDate().toLocalDateTime().format(formatter)).append("\n");
+        confirmationMessage.append("\uD83D\uDCC2 Категория: ").append(budget.getCategory()).append("\n");
+        confirmationMessage.append("⚠️ Текущий порог предупреждения: ").append(formatNumber(budget.getWarningThreshold())).append(" руб.\n");
 
         confirmationMessage.append("\n\nПодтвердить изменения?");
 
@@ -4872,7 +4896,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private void cancelBudgetUpdate(String chatId, BudgetUpdateState currentState) {
         budgetService.save(currentState.getOriginalBudget());
         budgetUpdateStates.remove(chatId);
-        sendMessage(chatId, "Изменения отменены.");
+        sendMessage(chatId, "❌ Изменения отменены.");
     }
 
     private void sendNewValueRequestForBudget(String chatId, String field) {
@@ -4885,25 +4909,25 @@ public class TelegramBot extends TelegramLongPollingBot {
             case "warning_threshold" -> "предупреждение о малом бюджете";
             default -> "";
         };
-        sendMessage(chatId, "Введите новое значение для поля " + fieldDisplayName + ":");
+        sendMessage(chatId, "✏️ Введите новое значение для поля " + fieldDisplayName + ":");
     }
 
     private void handleDeleteBudgetCommand(String[] parts, String chatId, String messageText) {
         if (parts.length > 1 && !(messageText.equals(BUTTON_DELETE_BUDGET_TEXT))) {
-            sendMessage(chatId, "Неверный формат команды. Используйте /delete_budget без параметров.");
+            sendMessage(chatId, "❌ Неверный формат команды. Используйте /delete_budget без параметров.");
             return;
         }
 
         List<Budget> budgets = budgetService.findBudgetsByUserId(Long.parseLong(chatId));
 
         if (budgets.isEmpty()) {
-            sendMessage(chatId, "У вас нет бюджетов для удаления.");
+            sendMessage(chatId, "🔍 У вас нет бюджета для удаления.");
             return;
         }
 
         InlineKeyboardMarkup markup = createDeleteBudgetMarkup(budgets);
 
-        SendMessage message = createMessage(chatId, "Выберите бюджет для удаления:", markup);
+        SendMessage message = createMessage(chatId, "🗑️ Выберите бюджет для удаления:", markup);
 
         try {
             execute(message);
@@ -4917,7 +4941,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         for (Budget budget : budgets) {
             InlineKeyboardButton button = new InlineKeyboardButton();
-            button.setText(budget.getName());
+            button.setText("💼 " + budget.getName());
             button.setCallbackData("delete_budget_" + budget.getId());
             List<InlineKeyboardButton> row = new ArrayList<>();
             row.add(button);
@@ -4933,20 +4957,20 @@ public class TelegramBot extends TelegramLongPollingBot {
     private void sendDeleteBudgetConfirmationMessage(String chatId, Long budgetIdToDelete) {
         Budget budget = budgetService.findById(budgetIdToDelete);
         if (budget == null) {
-            sendMessage(chatId, "Запись о бюджете не найдена.");
+            sendMessage(chatId, "🚫 Запись о бюджете не найдена.");
             return;
         }
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
-        StringBuilder confirmationMessage = new StringBuilder("Вы уверены, что хотите удалить следующий бюджет?\n\n");
-        confirmationMessage.append("Название: ").append(budget.getName()).append("\n");
-        confirmationMessage.append("Начальная сумма: ").append(formatNumber(budget.getInitialAmount())).append(" руб.\n");
-        confirmationMessage.append("Текущая сумма: ").append(formatNumber(budget.getAmount())).append(" руб.\n");
-        confirmationMessage.append("Категория: ").append(budget.getCategory()).append("\n");
-        confirmationMessage.append("Начальная дата: ").append(budget.getStartDate().toLocalDateTime().format(formatter)).append("\n");
-        confirmationMessage.append("Конечная дата: ").append(budget.getEndDate().toLocalDateTime().format(formatter)).append("\n");
-        confirmationMessage.append("Порог предупреждения: ").append(formatNumber(budget.getWarningThreshold())).append(" руб.\n");
+        StringBuilder confirmationMessage = new StringBuilder("❓ Вы уверены, что хотите удалить следующий бюджет?\n\n");
+        confirmationMessage.append("📛 Название: ").append(budget.getName()).append("\n");
+        confirmationMessage.append("💵 Начальная сумма: ").append(formatNumber(budget.getInitialAmount())).append(" руб.\n");
+        confirmationMessage.append("💰 Текущая сумма: ").append(formatNumber(budget.getAmount())).append(" руб.\n");
+        confirmationMessage.append("📂 Категория: ").append(budget.getCategory()).append("\n");
+        confirmationMessage.append("📅 Начальная дата: ").append(budget.getStartDate().toLocalDateTime().format(formatter)).append("\n");
+        confirmationMessage.append("📅 Конечная дата: ").append(budget.getEndDate().toLocalDateTime().format(formatter)).append("\n");
+        confirmationMessage.append("⚠️ Порог предупреждения: ").append(formatNumber(budget.getWarningThreshold())).append(" руб.\n");
 
         InlineKeyboardMarkup markup = createDeleteBudgetConfirmationMarkup();
 
@@ -4976,12 +5000,12 @@ public class TelegramBot extends TelegramLongPollingBot {
     private void confirmDeleteBudget(String chatId, Long budgetIdToDelete) {
         budgetService.deleteById(budgetIdToDelete);
         budgetDeletionStates.remove(chatId);
-        sendMessage(chatId, "Запись о бюджете удалена.");
+        sendMessage(chatId, "🗑️ Запись о бюджете удалена.");
     }
 
     private void cancelDeleteBudget(String chatId) {
         budgetDeletionStates.remove(chatId);
-        sendMessage(chatId, "Удаление отменено.");
+        sendMessage(chatId, "❌ Удаление отменено.");
     }
 
     private String formatNumber(Number number) {
@@ -5010,32 +5034,32 @@ public class TelegramBot extends TelegramLongPollingBot {
                 e.printStackTrace();
             }
         } else {
-            sendMessage(chatId, "Неверный формат команды. Используйте /current_budget без параметров.");
+            sendMessage(chatId, "❌ Неверный формат команды. Используйте /current_budget без параметров.");
         }
     }
 
     public String getCurrentBudgetInfo(String chatId) {
         User user = userService.findByChatId(Long.parseLong(chatId));
         if (user == null) {
-            return "Пользователь не зарегистрирован. Используйте /start для регистрации.";
+            return "🚫 Пользователь не зарегистрирован. Используйте /start для регистрации.";
         }
 
         Budget currentBudget = budgetService.findByUserChatId(user.getChatId());
         if (currentBudget == null) {
-            return "У вас нет текущего бюджета.";
+            return "ℹ️ У вас нет текущего бюджета.";
         }
 
         DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
         StringBuilder sb = new StringBuilder();
-        sb.append("Информация о текущем бюджете:\n");
-        sb.append("Название: ").append(currentBudget.getName()).append("\n");
-        sb.append("Начальная сумма: ").append(formatNumber(currentBudget.getInitialAmount())).append(" руб.\n");
-        sb.append("Текущая сумма: ").append(formatNumber(currentBudget.getAmount())).append(" руб.\n");
-        sb.append("Категория: ").append(currentBudget.getCategory()).append("\n");
-        sb.append("Начало: ").append(currentBudget.getStartDate().toLocalDateTime().format(dateFormatter)).append("\n");
-        sb.append("Окончание: ").append(currentBudget.getEndDate().toLocalDateTime().format(dateFormatter)).append("\n");
-        sb.append("Порог предупреждения: ").append(formatNumber(currentBudget.getWarningThreshold())).append(" руб.\n");
+        sb.append("💼 Информация о текущем бюджете:\n\n");
+        sb.append("📛 Название: ").append(currentBudget.getName()).append("\n");
+        sb.append("💰 Начальная сумма: ").append(formatNumber(currentBudget.getInitialAmount())).append(" руб.\n");
+        sb.append("💸 Текущая сумма: ").append(formatNumber(currentBudget.getAmount())).append(" руб.\n");
+        sb.append("📂 Категория: ").append(currentBudget.getCategory()).append("\n");
+        sb.append("📅 Начало: ").append(currentBudget.getStartDate().toLocalDateTime().format(dateFormatter)).append("\n");
+        sb.append("🏁 Окончание: ").append(currentBudget.getEndDate().toLocalDateTime().format(dateFormatter)).append("\n");
+        sb.append("⚠️ Порог предупреждения: ").append(formatNumber(currentBudget.getWarningThreshold())).append(" руб.\n");
 
         return sb.toString();
     }
@@ -5043,14 +5067,14 @@ public class TelegramBot extends TelegramLongPollingBot {
     private void handleReportCreationCommand(String chatId, String[] parts, String messageText) {
         User user = userService.findByChatId(Long.parseLong(chatId));
         if (user == null) {
-            sendMessage(chatId, "Пользователь не зарегистрирован. Используйте /start для регистрации.");
+            sendMessage(chatId, "❌ Пользователь не зарегистрирован. Используйте /start для регистрации.");
             return;
         }
 
-        if (parts.length == 1 || messageText.equals("\uD83D\uDCCA Аналитика бюджета")) {
+        if (parts.length == 1 || messageText.equals(BUTTON_SHOW_ANALYTIC_TEXT)) {
             startReportCreation(chatId);
         } else {
-            sendMessage(chatId, "Неверный формат команды. Используйте /add_report без параметров.");
+            sendMessage(chatId, "❌ Неверный формат команды. Используйте /add_report без параметров.");
         }
     }
 
@@ -5065,7 +5089,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         SendMessage message = new SendMessage();
         message.setChatId(chatId);
-        message.setText("Введите дату начала периода отчета (в формате ГГГГ-ММ-ДД):");
+        message.setText("✨ Введите дату начала периода отчета (в формате ГГГГ-ММ-ДД):");
         sendMessageForReport(message);
     }
 
@@ -5077,22 +5101,22 @@ public class TelegramBot extends TelegramLongPollingBot {
                 Timestamp startDate = Timestamp.valueOf(messageText + " 00:00:00");
                 currentState.setStartDate(startDate);
                 currentState.setState(ReportState.ENTER_END_DATE);
-                sendMessage(chatId, "Введите дату окончания периода отчета (в формате ГГГГ-ММ-ДД):");
+                sendMessage(chatId, "✨ Введите дату окончания периода отчета (в формате ГГГГ-ММ-ДД):");
             } catch (IllegalArgumentException e) {
-                sendMessage(chatId, "Пожалуйста, введите корректную дату в формате ГГГГ-ММ-ДД:");
+                sendMessage(chatId, "❌ Пожалуйста, введите корректную дату в формате ГГГГ-ММ-ДД:");
             }
         } else if (currentState.getState() == ReportState.ENTER_END_DATE) {
             try {
                 Timestamp endDate = Timestamp.valueOf(messageText + " 00:00:00");
                 if (currentState.getStartDate().after(endDate)) {
-                    sendMessage(chatId, "Дата окончания не может предшествовать дате начала. Пожалуйста, введите корректную дату окончания периода отчета (в формате ГГГГ-ММ-ДД):");
+                    sendMessage(chatId, "❌ Дата окончания не может предшествовать дате начала. Пожалуйста, введите корректную дату окончания периода отчета (в формате ГГГГ-ММ-ДД):");
                 } else {
                     currentState.setEndDate(endDate);
                     generateReport(chatId, currentState);
                     reportCreationStates.remove(chatId);
                 }
             } catch (IllegalArgumentException e) {
-                sendMessage(chatId, "Пожалуйста, введите корректную дату в формате ГГГГ-ММ-ДД:");
+                sendMessage(chatId, "❌ Пожалуйста, введите корректную дату в формате ГГГГ-ММ-ДД:");
             }
         }
     }
@@ -5112,7 +5136,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             byte[] pdfBytes = generatePdfReport(user, startDate, endDate, expenses, incomes, budgets);
             sendPdfReport(chatId, pdfBytes);
         } catch (Exception e) {
-            sendMessage(chatId, "Ошибка при генерации отчета: " + e.getMessage());
+            sendMessage(chatId, "❌ Ошибка при генерации отчета: " + e.getMessage());
         }
     }
 
