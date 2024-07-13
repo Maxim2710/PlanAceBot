@@ -1,12 +1,12 @@
 bot:
   name: PlanAceBot
-  token: unknown
+  token: 7363455230:AAE4WqdV7VNEbg3FvcD-QGTu8XcqHZWCgWM
 
 spring:
   datasource:
-    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:54320/devMax_account
-    username: devMax_account_admin
-    password: g*nLx&5oSQQ
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:5432/devmax_account
+    username: devmax_account_admin
+    password: p;rXG1Y75E
     hikari:
       minimumIdle: 5
       maximumPoolSize: 20
