@@ -11,6 +11,9 @@ import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
@@ -41,12 +44,21 @@ public class NotificationService {
     @Scheduled(fixedRate = 1000)
     public void checkDeadlines() {
         List<Task> tasks = taskRepository.findAll();
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(ZoneId.of("UTC"));
 
         for (Task task : tasks) {
             LocalDateTime deadline = task.getDeadline();
             if (deadline != null && !task.isNotifiedOneDay()) {
-                long daysUntilDeadline = ChronoUnit.DAYS.between(now, deadline);
+                User user = task.getUser();
+                String userTimezone = user.getTimezone();
+                if (userTimezone == null || userTimezone.isEmpty()) {
+                    userTimezone = "UTC";
+                }
+
+                ZonedDateTime userNow = now.atZone(ZoneId.of("UTC")).withZoneSameInstant(ZoneId.of(userTimezone));
+                ZonedDateTime userDeadline = deadline.atZone(ZoneId.of("UTC")).withZoneSameInstant(ZoneId.of(userTimezone));
+
+                long daysUntilDeadline = ChronoUnit.DAYS.between(userNow, userDeadline);
                 long daysFromCreationToDeadline = ChronoUnit.DAYS.between(task.getCreationTimestamp().toLocalDateTime(), deadline);
 
                 if (daysFromCreationToDeadline < 1) {
@@ -84,9 +96,17 @@ public class NotificationService {
     private void sendDeadlineNotification(Task task, long daysUntilDeadline) {
         User user = task.getUser();
         String chatId = String.valueOf(user.getChatId());
+        String userTimezone = user.getTimezone();
+        if (userTimezone == null || userTimezone.isEmpty()) {
+            userTimezone = "UTC";
+        }
+
+        ZonedDateTime userDeadline = task.getDeadline().atZone(ZoneId.of("UTC")).withZoneSameInstant(ZoneId.of(userTimezone));
+        String deadlineString = userDeadline.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+
         String message = String.format("\uD83D\uDCC6 У вас есть задача, дедлайн которой подходит к концу:\n\n" +
-                        "\uD83D\uDD16 Название: %s\n\uD83D\uDCDD Описание: %s\n\uD83D\uDEC8 Приоритет: %d\n⏳ Осталось %d дней до дедлайна.",
-                task.getTitle(), task.getDescription(), task.getPriority(), daysUntilDeadline);
+                        "\uD83D\uDD16 Название: %s\n\uD83D\uDCDD Описание: %s\n\uD83D\uDEC8 Приоритет: %d\n⏳ Осталось %d дней до дедлайна (%s).",
+                task.getTitle(), task.getDescription(), task.getPriority(), daysUntilDeadline, deadlineString);
 
         telegramBot.sendMessage(chatId, message);
     }
