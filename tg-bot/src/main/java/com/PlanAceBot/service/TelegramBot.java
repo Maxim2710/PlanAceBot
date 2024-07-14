@@ -73,6 +73,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             :information_source: Список доступных команд:
 
             /start - Регистрация пользователя и приветственное сообщение.
+            /update_timezone - Обновление часового пояса.
             /calc - Калькулятор. Введите математическое выражение после команды.
             /create_task - Создание новой задачи.
             /update_task - Обновление существующей задачи.
@@ -220,6 +221,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private static final String BUTTON_END_DATE = "🏁 Дата окончания";
     private static final String BUTTON_WARNING = "⚠️ Предупреждение";
 
+    private static final String BUTTON_TIMEZONE_TEXT = "\uD83D\uDE80 Обновить часовой пояс";
     private static final String BUTTON_SHOW_TASK_TEXT = "\uD83D\uDCCB Задачи";
     private static final String BUTTON_SHOW_REMINDER_TEXT = "\uD83D\uDD14 Напоминания";
     private static final String BUTTON_CREATE_TASK_TEXT = "\uD83D\uDCDD Создать задачу";
@@ -325,6 +327,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         this.botConfig = config;
         List<BotCommand> listofCommands = new ArrayList<>();
         listofCommands.add(new BotCommand(COMMAND_START, "Регистрация пользователя и приветственное сообщение"));
+        listofCommands.add(new BotCommand(COMMAND_UPDATE_TIMEZONE, "Обновление часового пояса"));
         listofCommands.add(new BotCommand(COMMAND_CALC, "Калькулятор. Введите математическое выражение после команды"));
         listofCommands.add(new BotCommand(COMMAND_CREATE_TASK, "Создание новой задачи"));
         listofCommands.add(new BotCommand(COMMAND_UPDATE_TASK, "Обновление существующей задачи"));
@@ -464,6 +467,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                 case BUTTON_LIST_INCOMES_TEXT -> COMMAND_LIST_INCOMES;
                 case BUTTON_LIST_EXPENSES_TEXT -> COMMAND_LIST_EXPENSES;
                 case BUTTON_DONATE_TEXT -> COMMAND_PAYMENT_DETAILS;
+                case BUTTON_TIMEZONE_TEXT -> COMMAND_UPDATE_TIMEZONE;
                 default -> messageText.split(" ", 2)[0];
             };
 
@@ -815,7 +819,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
             StringBuilder message = new StringBuilder();
             message.append("🍅 Помодоро сессия завершена!\n");
-            message.append("Отличная работа! Возможно, пора сделать перерыв?");
+            message.append("Отличная работа!");
 
             createMainMenuKeyboard(chatId, message.toString());
         } else {
@@ -1388,7 +1392,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void sendTimezoneRequestMessage(String chatId, boolean isRegistration) {
-        String message = "Пожалуйста, введите ваш часовой пояс (Например, 'Europe/Moscow' or 'UTC+3'):";
+        String message = "Пожалуйста, введите ваш часовой пояс (Например, 'UTC+1' или 'UTC+3'):";
         sendMessage(chatId, message);
 
         timezoneAwaitingUsers.put(chatId, isRegistration);
@@ -1424,6 +1428,8 @@ public class TelegramBot extends TelegramLongPollingBot {
         thirdRow.add(BUTTON_SHOW_TIME_MANAGEMENT_COMMANDS_TEXT);
 
         KeyboardRow fourthRow = new KeyboardRow();
+        fourthRow.add(BUTTON_TIMEZONE_TEXT);
+
         fourthRow.add(BUTTON_DONATE_TEXT);
         fourthRow.add(BUTTON_HELP_TEXT);
 
@@ -1464,6 +1470,8 @@ public class TelegramBot extends TelegramLongPollingBot {
         thirdRow.add(BUTTON_SHOW_TIME_MANAGEMENT_COMMANDS_TEXT);
 
         KeyboardRow fourthRow = new KeyboardRow();
+        fourthRow.add(BUTTON_TIMEZONE_TEXT);
+
         fourthRow.add(BUTTON_DONATE_TEXT);
         fourthRow.add(BUTTON_HELP_TEXT);
 
@@ -1505,6 +1513,8 @@ public class TelegramBot extends TelegramLongPollingBot {
         thirdRow.add(BUTTON_SHOW_TIME_MANAGEMENT_COMMANDS_TEXT);
 
         KeyboardRow fourthRow = new KeyboardRow();
+        fourthRow.add(BUTTON_TIMEZONE_TEXT);
+
         fourthRow.add(BUTTON_DONATE_TEXT);
         fourthRow.add(BUTTON_HELP_TEXT);
 
@@ -1545,6 +1555,8 @@ public class TelegramBot extends TelegramLongPollingBot {
         thirdRow.add(BUTTON_SHOW_TIME_MANAGEMENT_COMMANDS_TEXT);
 
         KeyboardRow fourthRow = new KeyboardRow();
+        fourthRow.add(BUTTON_TIMEZONE_TEXT);
+
         fourthRow.add(BUTTON_DONATE_TEXT);
         fourthRow.add(BUTTON_HELP_TEXT);
 
@@ -3496,7 +3508,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
         for (Reminder reminder : reminders) {
-            String formattedReminderTime = formatReminderTime(reminder.getReminderTime(), chatId); // Форматируем время
+            String formattedReminderTime = formatReminderTime(reminder.getReminderTime(), chatId);
             messageBuilder.append(EmojiParser.parseToUnicode(":bell: *Номер напоминания:* ")).append(reminder.getId()).append("\n");
             messageBuilder.append(EmojiParser.parseToUnicode(":memo: *Текст напоминания:* ")).append(reminder.getMessage()).append("\n");
             messageBuilder.append(EmojiParser.parseToUnicode(":alarm_clock: *Время напоминания:* ")).append(formattedReminderTime).append("\n");
