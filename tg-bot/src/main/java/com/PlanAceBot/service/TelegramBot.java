@@ -3099,7 +3099,12 @@ public class TelegramBot extends TelegramLongPollingBot {
         if (optionalReminder.isPresent()) {
             Reminder reminder = optionalReminder.get();
             if (reminder.getUser().getChatId().equals(Long.parseLong(chatId))) {
-                Timestamp newTime = new Timestamp(reminder.getReminderTime().getTime() + duration.toMillis());
+                ZonedDateTime nowInUtc = ZonedDateTime.now(ZoneOffset.UTC);
+
+                ZonedDateTime newReminderTimeInUtc = nowInUtc.plus(duration);
+
+                Timestamp newTime = Timestamp.from(newReminderTimeInUtc.toInstant());
+
                 reminder.setReminderTime(newTime);
                 reminder.setSent(false);
                 reminderService.save(reminder);
@@ -3133,11 +3138,18 @@ public class TelegramBot extends TelegramLongPollingBot {
                 Optional<Reminder> optionalReminder = reminderService.findReminderById(reminderId);
                 if (optionalReminder.isPresent()) {
                     Reminder reminder = optionalReminder.get();
-                    Timestamp newTime = Timestamp.valueOf(localDateTime);
+
+                    ZonedDateTime zonedDateTime = localDateTime.atZone(ZoneId.systemDefault());
+                    ZonedDateTime utcDateTime = zonedDateTime.withZoneSameInstant(ZoneOffset.UTC);
+                    Timestamp newTime = Timestamp.valueOf(utcDateTime.toLocalDateTime());
+
                     reminder.setReminderTime(newTime);
                     reminder.setSent(false);
                     reminderService.save(reminder);
-                    sendMessage(chatId, "🕒 Напоминание успешно отложено на " + localDateTime.format(formatter) + ".");
+
+                    String formattedReminderTime = formatReminderTime(newTime, chatId);
+
+                    sendMessage(chatId, "🕒 Напоминание успешно отложено на " + formattedReminderTime + ".");
                     reminderCustomTimeStates.remove(chatId);
                 } else {
                     sendMessage(chatId, "❌ Ошибка при отложении напоминания.");
