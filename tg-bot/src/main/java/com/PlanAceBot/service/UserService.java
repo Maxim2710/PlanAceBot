@@ -26,4 +26,15 @@ public class UserService {
     public User getUserByChatId(String chatId) {
         return userRepository.findByChatId(Long.parseLong(chatId));
     }
+
+    public String getUserTimezone(String chatId) {
+        // Пример: Получение часового пояса из базы данных по chatId пользователя
+        User user = userRepository.findByChatId(Long.parseLong(chatId));
+        if (user != null) {
+            return user.getTimezone(); // Предположим, что у пользователя есть поле timezone
+        } else {
+            // Если пользователя нет в базе данных или нет информации о часовом поясе
+            return "UTC"; // Возвращаем UTC как значение по умолчанию
+        }
+    }
 }

@@ -84,7 +84,7 @@ public class NotificationService {
         String chatId = String.valueOf(user.getChatId());
         String message = String.format(
                 "\uD83D\uDCE2 Задача '%s' была создана с дедлайном менее чем через 1 день. Пожалуйста, проверьте её срочно. \uD83D\uDCE2\n\n" +
-                        "\uD83D\uDD16 Название: %s\n\uD83D\uDCDD Описание: %s\n\uD83D\uDEC8 Приоритет: %d",
+                        "\uD83D\uDD16 Название: %s\n\uD83D\uDCDD Описание: %s⭐ Приоритет: %d",
                 task.getTitle(), task.getTitle(), task.getDescription(), task.getPriority()
         );
 
@@ -105,7 +105,7 @@ public class NotificationService {
         String deadlineString = userDeadline.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
 
         String message = String.format("\uD83D\uDCC6 У вас есть задача, дедлайн которой подходит к концу:\n\n" +
-                        "\uD83D\uDD16 Название: %s\n\uD83D\uDCDD Описание: %s\n\uD83D\uDEC8 Приоритет: %d\n⏳ Осталось %d дней до дедлайна (%s).",
+                        "\uD83D\uDD16 Название: %s\n\uD83D\uDCDD Описание: %s⭐ Приоритет: %d\n⏳ Осталось %d дней до дедлайна (%s).",
                 task.getTitle(), task.getDescription(), task.getPriority(), daysUntilDeadline, deadlineString);
 
         telegramBot.sendMessage(chatId, message);

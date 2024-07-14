@@ -63,6 +63,8 @@ import java.awt.image.BufferedImage;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static org.apache.commons.lang3.SystemProperties.getUserTimezone;
+
 @Component
 @Slf4j
 public class TelegramBot extends TelegramLongPollingBot {
@@ -411,7 +413,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                 boolean isRegistration = timezoneAwaitingUsers.get(chatId);
                 saveUserTimezone(chatId, messageText);
                 if (isRegistration) {
-                    sendWelcomeMessage(chatId); // Send the welcome message only if it's registration
+                    sendWelcomeMessage(chatId);
                 }
                 return;
             }
@@ -2822,15 +2824,13 @@ public class TelegramBot extends TelegramLongPollingBot {
         tasks.sort(Comparator.comparingInt(Task::getPriority).reversed());
 
         StringBuilder messageBuilder = new StringBuilder();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-
         for (Task task : tasks) {
             messageBuilder.append(EmojiParser.parseToUnicode("\uD83D\uDD8A Название: ")).append(task.getTitle()).append("\n");
             messageBuilder.append(EmojiParser.parseToUnicode("\uD83D\uDCC4 Описание: ")).append(task.getDescription() != null ? task.getDescription() : "Без описания").append("\n");
-            messageBuilder.append(EmojiParser.parseToUnicode("\uD83D\uDCC5 Создано: ")).append(task.getCreationTimestamp().toLocalDateTime().format(formatter)).append("\n");
+            messageBuilder.append(EmojiParser.parseToUnicode("\uD83D\uDCC5 Создано: ")).append(formatTimestampTime(task.getCreationTimestamp(), chatId)).append("\n");
             messageBuilder.append(EmojiParser.parseToUnicode("⭐ Приоритет: ")).append(task.getPriority()).append("\n");
             if (task.getDeadline() != null) {
-                messageBuilder.append(EmojiParser.parseToUnicode("⏰ Дедлайн: ")).append(task.getDeadline().format(formatter)).append("\n");
+                messageBuilder.append(EmojiParser.parseToUnicode("⏰ Дедлайн: ")).append(formatDeadline(task.getDeadline(), chatId)).append("\n");
             }
             messageBuilder.append("\n");
         }
@@ -2844,6 +2844,21 @@ public class TelegramBot extends TelegramLongPollingBot {
         } catch (TelegramApiException e) {
             log.error("Error sending message: " + e.getMessage());
         }
+    }
+
+    private String formatTimestampTime(Timestamp timestamp, String chatId) {
+        LocalDateTime localDateTime = timestamp.toLocalDateTime();
+        ZoneId zoneId = ZoneId.of(userService.getUserTimezone(chatId));
+        ZonedDateTime zonedDateTime = localDateTime.atZone(ZoneId.of("UTC")).withZoneSameInstant(zoneId);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm").withZone(zoneId);
+        return zonedDateTime.format(formatter);
+    }
+
+    private String formatDeadline(LocalDateTime deadline, String chatId) {
+        ZoneId zoneId = ZoneId.of(userService.getUserTimezone(chatId));
+        ZonedDateTime zonedDateTime = deadline.atZone(ZoneId.of("UTC")).withZoneSameInstant(zoneId);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm").withZone(zoneId);
+        return zonedDateTime.format(formatter);
     }
 
     private void handleSetDeadlineCommand(String chatId, String[] parts, String messageText) {
