@@ -33,6 +33,9 @@ public class User {
     @Column(name = "registered_at")
     private Timestamp registeredAt;
 
+    @Column(name = "timezone")
+    private String timezone;
+
     public User(String chatId) {
         this.chatId = Long.valueOf(chatId);
     }

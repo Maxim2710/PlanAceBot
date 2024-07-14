@@ -39,10 +39,7 @@ import java.io.*;
 import java.sql.Timestamp;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
-import java.time.Duration;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.*;
@@ -180,6 +177,8 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     private static final String COMMAND_PAYMENT_DETAILS = "/payment_details";
 
+    public static final String COMMAND_UPDATE_TIMEZONE = "/update_timezone";
+
     private static final String BUTTON_TITLE = "🏷️ Название";
     private static final String BUTTON_DESCRIPTION = "📝 Описание";
     private static final String BUTTON_PRIORITY = "⚠️ Приоритет";
@@ -290,6 +289,8 @@ public class TelegramBot extends TelegramLongPollingBot {
     private final Map<String, Boolean> calcStates = new HashMap<>();
 
     private final Map<String, ReportCreationState> reportCreationStates = new HashMap<>();
+
+    private final Map<String, Boolean> timezoneAwaitingUsers = new HashMap<>();
 
     @Autowired
     private UserService userService;
@@ -403,6 +404,15 @@ public class TelegramBot extends TelegramLongPollingBot {
 
             if (!isUserSubscribed(chatId)) {
                 sendSubscribeMessage(chatId);
+                return;
+            }
+
+            if (isAwaitingTimezone(chatId)) {
+                boolean isRegistration = timezoneAwaitingUsers.get(chatId);
+                saveUserTimezone(chatId, messageText);
+                if (isRegistration) {
+                    sendWelcomeMessage(chatId); // Send the welcome message only if it's registration
+                }
                 return;
             }
 
@@ -676,6 +686,10 @@ public class TelegramBot extends TelegramLongPollingBot {
                         sendPaymentDetails(chatId);
                         break;
 
+                    case COMMAND_UPDATE_TIMEZONE:
+                        sendTimezoneRequestMessage(chatId, false);
+                        break;
+
                     default:
                         sendUnknownCommandMessage(chatId);
                         break;
@@ -683,6 +697,20 @@ public class TelegramBot extends TelegramLongPollingBot {
             }
         } else if (update.hasCallbackQuery()) {
             handleCallbackQuery(update);
+        }
+    }
+
+    private boolean isAwaitingTimezone(String chatId) {
+        return timezoneAwaitingUsers.containsKey(chatId);
+    }
+
+    private void saveUserTimezone(String chatId, String timezone) {
+        User user = userService.findByChatId(Long.parseLong(chatId));
+        if (user != null) {
+            user.setTimezone(timezone);
+            userService.save(user);
+            sendMessage(chatId, "Ваш часовой пояс был обновлен до " + timezone + ".");
+            timezoneAwaitingUsers.remove(chatId);
         }
     }
 
@@ -1349,12 +1377,19 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
 
         if (isNewUser && flag) {
-            sendWelcomeMessage(chatId);
+            sendTimezoneRequestMessage(chatId, true);
         } else if (!isNewUser && flag) {
             sendWelcomeBackMessage(chatId);
         } else {
             createStartKeyboardForBack(chatId, "Вы вернулись в главное меню 😊");
         }
+    }
+
+    private void sendTimezoneRequestMessage(String chatId, boolean isRegistration) {
+        String message = "Пожалуйста, введите ваш часовой пояс (Например, 'Europe/Moscow' or 'UTC+3'):";
+        sendMessage(chatId, message);
+
+        timezoneAwaitingUsers.put(chatId, isRegistration);
     }
 
     private void sendWelcomeMessage(String chatId) {
@@ -2856,6 +2891,14 @@ public class TelegramBot extends TelegramLongPollingBot {
         int taskId = taskDeadlineStates.get(chatId);
         Task task = taskService.findById(taskId);
 
+        User user = userService.findByChatId(Long.parseLong(chatId));
+        String userTimezone = user.getTimezone();
+        if (userTimezone == null || userTimezone.isEmpty()) {
+            sendMessage(chatId, "Не удалось определить ваш часовой пояс. Пожалуйста, сначала установите его с помощью команды /update_timezone.");
+            taskDeadlineStates.remove(chatId);
+            return;
+        }
+
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
         LocalDateTime deadline;
         try {
@@ -2865,13 +2908,16 @@ public class TelegramBot extends TelegramLongPollingBot {
             return;
         }
 
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(ZoneId.of(userTimezone));
         if (deadline.isBefore(now) || deadline.isEqual(now)) {
             sendMessage(chatId, "Дата дедлайна должна быть в будущем. Пожалуйста, введите корректную дату. ⏰");
             return;
         }
 
-        task.setDeadline(deadline);
+        ZonedDateTime userDeadline = deadline.atZone(ZoneId.of(userTimezone));
+        ZonedDateTime utcDeadline = userDeadline.withZoneSameInstant(ZoneId.of("UTC"));
+
+        task.setDeadline(utcDeadline.toLocalDateTime());
         taskService.save(task);
         taskDeadlineStates.remove(chatId);
         sendMessage(chatId, "Дедлайн установлен для задачи: " + task.getTitle() + " 🚀");
