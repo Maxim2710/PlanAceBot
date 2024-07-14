@@ -413,11 +413,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             }
 
             if (isAwaitingTimezone(chatId)) {
-                boolean isRegistration = timezoneAwaitingUsers.get(chatId);
                 saveUserTimezone(chatId, messageText);
-                if (isRegistration) {
-                    sendWelcomeMessage(chatId);
-                }
                 return;
             }
 
@@ -711,13 +707,41 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void saveUserTimezone(String chatId, String timezone) {
-        User user = userService.findByChatId(Long.parseLong(chatId));
-        if (user != null) {
-            user.setTimezone(timezone);
-            userService.save(user);
-            sendMessage(chatId, "Ваш часовой пояс был обновлен до " + timezone + ".");
-            timezoneAwaitingUsers.remove(chatId);
+        if (isValidTimezone(timezone)) {
+            User user = userService.findByChatId(Long.parseLong(chatId));
+            if (user != null) {
+                user.setTimezone(timezone);
+                userService.save(user);
+                sendMessage(chatId, "\uD83D\uDD52 Ваш часовой пояс был обновлен до " + timezone + ".");
+
+                boolean isRegistration = Boolean.TRUE.equals(timezoneAwaitingUsers.get(chatId));
+                timezoneAwaitingUsers.remove(chatId);
+
+                if (isRegistration) {
+                    sendWelcomeMessage(chatId);
+                }
+            }
+        } else {
+            sendMessage(chatId, "❌ Неверный формат часового пояса. Пожалуйста, введите значение в формате 'UTC-1' или 'UTC+3'.");
         }
+    }
+
+    private boolean isValidTimezone(String timezone) {
+        if (timezone == null || !timezone.matches("^UTC[+-](1[0-2]|[0-9]|1[3-4])$")) {
+            return false;
+        }
+
+        try {
+            String[] parts = timezone.substring(3).split(":");
+            int hours = Integer.parseInt(parts[0]);
+            if (hours < -12 || hours > 14) {
+                return false;
+            }
+        } catch (NumberFormatException e) {
+            return false;
+        }
+
+        return true;
     }
 
     private void sendPaymentDetails(String chatId) {
@@ -1392,7 +1416,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void sendTimezoneRequestMessage(String chatId, boolean isRegistration) {
-        String message = "Пожалуйста, введите ваш часовой пояс (Например, 'UTC+1' или 'UTC+3'):";
+        String message = "\uD83D\uDD52 Пожалуйста, введите ваш часовой пояс (Например, 'UTC-1' или 'UTC+3'):";
         sendMessage(chatId, message);
 
         timezoneAwaitingUsers.put(chatId, isRegistration);
