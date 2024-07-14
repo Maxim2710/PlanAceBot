@@ -41,6 +41,9 @@ public class NotificationService {
     @Autowired
     private NinetyThirtyService ninetyThirtyService;
 
+    @Autowired
+    private ReminderService reminderService;
+
     @Scheduled(fixedRate = 1000)
     public void checkDeadlines() {
         List<Task> tasks = taskRepository.findAll();
@@ -84,7 +87,7 @@ public class NotificationService {
         String chatId = String.valueOf(user.getChatId());
         String message = String.format(
                 "\uD83D\uDCE2 Задача '%s' была создана с дедлайном менее чем через 1 день. Пожалуйста, проверьте её срочно. \uD83D\uDCE2\n\n" +
-                        "\uD83D\uDD16 Название: %s\n\uD83D\uDCDD Описание: %s⭐ Приоритет: %d",
+                        "\uD83D\uDD16 Название: %s\n\uD83D\uDCDD Описание: %s\n⭐ Приоритет: %d",
                 task.getTitle(), task.getTitle(), task.getDescription(), task.getPriority()
         );
 
@@ -109,6 +112,18 @@ public class NotificationService {
                 task.getTitle(), task.getDescription(), task.getPriority(), daysUntilDeadline, deadlineString);
 
         telegramBot.sendMessage(chatId, message);
+    }
+
+    @Scheduled(fixedRate = 1000)
+    public void checkAndSendReminders() {
+        List<Reminder> dueReminders = reminderService.findDueReminders();
+        for (Reminder reminder : dueReminders) {
+            if (!reminder.isSent()) {
+                telegramBot.sendReminderNotification(reminder);
+                reminder.setSent(true);
+                reminderService.save(reminder);
+            }
+        }
     }
 
     @Scheduled(fixedRate = 1000)

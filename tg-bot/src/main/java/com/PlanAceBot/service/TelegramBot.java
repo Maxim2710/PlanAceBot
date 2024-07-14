@@ -2072,8 +2072,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                 createReminder(currentState.getMessage(), currentState.getReminderTime(), chatId);
                 reminderCreationStates.remove(chatId);
 
-                SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm");
-                String formattedReminderTime = formatter.format(currentState.getReminderTime());
+                String formattedReminderTime = formatReminderTime(currentState.getReminderTime(), chatId);
 
                 sendMessage(chatId, "Напоминание установлено на " + formattedReminderTime + ". ⏰");
             }
@@ -2978,19 +2977,31 @@ public class TelegramBot extends TelegramLongPollingBot {
                     return;
                 }
 
-                Timestamp reminderTime = Timestamp.valueOf(localDateTime);
+                ZonedDateTime zonedDateTime = localDateTime.atZone(ZoneId.of(userService.getUserTimezone(chatId)));
+                ZonedDateTime utcDateTime = zonedDateTime.withZoneSameInstant(ZoneOffset.UTC);
+                Timestamp reminderTime = Timestamp.valueOf(utcDateTime.toLocalDateTime());
+
                 currentState.setReminderTime(reminderTime);
                 currentState.setState(ReminderState.CONFIRMATION);
 
+                String formattedReminderTime = formatReminderTime(reminderTime, chatId);
+
                 String confirmationMessage = "📅 Вы ввели следующие данные:\n" +
                         "Сообщение: " + currentState.getMessage() + "\n" +
-                        "Время напоминания: " + localDateTime.format(formatter) + "\n\n" +
+                        "Время напоминания: " + formattedReminderTime + "\n\n" +
                         "✅ Все верно?";
                 sendConfirmationMessage(chatId, confirmationMessage);
             } catch (DateTimeParseException e) {
                 sendMessage(chatId, "❌ Неверный формат времени. Пожалуйста, введите время в формате yyyy-MM-dd HH:mm:");
             }
         }
+    }
+
+    private String formatReminderTime(Timestamp reminderTime, String chatId) {
+        ZoneId zoneId = ZoneId.of(userService.getUserTimezone(chatId));
+        ZonedDateTime zonedDateTime = reminderTime.toLocalDateTime().atZone(ZoneOffset.UTC).withZoneSameInstant(zoneId);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+        return zonedDateTime.format(formatter);
     }
 
     private void sendConfirmationMessage(String chatId, String confirmationMessage) {
@@ -3044,19 +3055,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         reminderService.save(reminder);
     }
 
-    @Scheduled(fixedRate = 1000)
-    public void checkAndSendReminders() {
-        List<Reminder> dueReminders = reminderService.findDueReminders();
-        for (Reminder reminder : dueReminders) {
-            if (!reminder.isSent()) {
-                sendReminderNotification(reminder);
-                reminder.setSent(true);
-                reminderService.save(reminder);
-            }
-        }
-    }
-
-    private void sendReminderNotification(Reminder reminder) {
+    public void sendReminderNotification(Reminder reminder) {
         String chatId = reminder.getUser().getChatId().toString();
         String messageText = "🔔 Напоминание: " + reminder.getMessage();
 
@@ -3221,12 +3220,12 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
 
         String currentMessage = reminder.getMessage();
-        LocalDateTime remindAt = reminder.getReminderTime().toLocalDateTime();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+        Timestamp reminderTime = reminder.getReminderTime();
+        String formattedReminderTime = formatReminderTime(reminderTime, chatId);
 
         String selectionMessage = "📝️ Выберите, что вы хотите обновить для напоминания:\n";
         selectionMessage += "📌 Текущее сообщение: " + currentMessage + "\n";
-        selectionMessage += "🕒 Дата напоминания: " + remindAt.format(formatter) + "\n";
+        selectionMessage += "🕒 Дата напоминания: " + formattedReminderTime + "\n";
 
         InlineKeyboardMarkup markup = createReminderUpdateMarkup();
 
@@ -3289,7 +3288,13 @@ public class TelegramBot extends TelegramLongPollingBot {
             case "remindAt":
                 try {
                     LocalDateTime remindAt = LocalDateTime.parse(messageText, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
-                    reminder.setReminderTime(Timestamp.valueOf(remindAt));
+
+                    String userTimezone = userService.getUserTimezone(chatId);
+                    ZoneId userZoneId = ZoneId.of(userTimezone);
+
+                    ZonedDateTime userDateTime = remindAt.atZone(userZoneId);
+                    ZonedDateTime utcDateTime = userDateTime.withZoneSameInstant(ZoneOffset.UTC);
+                    reminder.setReminderTime(Timestamp.valueOf(utcDateTime.toLocalDateTime()));
                 } catch (DateTimeParseException e) {
                     sendMessage(chatId, "❌ Неверный формат даты и времени. Используйте формат yyyy-MM-dd HH:mm");
                     return;
@@ -3311,10 +3316,12 @@ public class TelegramBot extends TelegramLongPollingBot {
         StringBuilder confirmationMessage = new StringBuilder("✨ Изменения сохранены:\n");
         confirmationMessage.append("📝 Сообщение: ").append(reminder.getMessage()).append("\n");
 
-        LocalDateTime remindAt = reminder.getReminderTime().toLocalDateTime();
-        if (remindAt != null) {
-            confirmationMessage.append("⏰ Напомнить в: ").append(remindAt.format(formatter)).append("\n");
-        }
+        String userTimezone = userService.getUserTimezone(chatId);
+        ZoneId userZoneId = ZoneId.of(userTimezone);
+        ZonedDateTime utcDateTime = reminder.getReminderTime().toLocalDateTime().atZone(ZoneOffset.UTC);
+        ZonedDateTime userDateTime = utcDateTime.withZoneSameInstant(userZoneId);
+
+        confirmationMessage.append("⏰ Напомнить в: ").append(userDateTime.format(formatter)).append("\n");
 
         confirmationMessage.append("\n\n❓ Подтвердить изменения?");
 
@@ -3416,11 +3423,11 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
 
         Reminder reminder = optionalReminder.get();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+        String formattedReminderTime = formatReminderTime(reminder.getReminderTime(), chatId);
 
         StringBuilder confirmationMessage = new StringBuilder("❗ Вы уверены, что хотите удалить следующее напоминание?\n\n");
         confirmationMessage.append("📌 Сообщение: ").append(reminder.getMessage()).append("\n");
-        confirmationMessage.append("⏰ Время напоминания: ").append(reminder.getReminderTime().toLocalDateTime().format(formatter)).append("\n");
+        confirmationMessage.append("⏰ Время напоминания: ").append(formattedReminderTime).append("\n");
 
         InlineKeyboardMarkup markup = createDeleteReminderConfirmationMarkup();
 
@@ -3477,9 +3484,10 @@ public class TelegramBot extends TelegramLongPollingBot {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
         for (Reminder reminder : reminders) {
+            String formattedReminderTime = formatReminderTime(reminder.getReminderTime(), chatId); // Форматируем время
             messageBuilder.append(EmojiParser.parseToUnicode(":bell: *Номер напоминания:* ")).append(reminder.getId()).append("\n");
             messageBuilder.append(EmojiParser.parseToUnicode(":memo: *Текст напоминания:* ")).append(reminder.getMessage()).append("\n");
-            messageBuilder.append(EmojiParser.parseToUnicode(":alarm_clock: *Время напоминания:* ")).append(reminder.getReminderTime().toLocalDateTime().format(formatter)).append("\n");
+            messageBuilder.append(EmojiParser.parseToUnicode(":alarm_clock: *Время напоминания:* ")).append(formattedReminderTime).append("\n");
             messageBuilder.append("\n");
         }
 
