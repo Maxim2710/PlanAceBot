@@ -26,7 +26,7 @@ services:
 
   tg-bot:
     container_name: tg-bot
-    image: tg-bot:test
+    image: tg-bot:latest
     environment:
       POSTGRES_HOST: postgres
 
