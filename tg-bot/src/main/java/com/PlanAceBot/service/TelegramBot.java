@@ -5324,7 +5324,10 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         PdfFont font = PdfFontFactory.createFont("fonts/FreeSans.ttf", "CP1251", true);
 
-        String creationDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Timestamp(System.currentTimeMillis()));
+        ZoneId userTimeZone = ZoneId.of(user.getTimezone());
+
+        ZonedDateTime currentTime = ZonedDateTime.now(ZoneId.systemDefault()).withZoneSameInstant(userTimeZone);
+        String creationDate = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").format(currentTime);
 
         document.add(new Paragraph("Отчет за период " + formatTimestamp(startDate) + " - " + formatTimestamp(endDate)).setFontSize(14).setBold().setFont(font));
         document.add(new Paragraph("Пользователь: " + user.getFirstName()).setFontSize(12).setFont(font));
